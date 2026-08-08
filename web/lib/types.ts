@@ -1,8 +1,22 @@
-// Tipos compartidos entre el cliente de Massive, los cálculos y la UI.
+// Tipos compartidos entre los clientes de datos (Schwab/Massive), los cálculos y la UI.
 
 export type ContractType = "call" | "put";
 
-/** Subconjunto del contrato tal como lo devuelve el Option Chain Snapshot de Massive. */
+/** Griegos e IV reales del contrato. Los entrega Schwab; Massive no. */
+export interface ContractGreeks {
+  delta: number | null;
+  gamma: number | null;
+  theta: number | null;
+  vega: number | null;
+  rho: number | null;
+  /** Volatilidad implícita en DECIMAL (0.3053), no en porcentaje. */
+  iv: number | null;
+}
+
+/**
+ * Contrato crudo normalizado. La forma base es la del Option Chain Snapshot de
+ * Massive; `quote` y `greeks` son campos que solo llegan desde Schwab.
+ */
 export interface RawContract {
   break_even_price?: number;
   day?: {
@@ -25,10 +39,20 @@ export interface RawContract {
     price?: number;
     ticker?: string;
   };
+  /** Quote real bid/ask (Schwab). El plan de Massive no lo entrega. */
+  quote?: {
+    bid?: number;
+    ask?: number;
+  };
+  /** Griegos reales (Schwab). Evita estimarlos con Black-Scholes. */
+  greeks?: ContractGreeks;
 }
 
-/** De dónde salió el precio usado para Open Premium (bid no está disponible en este plan). */
-export type PriceSource = "last_trade" | "day_close" | "day_vwap" | "none";
+/**
+ * De dónde salió el precio usado para Open Premium.
+ * `bid` es el que pide el Proceso Principal; los demás son respaldos.
+ */
+export type PriceSource = "bid" | "last_trade" | "day_close" | "day_vwap" | "none";
 
 /** Fila procesada que consume la tabla. */
 export interface Row {
@@ -42,6 +66,11 @@ export interface Row {
   priceSource: PriceSource;
   openPremium: number | null;
   notionalValue: number;
+  /** Quote real. Opcional: solo viene con Schwab. */
+  bid?: number | null;
+  ask?: number | null;
+  /** Griegos reales. Opcional: solo vienen con Schwab. */
+  greeks?: ContractGreeks | null;
 }
 
 export interface ChainMeta {
@@ -51,6 +80,10 @@ export interface ChainMeta {
   expirationCount: number;
   pages: number;
   truncated: boolean;
+  /** Proveedor que sirvió la cadena. */
+  source?: "schwab" | "massive";
+  /** Los datos vienen con retraso (Schwab los marca así). */
+  delayed?: boolean;
 }
 
 /** Información y stats de la empresa (se muestra antes de la tabla). */

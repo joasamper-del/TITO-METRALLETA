@@ -30,6 +30,7 @@ const KEY_VIEW = "tito.view";
 const KEY_HORIZON = "tito.ideas.horizon";
 
 const HORIZON_LABELS: Record<number, string> = {
+  1: "Hoy (0DTE)",
   10: "Esta semana",
   20: "2 semanas",
   30: "1 mes",

@@ -129,3 +129,37 @@ describe("gexAnalysis", () => {
     expect(a.confidence).toBeLessThanOrEqual(100);
   });
 });
+
+describe("gexAnalysis — modo 0DTE (dteMax + piso de T)", () => {
+  const TODAY = "2026-07-23"; // = NOW → dte 0 (0DTE)
+  const FUTURE = "2026-08-21"; // ~29 dte
+
+  it("modo normal (sin dteMax) excluye los contratos que vencen hoy", () => {
+    // Sin este alcance, un agente '0DTE' nunca vería su propia expiración.
+    const a = analyze([row(100, "call", 5000, TODAY)]);
+    expect(a.nodes).toHaveLength(0);
+  });
+
+  it("dteMax=0 incluye la expiración de hoy y descarta las futuras", () => {
+    const a = analyze(
+      [row(100, "call", 5000, TODAY), row(105, "call", 9000, FUTURE)],
+      { dteMax: 0 },
+    );
+    expect(a.nodes.map((n) => n.strike)).toEqual([100]);
+    expect(a.n).toBe(1);
+  });
+
+  it("el 0DTE produce GEX finito gracias al piso de T (no NaN ni Infinity)", () => {
+    const a = analyze([row(100, "call", 5000, TODAY)], { dteMax: 0 });
+    expect(a.nodes).toHaveLength(1);
+    expect(Number.isFinite(a.nodes[0].netGex)).toBe(true);
+    expect(a.nodes[0].netGex).toBeGreaterThan(0); // call → GEX positivo
+    expect(a.kingStrike).toBe(100);
+  });
+
+  it("el piso de T no altera los contratos con dte ≥ 1 (sin regresión)", () => {
+    const base = analyze([row(100, "call", 5000, FUTURE)]);
+    const scoped = analyze([row(100, "call", 5000, FUTURE)], { dteMax: 40 });
+    expect(scoped.nodes[0].netGex).toBeCloseTo(base.nodes[0].netGex, 6);
+  });
+});

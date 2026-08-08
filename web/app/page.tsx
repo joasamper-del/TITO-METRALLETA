@@ -137,8 +137,12 @@ export default function Dashboard() {
       structureScore: structure?.score ?? null,
       lowLiquidity: structure?.notional.lowLiquidity ?? false,
       now: new Date(),
+      // Modo 0DTE: al elegir "Hoy" el mapa GEX y la predicción se calculan solo
+      // sobre la expiración de hoy (dte ≤ 0), que es el gamma que mueve el precio
+      // intradía. El resto de horizontes usa toda la cadena vigente.
+      dteMax: horizonDays === 1 ? 0 : null,
     });
-  }, [chainRows, bars, company, chainMeta, convRows, unusualRows, conviction, structure]);
+  }, [chainRows, bars, company, chainMeta, convRows, unusualRows, conviction, structure, horizonDays]);
 
   // Heatmap de GEX por strike × vencimiento — abre el GEX en sus dos dimensiones.
   const heatmap = useMemo(() => {
@@ -373,7 +377,7 @@ export default function Dashboard() {
                 <div className="stack-tight">
                   <div className="view-toggle-row">
                     <div className="view-toggle">
-                      {[[10, "Esta semana"], [20, "2 semanas"], [30, "1 mes"]].map(([d, lbl]) => (
+                      {[[1, "Hoy (0DTE)"], [10, "Esta semana"], [20, "2 semanas"], [30, "1 mes"]].map(([d, lbl]) => (
                         <button
                           key={d as number}
                           className={horizonDays === d ? "active" : ""}

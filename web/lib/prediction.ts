@@ -28,6 +28,7 @@ export interface HorizonOption {
 }
 
 export const HORIZONS: HorizonOption[] = [
+  { days: 1, label: "Hoy (0DTE)" },
   { days: 10, label: "10 días" },
   { days: 20, label: "20 días" },
   { days: 30, label: "30 días" },
@@ -249,8 +250,9 @@ export function predictPro(input: PredictionInput): ProPrediction {
       ? ` El target se ajustó ${shiftPct >= 0 ? "+" : ""}${shiftPct.toFixed(1)}% por el sesgo histórico del agente (${samples} predicciones vencidas).`
       : "";
 
+  const horizonText = horizonDays === 1 ? "Hoy (0DTE)" : `A ${horizonDays} días`;
   const summary =
-    `A ${horizonDays} días el escenario base apunta ${dirText}, dentro de un rango esperado de ` +
+    `${horizonText} el escenario base apunta ${dirText}, dentro de un rango esperado de ` +
     `±${em.sigmaPct.toFixed(1)}% (1σ). ${moneyText} ${scoreText}${trackText}${calText}`;
 
   const caveat = lowLiquidity

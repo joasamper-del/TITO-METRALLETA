@@ -68,7 +68,7 @@ export default function PredictionCard({
               className={`hz-tab ${horizonDays === h.days ? "on" : ""}`}
               onClick={() => onHorizon(h.days)}
             >
-              {h.days}d
+              {h.days === 1 ? "Hoy" : `${h.days}d`}
             </button>
           ))}
         </div>

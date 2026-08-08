@@ -25,6 +25,15 @@ export const FALLBACK_IV = 0.4;
 /** Solo se consideran strikes dentro de ±este % del spot (los LEAPs lejanos no pintan). */
 export const NEAR_SPOT_PCT = 0.2;
 
+/**
+ * Piso de T (en años) para contratos 0DTE. Un vencimiento de hoy tiene dte = 0, y
+ * `T = 0` rompería la gamma Black-Scholes (Γ = φ(d₁)/(S·σ·√T) → división por √0).
+ * Se le da a los de hoy medio día de vida (~0.5/365) para que su gamma sea finita y
+ * contribuyan al GEX, respetando la fórmula de la guía. Solo afecta a dte = 0: para
+ * dte ≥ 1, `dte/365` ya es mayor que este piso, así que no cambia nada.
+ */
+export const MIN_T_0DTE = 0.5 / 365;
+
 /** Peso del GEX vs. premium de trades reales al medir "concentración de dinero". */
 const GEX_WEIGHT = 0.6;
 const TRADE_WEIGHT = 0.4;
@@ -77,6 +86,74 @@ export function estimateIV(closes: number[]): number {
   return Math.min(3, Math.max(0.05, iv));
 }
 
+/** Fuente de la IV usada: la real de la cadena (Schwab) o la realizada estimada. */
+export type IvSource = "chain" | "realized";
+
+/** Densidad normal estándar φ(x). (La de blackScholes.ts es privada; esta es local.) */
+function phi(x: number): number {
+  return Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI);
+}
+
+/** d1, d2 de Black-Scholes con r = q = 0. null si los insumos no valen. */
+function d1d2(spot: number, strike: number, T: number, iv: number): [number, number] | null {
+  if (spot <= 0 || strike <= 0 || T <= 0 || iv <= 0) return null;
+  const sqrtT = Math.sqrt(T);
+  const d1 = (Math.log(spot / strike) + 0.5 * iv * iv * T) / (iv * sqrtT);
+  return [d1, d1 - iv * sqrtT];
+}
+
+/**
+ * Vanna de Black-Scholes (r = q = 0): ∂Δ/∂σ = −φ(d1)·d2/σ. Igual para call y put.
+ * Mide cuánto se mueve el delta si cambia la IV — un cambio de vol obliga a los
+ * dealers a re-cubrir y empuja el precio. La usa el motor 0DTE (`zerodte.ts`).
+ */
+export function bsVanna(spot: number, strike: number, T: number, iv: number): number {
+  const dd = d1d2(spot, strike, T, iv);
+  if (!dd) return 0;
+  const [d1, d2] = dd;
+  return -phi(d1) * d2 / iv;
+}
+
+/**
+ * Charm de Black-Scholes (r = q = 0): variación del delta por el paso del TIEMPO,
+ * = −φ(d1)·d2/(2T). Griego clave del 0DTE: crece como 1/T y se dispara al cierre.
+ */
+export function bsCharm(spot: number, strike: number, T: number, iv: number): number {
+  const dd = d1d2(spot, strike, T, iv);
+  if (!dd) return 0;
+  const [d1, d2] = dd;
+  return -phi(d1) * d2 / (2 * T);
+}
+
+/** IV por encima de esto se descarta por absurda (contratos ilíquidos muy OTM). */
+export const MAX_SANE_IV = 3;
+
+/**
+ * IV real de la cadena: media de la IV por contrato ponderada por Open Interest,
+ * limitada a strikes cerca del spot (±NEAR_SPOT_PCT) y acotada a MAX_SANE_IV.
+ * PURA. Devuelve null si la cadena no trae IV real (fuente sin griegos, p. ej. Massive).
+ */
+export function chainIV(rows: Row[], spot: number): number | null {
+  if (spot <= 0) return null;
+  const lo = spot * (1 - NEAR_SPOT_PCT);
+  const hi = spot * (1 + NEAR_SPOT_PCT);
+
+  let weighted = 0;
+  let weight = 0;
+  for (const r of rows) {
+    const iv = r.greeks?.iv;
+    if (typeof iv !== "number" || !(iv > 0) || iv > MAX_SANE_IV) continue;
+    if (r.strike < lo || r.strike > hi) continue;
+    const oi = r.openInterest;
+    if (!(oi > 0)) continue;
+    weighted += iv * oi;
+    weight += oi;
+  }
+
+  if (weight <= 0) return null;
+  return weighted / weight;
+}
+
 export interface GexInput {
   rows: Row[];
   closes: number[];               // cierres diarios (viejo→nuevo) para estimar IV
@@ -86,6 +163,12 @@ export interface GexInput {
   structureScore?: number | null;  // 0-10
   lowLiquidity?: boolean;
   now: Date;
+  /**
+   * Alcance por vencimiento: solo entran contratos con `dte ≤ dteMax`.
+   * `0` = modo 0DTE (solo la expiración de hoy). `null`/`undefined` = comportamiento
+   * normal (excluye same-day y toma toda la cadena vigente).
+   */
+  dteMax?: number | null;
 }
 
 const emptyAnalysis = (spot: number, iv: number, lowLiquidity: boolean): GexAnalysis => ({
@@ -100,7 +183,7 @@ const emptyAnalysis = (spot: number, iv: number, lowLiquidity: boolean): GexAnal
  * (imán), zona de inversión gamma, régimen, dirección y confianza.
  */
 export function gexAnalysis(input: GexInput): GexAnalysis {
-  const { rows, closes, spot, trades = [], convictionScore, structureScore, now } = input;
+  const { rows, closes, spot, trades = [], convictionScore, structureScore, now, dteMax } = input;
   const iv = estimateIV(closes);
   const lowLiquidity = input.lowLiquidity ?? false;
   if (spot <= 0 || rows.length === 0) return emptyAnalysis(spot, iv, lowLiquidity);
@@ -128,8 +211,10 @@ export function gexAnalysis(input: GexInput): GexAnalysis {
     if (r.strike < lo || r.strike > hi) continue;
     if (r.openInterest <= 0) continue;
     const dte = daysToExpiration(r.expiration, now);
-    if (dte <= 0) continue;
-    const T = dte / 365;
+    if (dte < 0) continue;                              // contratos ya expirados
+    if (dteMax != null) { if (dte > dteMax) continue; } // alcance 0DTE: solo hasta dteMax (0 = hoy)
+    else if (dte <= 0) continue;                        // modo normal: excluye same-day
+    const T = Math.max(dte / 365, MIN_T_0DTE);          // piso de T para que el 0DTE no rompa la gamma
 
     let gamma = bsGamma(spot, r.strike, T, iv);
     const anchor = realGamma.get(`${r.strike}|${r.contractType}`);

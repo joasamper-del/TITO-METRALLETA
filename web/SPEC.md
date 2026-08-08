@@ -114,3 +114,103 @@ notionalValue  = openInterest × 100 × strike
 
 Tarea 3 (comparación sectorial), Tarea 4 (interpretación muros Buy/Sell), Tarea 6 (liquidez vs "7 Magníficas"),
 Tarea 7 (noticias RSS), histórico de 5 días, filtros por vencimiento/strike, greeks/GEX.
+
+---
+
+# Webhook de alertas de TradingView (`/api/tradingview`)
+
+Fecha: 2026-08-08 · Estado: implementado
+
+## Objetivo
+
+**Buzón de entrada** de señales de TradingView. TradingView dispara una alerta y hace `POST`
+al endpoint; el servidor **valida y persiste** (no procesa ni ejecuta nada). Tito consume las
+alertas después leyéndolas por `GET`, igual que el agente lee `pending` en `/api/watchlist`.
+Las rutas son puentes finos; la orquestación la hace el agente, no el servidor.
+
+## Por qué el diseño es así (restricciones de TradingView)
+
+- **No manda headers personalizados** → imposible firmar la petición (HMAC/`Authorization`).
+  La única autenticación posible es un **secreto compartido dentro del cuerpo** (`passphrase`).
+- **`Content-Type` suele llegar como `text/plain`** aunque el cuerpo sea JSON → el servidor lee
+  `request.text()` y prueba **JSON** y luego **`clave=valor`**, en vez de confiar en `request.json()`.
+- Endpoint **público** → secreto obligatorio, límite de tamaño de cuerpo (16 KB) y tope de
+  alertas guardadas (500, se descartan las viejas) para que nadie llene el disco.
+
+## Configuración
+
+En `web/.env.local` (gitignored, **nunca** commitear el valor):
+
+```
+TRADINGVIEW_WEBHOOK_SECRET=<un secreto largo y aleatorio>
+```
+
+Sin esta variable el endpoint responde `503` y rechaza todo.
+
+## Cómo configurar la alerta en TradingView
+
+- **Webhook URL:** `https://TU_HOST/api/tradingview`
+- **Message** (JSON recomendado; el `passphrase` debe ser idéntico al `.env.local`):
+
+```json
+{
+  "passphrase": "EL_MISMO_SECRETO",
+  "ticker": "{{ticker}}",
+  "action": "{{strategy.order.action}}",
+  "close": "{{close}}",
+  "interval": "{{interval}}",
+  "strategy": "mi-estrategia-0DTE",
+  "message": "texto libre opcional"
+}
+```
+
+También se acepta formato `clave=valor` (una por línea) para alertas simples.
+
+## Contrato del endpoint
+
+```
+POST /api/tradingview
+  body: JSON o clave=valor con el passphrase dentro
+  200 → { ok: true, id, stored }
+  400 → cuerpo ilegible o falta 'ticker'
+  401 → passphrase incorrecto o ausente
+  413 → cuerpo > 16 KB
+  503 → TRADINGVIEW_WEBHOOK_SECRET no configurado en el servidor
+
+GET /api/tradingview?ticker=&since=&limit=
+  200 → { count, alerts: TradingViewAlert[] }   (más recientes primero)
+```
+
+## Normalización (payload → `TradingViewAlert`)
+
+El parser tolera nombres alternativos porque cada estrategia rotula distinto:
+
+- `ticker` ← `ticker | symbol | tick` (se quita el `$` y se pasa a mayúsculas)
+- `action` ← `action | side | signal`, mapeado a **buy** (`buy/long/bull/call`),
+  **sell** (`sell/short/bear/put/exit/close`) o **neutral** (default)
+- `price` ← `price | close | last` · `timeframe` ← `timeframe | interval | tf`
+- `strategy` ← `strategy | alert | name` · `message` ← `message | comment | text`
+- `raw` guarda el payload original **sin el secreto** (auditoría)
+
+## Componentes
+
+| Archivo | Responsabilidad | Depende de |
+|---------|-----------------|------------|
+| `lib/alert.ts` | **Puro**: `parseAlertBody`, `verifySecret`, `toAlert`, `filterAlerts` | — |
+| `lib/alertStore.ts` | Persistencia `data/alerts.json`, tope 500 (solo servidor) | `fs`, `alert.ts` |
+| `app/api/tradingview/route.ts` | `POST` (valida+guarda) y `GET` (sirve) | alert, alertStore, env |
+| `app/components/AlertsCard.tsx` | Tabla que lee `GET`, auto-refresca cada 15s | — |
+| `app/alertas/page.tsx` | Página `/alertas` con filtro por ticker (pestaña 🔔) | AlertsCard, NavTabs |
+
+## Seguridad
+
+- El secreto viaja en el cuerpo (limitación de TradingView); se compara en tiempo casi
+  constante y **nunca** se persiste ni se registra.
+- Buzón acotado (500) + límite de cuerpo (16 KB) contra abuso de un endpoint público.
+- Opcional (defensa en profundidad): restringir por las IPs publicadas de TradingView a nivel
+  de proxy/hosting.
+
+## Pruebas
+
+- Unit (vitest) en `lib/alert.test.ts`: parseo JSON/`clave=valor`, verificación del secreto,
+  normalización de acción/precio/ticker, que el secreto no cae en `raw`, y filtrado/orden.

@@ -4,13 +4,16 @@ import type { ContractType, PriceSource, RawContract, Row } from "./types";
 
 /**
  * Precio del contrato para el cálculo de Open Premium.
- * La fórmula del agente pide BID, pero el plan actual de Massive no devuelve quotes,
- * así que caemos a last_trade → day.close → day.vwap. Cuando haya bid, cambiar aquí.
+ * El Proceso Principal pide BID, y Schwab sí lo entrega, así que es la primera
+ * opción. Los demás son respaldos para cuando la cadena venga sin quote
+ * (p. ej. contratos sin mercado, o si la fuente vuelve a ser Massive).
  */
 export function contractPrice(raw: RawContract): {
   price: number | null;
   source: PriceSource;
 } {
+  const bid = raw.quote?.bid;
+  if (typeof bid === "number" && bid > 0) return { price: bid, source: "bid" };
   const lt = raw.last_trade?.price;
   if (typeof lt === "number" && lt > 0) return { price: lt, source: "last_trade" };
   const close = raw.day?.close;
@@ -39,7 +42,7 @@ function normalizeType(t: string | undefined): ContractType {
   return t === "put" ? "put" : "call";
 }
 
-/** Convierte un contrato crudo de Massive en una Row lista para la tabla. */
+/** Convierte un contrato crudo (Schwab o Massive) en una Row lista para la tabla. */
 export function toRow(raw: RawContract): Row {
   const openInterest = raw.open_interest ?? 0;
   const strike = raw.details?.strike_price ?? 0;
@@ -56,6 +59,9 @@ export function toRow(raw: RawContract): Row {
     priceSource: source,
     openPremium: openPremium(openInterest, price),
     notionalValue: notionalValue(openInterest, strike, shares),
+    bid: raw.quote?.bid ?? null,
+    ask: raw.quote?.ask ?? null,
+    greeks: raw.greeks ?? null,
   };
 }
 
