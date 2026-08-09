@@ -214,3 +214,20 @@ El parser tolera nombres alternativos porque cada estrategia rotula distinto:
 
 - Unit (vitest) en `lib/alert.test.ts`: parseo JSON/`clave=valor`, verificación del secreto,
   normalización de acción/precio/ticker, que el secreto no cae en `raw`, y filtrado/orden.
+
+### Capa de contexto — indicadores de TradingView (ago 2026)
+
+Sobre el mismo webhook, una capa de **confirmación** que **no altera el score 0-100**
+(ver [INTEGRACION-TRADINGVIEW.md](../INTEGRACION-TRADINGVIEW.md)). Cada alerta de indicador
+manda un campo **`source`** ∈ { `RSI`, `ADX`, `SuperTrend`, `Squeeze`, `VolumeProfile` } más
+`value` y/o `signal`. Ejemplo de Message:
+
+```json
+{"passphrase":"<secreto>","ticker":"{{ticker}}","source":"RSI","value":{{plot_0}},"interval":"{{interval}}"}
+```
+
+`lib/tvContext.ts` (PURO, tests en `tvContext.test.ts`) lee esas alertas del buzón, toma la
+**más reciente por indicador** para el ticker, las clasifica en **alcista/bajista/neutro** y marca
+**acuerdo/desacuerdo** con la dirección de la tesis (GEX/predicción). `app/components/TvContextRibbon.tsx`
+las pinta como una **cinta de contexto** en el dashboard (✓ acompaña / ⚠ contradice), aislada del
+scorecard. Solo EE.UU. (acciones/opciones); cripto fuera de alcance.

@@ -1039,3 +1039,20 @@ tfoot .totals td {
 .wheel-empty { color: var(--muted); }
 .wheel-status { font-size: 14px; font-weight: 600; margin: 4px 0; }
 .wheel-disclaimer { font-size: 12px; color: var(--muted); margin: 0 0 8px; }
+
+/* ── Cinta de contexto TradingView (confirmación, aislada del score) ── */
+.tv-ribbon { border: 1px solid var(--border); border-radius: 12px; background: #fff; padding: 12px 14px; }
+.tv-ribbon-head { font-size: 12px; font-weight: 600; margin-bottom: 8px; }
+.tv-ribbon-items { display: flex; flex-wrap: wrap; gap: 8px; }
+.tv-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 10px; border-radius: 8px; font-size: 12px;
+  border: 1px solid var(--border); background: #f2f4f7;
+}
+.tv-chip .tv-src { font-weight: 700; }
+.tv-chip .tv-tf { color: var(--muted); font-size: 11px; }
+.tv-chip.tv-up { background: var(--green-bg); }
+.tv-chip.tv-down { background: var(--red-bg); }
+.tv-chip.tv-flat { background: #f2f4f7; }
+.tv-flag.ok { color: var(--green-dark); font-weight: 700; }
+.tv-flag.warn { color: #b54708; font-weight: 700; }
