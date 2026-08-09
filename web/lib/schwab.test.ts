@@ -1,9 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  authedGet,
   dteWindows,
   DTE_WINDOWS,
   parseExpirationKey,
   parseSchwabChain,
+  resetSchwabToken,
   toOccTicker,
   toRawContract,
   type SchwabChainResponse,
@@ -203,5 +205,55 @@ describe("dteWindows", () => {
 
   it("con un tope menor al primer corte devuelve una sola ventana", () => {
     expect(dteWindows(10)).toEqual([[0, 10]]);
+  });
+});
+
+describe("authedGet — reintento automático ante 401", () => {
+  const okToken = () => ({
+    ok: true,
+    status: 200,
+    json: async () => ({ access_token: "tok-" + Math.random(), expires_in: 3600 }),
+    text: async () => "",
+  });
+  const apiRes = (status: number) => ({
+    ok: status < 400,
+    status,
+    json: async () => ({}),
+    text: async () => "",
+  });
+
+  beforeEach(() => {
+    process.env.SCHWAB_CLIENT_ID = "test-id";
+    process.env.SCHWAB_CLIENT_SECRET = "test-secret";
+    resetSchwabToken();
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("reintenta una vez con token fresco y devuelve 200", async () => {
+    // secuencia: token → api(401) → token(fresco) → api(200)
+    const queue = [okToken(), apiRes(401), okToken(), apiRes(200)];
+    const fetchMock = vi.fn(async () => queue.shift());
+    vi.stubGlobal("fetch", fetchMock);
+    const res = await authedGet("https://x/marketdata/v1/test");
+    expect(res.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+  });
+
+  it("no reintenta cuando la respuesta no es 401", async () => {
+    const queue = [okToken(), apiRes(200)];
+    const fetchMock = vi.fn(async () => queue.shift());
+    vi.stubGlobal("fetch", fetchMock);
+    const res = await authedGet("https://x/marketdata/v1/test");
+    expect(res.status).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("propaga el 401 si persiste tras el reintento (credenciales malas)", async () => {
+    const queue = [okToken(), apiRes(401), okToken(), apiRes(401)];
+    const fetchMock = vi.fn(async () => queue.shift());
+    vi.stubGlobal("fetch", fetchMock);
+    const res = await authedGet("https://x/marketdata/v1/test");
+    expect(res.status).toBe(401);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 });

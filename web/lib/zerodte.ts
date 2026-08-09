@@ -11,7 +11,7 @@ import { toRow } from "./compute";
 import { expectedMove, probTouch } from "./expectedMove";
 import { bsCharm, bsVanna, chainIV, MAX_SANE_IV } from "./gex";
 import { marketDateStr } from "./occ";
-import { getAccessToken, parseSchwabChain, SchwabError, type SchwabChainResponse } from "./schwab";
+import { authedGet, parseSchwabChain, SchwabError, type SchwabChainResponse } from "./schwab";
 import type { ContractType, Row } from "./types";
 import { loadFlow, overlayRealtime } from "./zerodteFlow";
 
@@ -834,11 +834,7 @@ export async function fetchZeroDte(
     strikeCount: "500",
   });
 
-  const token = await getAccessToken();
-  const res = await fetch(`${API_BASE}/chains?${params.toString()}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: "no-store",
-  });
+  const res = await authedGet(`${API_BASE}/chains?${params.toString()}`);
   if (!res.ok) {
     const body = await res.text().catch(() => "");
     throw new SchwabError(

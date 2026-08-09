@@ -89,6 +89,30 @@ export async function getAccessToken(): Promise<string> {
   return token;
 }
 
+/**
+ * GET autenticado con **reintento único ante 401**. Si Schwab invalida el token
+ * antes de que expire (revocación, rotación del lado del servidor), el primer
+ * intento devuelve 401; entonces se resetea la caché, se pide un token FRESCO y
+ * se reintenta una vez. Así un token caducado a destiempo no obliga a reiniciar
+ * el servidor ni a re-autorizar a mano. Un segundo 401 ya es problema de
+ * credenciales y se propaga al llamador para que lo reporte.
+ */
+export async function authedGet(url: string): Promise<Response> {
+  const token = await getAccessToken();
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  if (res.status !== 401) return res;
+
+  resetSchwabToken();
+  const fresh = await getAccessToken();
+  return fetch(url, {
+    headers: { Authorization: `Bearer ${fresh}` },
+    cache: "no-store",
+  });
+}
+
 // ------------------------------------------------------------------- parseo
 
 /** Forma de un contrato dentro de callExpDateMap / putExpDateMap. */
@@ -297,7 +321,6 @@ async function fetchWindow(
   to: number,
   depth: number,
 ): Promise<SchwabChainResponse[]> {
-  const token = await getAccessToken();
   const params = new URLSearchParams({
     symbol: ticker,
     contractType: "ALL",
@@ -306,10 +329,7 @@ async function fetchWindow(
     toDate: addDays(to),
   });
 
-  const res = await fetch(`${API_BASE}/chains?${params.toString()}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: "no-store",
-  });
+  const res = await authedGet(`${API_BASE}/chains?${params.toString()}`);
 
   if (res.ok) {
     const json = (await res.json()) as SchwabChainResponse;
@@ -434,15 +454,10 @@ export async function fetchQuote(ticker: string): Promise<SchwabQuote | null> {
   const clean = ticker.trim().toUpperCase();
   if (!clean) return null;
 
-  const token = await getAccessToken();
-  const res = await fetch(
+  const res = await authedGet(
     `${API_BASE}/quotes?symbols=${encodeURIComponent(clean)}`,
-    { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" },
   );
-  if (!res.ok) {
-    if (res.status === 401) resetSchwabToken();
-    return null;
-  }
+  if (!res.ok) return null;
 
   const json = (await res.json()) as Record<string, SchwabQuoteRaw>;
   const q = json[clean]?.quote;
@@ -491,7 +506,6 @@ export async function fetchIntradayBars(
   const clean = symbol.trim();
   if (!clean) return [];
 
-  const token = await getAccessToken();
   const now = Date.now();
   const params = new URLSearchParams({
     symbol: clean,
@@ -501,12 +515,8 @@ export async function fetchIntradayBars(
     startDate: String(now - 36 * 60 * 60 * 1000),
     endDate: String(now),
   });
-  const res = await fetch(`${API_BASE}/pricehistory?${params.toString()}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: "no-store",
-  });
+  const res = await authedGet(`${API_BASE}/pricehistory?${params.toString()}`);
   if (!res.ok) {
-    if (res.status === 401) resetSchwabToken();
     throw new SchwabError(describeStatus(res.status, clean, ""), res.status);
   }
 
