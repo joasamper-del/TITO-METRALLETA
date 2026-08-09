@@ -149,4 +149,55 @@ abre el dashboard).
 
 ---
 
+## 10. Operación autónoma en Robinhood — diagnóstico y ruta
+
+**Fecha:** 2026-08-09 · **Pregunta:** ¿puede Tito operar (colocar y gestionar órdenes) autónomamente en Robinhood?
+
+### Respuesta corta: **No — y por diseño.**
+
+Tito es un sistema de **análisis y apoyo a la decisión**, no un ejecutor. Su única escritura a
+Robinhood es **sincronizar contratos a tu watchlist** vía MCP (`add_option_to_watchlist`), para
+que tú los operes a mano. No existe código de colocación de órdenes (`grep place_order/placeOrder`
+→ nada). El propio `web/lib/watchlist.ts` lo declara: *"Tito nunca coloca una orden"*, y
+`web/lib/outboxStore.ts` solo persiste la identidad del contrato para resolverlo en el broker.
+
+El flujo termina en **"aquí está el contrato en tu watchlist / la orden lista"** y se detiene ahí
+a propósito.
+
+### Bloqueadores para operar autónomamente (en orden de prioridad)
+
+| # | Bloqueador | Detalle |
+|---|---|---|
+| 1 🔴 | **Capa de ejecución (no existe)** | Falta un módulo que llame a las tools de escritura del MCP (`review_option_order` → `place_option_order`), con manejo de estado de orden, fills parciales, cancelaciones y timeouts. Hoy Tito no coloca órdenes. |
+| 2 🔴 | **Gate `agentic_allowed` + aprobación de opciones (choque de cuentas)** | La operación autónoma por MCP está habilitada **por cuenta** con `agentic_allowed`. En la config actual: la cuenta con opciones nivel 3 tiene `agentic_allowed=false`; la única `agentic_allowed=true` ("Agentic") es **cash y sin nivel de opciones**. Para 0DTE (puras opciones), hoy es **inviable** sin reconfigurar cuentas: se necesita **una sola cuenta** que combine agentic + aprobación de opciones. |
+| 3 🟠 | **Runtime desatendido / scheduler** | No existe ni para el análisis (ver §8.4, "falta ciclo automático" del 0DTE). Se requiere un proceso always-on: data → decisión (scorecard) → orden → gestión de posición → manejo de errores, sin humano presente. |
+| 4 🟠 | **Guardrails de riesgo para ejecución desatendida** | Faltan: límite de tamaño por posición, pérdida máxima diaria, kill-switch, control de slippage/límite, reconciliación de posiciones, monitoreo de estado de orden. Imprescindibles antes de dejar algo operando solo. |
+| 5 🟡 | **Fragilidad de datos desatendida** | La cookie de MarketSnack caduca (renovación manual, §7.2) y la cobertura de gamma de Schwab es ~47% (§7.3). Un agente desatendido se rompería en silencio con datos incompletos. |
+| 6 ⚪ | **Restricción de política (no técnica)** | Un asistente Claude tiene **prohibido ejecutar trades o mover dinero**: puede investigar, dimensionar y dejar la orden lista para revisar, pero la ejecución la confirma y coloca el humano. Un ejecutor autónomo real sería **software propio del usuario** con autorización explícita, no el agente. |
+
+### Ruta a semi-autonomía (si se decide construirla)
+
+**Fase 0 — Prerrequisitos de cuenta (bloqueante).** Resolver el choque #2: habilitar una cuenta
+que combine `agentic_allowed=true` **y** aprobación de opciones al nivel necesario para 0DTE.
+Sin esto, nada de lo demás importa para opciones.
+
+**Fase 1 — Ejecución "humano-en-el-lazo" (semi-autónomo).** Módulo de ejecución que arma la orden
+con `review_option_order`, la presenta con todos los parámetros, y **espera confirmación explícita**
+del usuario antes de `place_option_order`. Tito ya calcula la señal; esto solo cierra el último paso
+de forma asistida. Es el salto de mayor valor y menor riesgo.
+
+**Fase 2 — Guardrails y gestión de posición.** Sizing por regla, pérdida máxima diaria, kill-switch,
+stops/targets automáticos sobre posiciones abiertas, reconciliación contra `get_option_positions`.
+
+**Fase 3 — Runtime desatendido + robustez de datos.** Scheduler 9:30–16:00 ET, alertas proactivas
+de caducidad de cookie, y solo entonces evaluar autonomía plena (sin confirmación) — con topes duros.
+
+### En una frase
+
+Ni Tito Metralleta ni Warren Buffett Jr son ejecutores autónomos: ambos terminan en *"orden lista
+para que TÚ la coloques"*. Para autonomía real faltan **capa de ejecución + una cuenta con agentic
+y opciones + runtime desatendido con guardrails de riesgo** — en ese orden.
+
+---
+
 *Referencias: [CLAUDE.md](CLAUDE.md) · [web/SPEC.md](web/SPEC.md) · [Agente Principal/Proceso 0DTE.md](Agente%20Principal/Proceso%200DTE.md) · [Guia GEX y Prediccion](Guia%20GEX%20y%20Prediccion%20-%20Tito%20Metralleta.pdf)*
