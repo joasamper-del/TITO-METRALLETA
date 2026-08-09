@@ -15,7 +15,7 @@ if %errorlevel%==0 (
   echo El servidor ya esta corriendo. Abriendo el navegador...
 ) else (
   echo Iniciando el servidor... ^(deja abierta la ventana del servidor^)
-  start "TITO METRALLETA - servidor" cmd /k "cd /d ""%APPDIR%"" ^&^& npm run dev"
+  start "TITO METRALLETA - servidor" /d "%APPDIR%" cmd /k "npm run dev"
   echo Esperando a que el servidor arranque...
   powershell -NoProfile -Command "for($i=0;$i -lt 60;$i++){$c=New-Object Net.Sockets.TcpClient; try{$c.Connect('localhost',3000);$c.Close();exit 0}catch{Start-Sleep -Milliseconds 500}}; exit 1"
 )
