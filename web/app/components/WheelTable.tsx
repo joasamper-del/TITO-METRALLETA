@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { AffordableCandidate } from "@/lib/wheelAfford";
+import { fromWheel } from "@/lib/verdict";
+import VerdictBadge from "./VerdictBadge";
 
 const money = (n: number) => `$${n.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 const money2 = (n: number) => `$${n.toFixed(2)}`;
@@ -59,7 +61,10 @@ function WheelRow({ c, view }: { c: AffordableCandidate; view: "estudiante" | "p
     <div className={`card wheel-row ${c.afford.affordable ? "" : "unafford"}`}>
       <button className="wheel-row-head" onClick={() => setOpen((v) => !v)} type="button">
         <span><b>{c.ticker}</b> ${c.strike} put · {c.expiration} ({c.dte}d)</span>
-        <span className="wheel-score">{s.total}<small>/100</small></span>
+        <span className="wheel-head-right" style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+          <VerdictBadge verdict={fromWheel(s.total, false)} showPct={false} />
+          <span className="wheel-score">{s.total}<small>/100</small></span>
+        </span>
       </button>
 
       {view === "estudiante" ? (

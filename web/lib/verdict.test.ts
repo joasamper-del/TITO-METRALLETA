@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canPrepareTrade, fromPrediction, fromZeroDte } from "./verdict";
+import { canPrepareTrade, fromPrediction, fromWheel, fromZeroDte } from "./verdict";
 import type { Verdict } from "./zerodteVerdict";
 import type { ProPrediction } from "./prediction";
 
@@ -84,5 +84,26 @@ describe("fromPrediction", () => {
   });
   it("null → NO OPERAR", () => {
     expect(fromPrediction(null).action).toBe("NO_OPERAR");
+  });
+});
+
+describe("fromWheel", () => {
+  it("bloqueado (ilíquido) → NO OPERAR", () => {
+    expect(fromWheel(85, true).action).toBe("NO_OPERAR");
+  });
+  it("score ≥70 → COMPRAR (vender put)", () => {
+    const u = fromWheel(75);
+    expect(u.action).toBe("COMPRAR");
+    expect(u.label).toBe("VENDER PUT");
+    expect(u.source).toBe("wheel");
+  });
+  it("score 50-69 → ESPERAR", () => {
+    expect(fromWheel(60).action).toBe("ESPERAR");
+  });
+  it("score <50 → NO OPERAR", () => {
+    expect(fromWheel(40).action).toBe("NO_OPERAR");
+  });
+  it("sin score → NO OPERAR", () => {
+    expect(fromWheel(null).action).toBe("NO_OPERAR");
   });
 });

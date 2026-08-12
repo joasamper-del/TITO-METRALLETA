@@ -80,3 +80,20 @@ export function fromPrediction(p: ProPrediction | null): UnifiedVerdict {
     source: "ticker",
   };
 }
+
+/**
+ * Adapta un candidato de la Wheel (venta de cash-secured put) al modelo unificado.
+ * - `blocked` (ilíquido) o sin score → NO OPERAR.
+ * - score ≥70 → COMPRAR (vender el put); 50-69 → ESPERAR; <50 → NO OPERAR.
+ * El "operar" aquí es VENDER un put (estrategia de ingreso, sesgo alcista/neutral),
+ * por eso la etiqueta es "VENDER PUT", no "CALLS/PUTS".
+ */
+export function fromWheel(scoreTotal: number | null, blocked = false): UnifiedVerdict {
+  if (blocked || scoreTotal == null) {
+    return { action: "NO_OPERAR", bias: "neutral", confidencePct: scoreTotal ?? 0, label: "NO OP.", source: "wheel" };
+  }
+  const action: TradeAction = scoreTotal >= 70 ? "COMPRAR" : scoreTotal >= 50 ? "ESPERAR" : "NO_OPERAR";
+  const bias: TradeBias = action === "NO_OPERAR" ? "neutral" : "alcista";
+  const label = action === "COMPRAR" ? "VENDER PUT" : action === "ESPERAR" ? "ESPERAR" : "NO OP.";
+  return { action, bias, confidencePct: scoreTotal, label, source: "wheel" };
+}
