@@ -5,9 +5,11 @@
 
 import { Fragment, useCallback, useEffect, useState } from "react";
 import type { ChainLine, ZeroDteResult } from "@/lib/zerodte";
+import type { DiscoverResult } from "@/lib/zerodteDiscover";
 import type { AggressorRead } from "@/lib/zerodteFlow";
 import ZeroDteChart from "@/app/components/ZeroDteChart";
 import NavTabs from "@/app/components/NavTabs";
+import ConclusionEjecutivaCard from "@/app/components/ConclusionEjecutivaCard";
 
 interface FlowState {
   cycles: number;
@@ -32,6 +34,19 @@ interface EvalState {
 }
 
 const REFRESH_MS = 60 * 1000; // la página se refresca sola cada 1 min (solo la fecha de hoy)
+
+// Filtro del descubridor. Calls/Puts se apoyan EXACTAMENTE en el veredicto que
+// calcula buildVerdict (via el servidor); NO OPERAR y ESPERAR nunca entran en
+// Calls ni Puts — solo un COMPRAR direccional es una oportunidad.
+type DiscFilter = "todos" | "calls" | "puts";
+type DiscCandidate = DiscoverResult["candidates"][number];
+
+const isCall = (c: DiscCandidate) =>
+  c.verdict.action === "COMPRAR" && c.verdict.bias === "alcista";
+const isPut = (c: DiscCandidate) =>
+  c.verdict.action === "COMPRAR" && c.verdict.bias === "bajista";
+const matchesFilter = (c: DiscCandidate, f: DiscFilter) =>
+  f === "todos" ? true : f === "calls" ? isCall(c) : isPut(c);
 
 const nf = new Intl.NumberFormat("en-US");
 const num = (v: number | null | undefined) => (v == null ? "—" : nf.format(v));
@@ -87,6 +102,12 @@ export default function ZeroDtePage() {
   const [ticker, setTicker] = useState("SPX");
   const [days] = useState<string[]>(() => expirationDays(5));
   const [selDate, setSelDate] = useState<string>(() => etTodayStr());
+  // Descubridor 0DTE: recorre el universo y lista los que vencen hoy por volumen.
+  const [disc, setDisc] = useState<DiscoverResult | null>(null);
+  const [discErr, setDiscErr] = useState<string | null>(null);
+  const [discLoading, setDiscLoading] = useState(false);
+  // Filtro del descubridor: Calls / Puts / Todos. Un solo scan, filtro instantáneo.
+  const [discFilter, setDiscFilter] = useState<DiscFilter>("todos");
 
   const load = useCallback(async (t: string, date: string) => {
     setLoading(true);
@@ -128,6 +149,31 @@ export default function ZeroDtePage() {
     }
   }, []);
 
+  // Descubridor: pide al servidor que recorra el universo y devuelva los que
+  // tienen 0DTE hoy, rankeados por volumen. No toca la vista de la cadena.
+  const runDiscover = useCallback(async () => {
+    setDiscLoading(true);
+    setDiscErr(null);
+    try {
+      const res = await fetch("/api/0dte/discover", { cache: "no-store" });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? `HTTP ${res.status}`);
+      setDisc(json as DiscoverResult);
+    } catch (e) {
+      setDiscErr(e instanceof Error ? e.message : "Error en el descubridor");
+      setDisc(null);
+    } finally {
+      setDiscLoading(false);
+    }
+  }, []);
+
+  // Elegir un candidato del descubridor: carga su cadena de HOY en la vista.
+  const pickCandidate = useCallback((t: string) => {
+    const today = etTodayStr();
+    setSelDate(today);
+    setTicker(t);
+  }, []);
+
   useEffect(() => {
     load(ticker, selDate);
     // El refresco automático solo tiene sentido en vivo (hoy). En un vencimiento
@@ -152,6 +198,12 @@ export default function ZeroDtePage() {
     ? data.lines.findIndex((l) => l.strike < spot)
     : -1;
 
+  // Descubridor: conteos por veredicto (para las pestañas) y lista ya filtrada.
+  const allCands = disc?.candidates ?? [];
+  const callsCount = allCands.filter(isCall).length;
+  const putsCount = allCands.filter(isPut).length;
+  const shownCands = allCands.filter((c) => matchesFilter(c, discFilter));
+
   return (
     <div className="z-wrap">
       <style>{CSS}</style>
@@ -169,15 +221,136 @@ export default function ZeroDtePage() {
         </div>
         <div className="z-controls">
           <select value={ticker} onChange={(e) => setTicker(e.target.value)}>
-            <option value="SPX">SPX</option>
-            <option value="SPY">SPY</option>
-            <option value="QQQ">QQQ</option>
+            <optgroup label="Índices / ETF · vencimiento diario">
+              <option value="SPX">SPX</option>
+              <option value="SPY">SPY</option>
+              <option value="QQQ">QQQ</option>
+              <option value="IWM">IWM</option>
+              <option value="NDX">NDX</option>
+              <option value="RUT">RUT</option>
+              <option value="DIA">DIA</option>
+            </optgroup>
+            <optgroup label="Acciones · venc. casi diario (Robinhood)">
+              <option value="NVDA">NVDA</option>
+              <option value="GOOGL">GOOGL</option>
+              <option value="AAPL">AAPL</option>
+              <option value="MSFT">MSFT</option>
+              <option value="AMZN">AMZN</option>
+              <option value="META">META</option>
+              <option value="AVGO">AVGO</option>
+              <option value="TSLA">TSLA</option>
+            </optgroup>
           </select>
           <button onClick={() => load(ticker, selDate)} disabled={loading}>
             {loading ? "Cargando…" : "Actualizar"}
           </button>
         </div>
       </header>
+
+      {/* Conclusión ejecutiva: la decisión clara del ticker cargado, arriba de todo. */}
+      <ConclusionEjecutivaCard data={data} />
+
+      <section className="z-disc">
+        <div className="z-disc-top">
+          <button className="z-disc-btn" onClick={runDiscover} disabled={discLoading}>
+            {discLoading ? "Buscando…" : "🔎 Buscar oportunidades 0DTE"}
+          </button>
+          {disc && (
+            <span className="z-disc-meta">
+              {disc.withZeroDte} con 0DTE hoy · de {disc.universeSize} del universo
+            </span>
+          )}
+        </div>
+
+        {/* Filtro Calls / Puts / Todos: un solo scan, filtro instantáneo por el
+            MISMO veredicto que la Conclusión Ejecutiva. */}
+        {disc && disc.candidates.length > 0 && (
+          <div className="z-disc-modes" role="tablist" aria-label="Filtrar oportunidades">
+            <button
+              role="tab"
+              aria-selected={discFilter === "calls"}
+              className={`z-mode z-mode-calls ${discFilter === "calls" ? "z-mode-on" : ""}`}
+              onClick={() => setDiscFilter("calls")}
+            >
+              ▲ Buscar calls <em>{callsCount}</em>
+            </button>
+            <button
+              role="tab"
+              aria-selected={discFilter === "puts"}
+              className={`z-mode z-mode-puts ${discFilter === "puts" ? "z-mode-on" : ""}`}
+              onClick={() => setDiscFilter("puts")}
+            >
+              ▼ Buscar puts <em>{putsCount}</em>
+            </button>
+            <button
+              role="tab"
+              aria-selected={discFilter === "todos"}
+              className={`z-mode z-mode-todos ${discFilter === "todos" ? "z-mode-on" : ""}`}
+              onClick={() => setDiscFilter("todos")}
+            >
+              Todos <em>{disc.candidates.length}</em>
+            </button>
+          </div>
+        )}
+
+        {discErr && <div className="z-error">{discErr}</div>}
+
+        {disc && disc.candidates.length === 0 && !discErr && (
+          <p className="z-disc-empty">
+            Ningún nombre del universo tiene <b>0DTE hoy</b>. Los dailies de acciones son
+            Lun/Mié/Vie; en martes/jueves solo los índices (SPX/SPY/QQQ/IWM) vencen a diario.
+          </p>
+        )}
+
+        {disc && disc.candidates.length > 0 && shownCands.length === 0 && (
+          <p className="z-disc-empty">
+            {discFilter === "calls"
+              ? "Ningún ticker con 0DTE hoy da COMPRAR CALLS. Hoy no hay setup de calls limpio."
+              : "Ningún ticker con 0DTE hoy da COMPRAR PUTS. Hoy no hay setup de puts limpio."}{" "}
+            Los <b>NO OPERAR</b> y <b>ESPERAR</b> no aparecen aquí a propósito.
+          </p>
+        )}
+
+        {shownCands.length > 0 && (
+          <div className="z-disc-list">
+            {shownCands.map((c, i) => (
+              <button key={c.ticker} className="z-disc-row" onClick={() => pickCandidate(c.ticker)}>
+                <span className="z-disc-rank">{i + 1}</span>
+                <span className="z-disc-tk">{c.ticker}</span>
+                <span className={`z-disc-vd z-disc-vd-${c.verdict.action.toLowerCase()}-${c.verdict.bias}`}>
+                  {c.verdict.action === "COMPRAR"
+                    ? c.verdict.bias === "alcista" ? "CALLS" : "PUTS"
+                    : c.verdict.action === "ESPERAR" ? "ESPERAR" : "NO OP."}
+                  <em>{c.verdict.confidencePct}%</em>
+                </span>
+                <span className="z-disc-spot">{dec(c.spot)}</span>
+                <span className="z-disc-vol">
+                  <b>{num(c.totalVolume)}</b> vol
+                  <i className="z-disc-bar">
+                    <em style={{ width: `${Math.min(100, (c.totalVolume / (allCands[0]?.totalVolume || 1)) * 100)}%` }} />
+                  </i>
+                </span>
+                <span className="z-disc-pcr">P/C {c.putCallRatio?.toFixed(2) ?? "—"}</span>
+                <span className="z-disc-mag">🧲 {c.magnet ?? "—"}</span>
+                <span
+                  className={`z-disc-news z-disc-news-${c.news?.bias ?? "none"}`}
+                  title={c.news?.topTitle ?? "Sin noticias de empresa recientes"}
+                >
+                  {c.news ? (
+                    <>
+                      {c.news.fresh ? "📰" : "📄"}{" "}
+                      {c.news.topAgeH != null ? `${Math.round(c.news.topAgeH)}h` : ""}
+                      {c.news.freshCount > 0 && <em className="z-disc-news-n">{c.news.freshCount}</em>}
+                    </>
+                  ) : (
+                    <span className="z-disc-news-empty">sin noticias</span>
+                  )}
+                </span>
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
 
       <div className="z-daybar">
         <span className="z-daybar-lbl">Vencimiento</span>
@@ -894,4 +1067,62 @@ const CSS = `
 .z-top-put .z-tag { left: 8px; background: var(--red-bg); color: #b42318; }
 .z-top-call span { padding-left: 4px; }
 .z-toprow .z-bar { height: 5px; }
+
+/* Descubridor 0DTE: botón + lista de candidatos rankeados por volumen. */
+.z-disc { margin: 8px 0 16px; }
+.z-disc-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.z-disc-btn { font: inherit; font-weight: 700; padding: 10px 18px; border-radius: 10px;
+  border: 1px solid var(--accent); background: var(--accent); color: #fff; cursor: pointer; }
+.z-disc-btn:disabled { opacity: .6; cursor: default; }
+.z-disc-meta { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.z-disc-empty { margin: 12px 0 0; font-size: 12.5px; color: var(--muted); line-height: 1.5;
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
+.z-disc-list { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.z-disc-row { display: grid; grid-template-columns: 22px 52px 84px 60px 1fr 62px 56px 92px;
+  align-items: center; gap: 10px; text-align: left; font: inherit; cursor: pointer;
+  background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px;
+  font-variant-numeric: tabular-nums; }
+.z-disc-row:hover { border-color: var(--accent); background: var(--accent-dim); }
+.z-disc-rank { font-size: 12px; color: var(--faint); font-weight: 700; }
+.z-disc-tk { font-size: 15px; font-weight: 700; color: var(--text); }
+.z-disc-spot { font-size: 13px; color: var(--muted); }
+.z-disc-vol { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted); }
+.z-disc-vol b { color: var(--text); }
+.z-disc-bar { display: block; height: 5px; border-radius: 3px; background: var(--border); overflow: hidden; }
+.z-disc-bar em { display: block; height: 100%; background: var(--accent); }
+.z-disc-pcr, .z-disc-mag { font-size: 12px; color: var(--muted); text-align: right; }
+.z-disc-news { font-size: 12px; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.z-disc-news-empty { color: var(--faint); font-size: 11px; }
+.z-disc-news-bullish { color: var(--green-dark); }
+.z-disc-news-bearish { color: #b42318; }
+.z-disc-news-mixed, .z-disc-news-neutral { color: var(--muted); }
+.z-disc-news-none { color: var(--faint); }
+.z-disc-news-n { font-style: normal; margin-left: 4px; font-size: 9.5px; padding: 1px 5px;
+  border-radius: 999px; background: var(--accent-dim); color: var(--accent); vertical-align: middle; }
+
+/* Filtro Calls / Puts / Todos del descubridor. */
+.z-disc-modes { display: inline-flex; gap: 4px; margin-top: 12px; padding: 4px;
+  background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px; }
+.z-mode { font: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+  padding: 7px 14px; border-radius: 9px; border: 1px solid transparent; background: transparent;
+  color: var(--muted); display: inline-flex; align-items: center; gap: 6px; }
+.z-mode em { font-style: normal; font-size: 11px; font-weight: 700; padding: 1px 7px;
+  border-radius: 999px; background: var(--border-soft); color: var(--muted); font-variant-numeric: tabular-nums; }
+.z-mode:hover { color: var(--text); }
+.z-mode-on { background: var(--panel); border-color: var(--border); box-shadow: 0 1px 2px rgba(16,24,40,.06); }
+.z-mode-calls.z-mode-on { color: var(--green-dark); } .z-mode-calls.z-mode-on em { background: var(--green-bg); color: var(--green-dark); }
+.z-mode-puts.z-mode-on { color: #b42318; } .z-mode-puts.z-mode-on em { background: var(--red-bg); color: #b42318; }
+.z-mode-todos.z-mode-on { color: var(--text); } .z-mode-todos.z-mode-on em { background: var(--accent-dim); color: var(--accent); }
+
+/* Chip de veredicto por fila (mismo que la Conclusión Ejecutiva). */
+.z-disc-vd { display: inline-flex; align-items: center; gap: 5px; justify-self: start;
+  font-size: 11px; font-weight: 800; letter-spacing: .03em; padding: 3px 8px; border-radius: 999px;
+  white-space: nowrap; background: var(--panel-2); color: var(--muted); }
+.z-disc-vd em { font-style: normal; font-weight: 700; font-size: 10px; opacity: .85; font-variant-numeric: tabular-nums; }
+.z-disc-vd-comprar-alcista { background: var(--green-bg); color: var(--green-dark); }
+.z-disc-vd-comprar-bajista { background: var(--red-bg); color: #b42318; }
+.z-disc-vd-esperar-alcista, .z-disc-vd-esperar-bajista, .z-disc-vd-esperar-neutral {
+  background: var(--amber-bg); color: var(--amber-text); }
+.z-disc-vd-no_operar-alcista, .z-disc-vd-no_operar-bajista, .z-disc-vd-no_operar-neutral {
+  background: var(--panel-2); color: var(--faint); }
 `;
