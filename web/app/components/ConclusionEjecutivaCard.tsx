@@ -11,6 +11,7 @@
 
 import type { ZeroDteResult } from "@/lib/zerodte";
 import { buildVerdict, type Verdict } from "@/lib/zerodteVerdict";
+import PrepararOperacion0DTE from "./PrepararOperacion0DTE";
 
 const lvl = (n: number | null | undefined) =>
   n == null ? "—" : Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, "");
@@ -104,6 +105,9 @@ export default function ConclusionEjecutivaCard({ data }: { data: ZeroDteResult 
           {v.assumptions && <p className="ce-assume">Supuestos: {v.assumptions}</p>}
         </div>
       )}
+
+      {/* Preparar operación: solo aparece si el veredicto es COMPRAR (gate duro). */}
+      <PrepararOperacion0DTE data={data} />
 
       <p className="ce-foot">
         Clasificación de research, no una orden de compra/venta. No es consejo financiero, solo
