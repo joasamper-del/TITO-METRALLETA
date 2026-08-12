@@ -35,6 +35,14 @@ export const DISCOVER_UNIVERSE = [
   "MSTR", "COIN", "INTU", "SHOP",
 ];
 
+/**
+ * Universo por defecto del módulo 0DTE = la watchlist "0DTE" de Robinhood de Victor
+ * (lista ⚡ "Underlyings para análisis de flujo 0DTE"). Snapshot: el app no lee
+ * Robinhood en vivo, así que si cambias la lista en RH hay que re-sincronizar aquí.
+ * Última sync: 2026-08-12.
+ */
+export const ZERODTE_WATCHLIST = ["QQQ", "SPY", "SHOP", "SMH", "AMD", "INTU"];
+
 const HOUR_MS = 3600_000;
 
 /** Resumen de noticias del candidato: la más fresca + el sesgo de sentimiento. */
@@ -66,11 +74,30 @@ export interface CandidateVerdict {
   bias: VerdictBias; // alcista · bajista · neutral
   confidence: VerdictConfidence;
   confidencePct: number;
+  /** Estrategia sugerida (1-2 frases). */
+  strategy: string;
+  /** El porqué del veredicto. */
+  reason: string;
+  /** Nivel/condición de invalidación = stop de la tesis. */
+  stop: string;
+  /** Objetivo como rango [lo, hi], nunca un precio único. */
+  targetRange: [number, number] | null;
+}
+
+/** Contrato 0DTE sugerido para un veredicto COMPRAR (null si no aplica). */
+export interface CandidateContract {
+  right: "call" | "put";
+  strike: number | null;
+  /** Prima por contrato (de la cadena), o null si el strike no está rankeado. */
+  price: number | null;
+  expiration: string;
 }
 
 export interface DiscoverCandidate {
   ticker: string;
   spot: number | null;
+  /** false = el ticker no tiene 0DTE hoy (o no llegaron datos). */
+  hasZeroDte: boolean;
   /** callVolume + putVolume de TODA la cadena del día. Es el ranking. */
   totalVolume: number;
   callVolume: number;
@@ -81,6 +108,8 @@ export interface DiscoverCandidate {
   magnet: number | null;
   /** Veredicto 0DTE del candidato (misma lógica que la tarjeta). */
   verdict: CandidateVerdict;
+  /** Contrato sugerido si el veredicto es COMPRAR, si no null. */
+  contract: CandidateContract | null;
   /** Noticia más fresca del ticker, o null si no hay (índices, sin cobertura, sin API key). */
   news: CandidateNews | null;
 }
@@ -132,8 +161,11 @@ async function attachNews(cands: DiscoverCandidate[], now: Date): Promise<void> 
  * forma tolerante: un fallo de Schwab en un nombre no tumba al resto. Los
  * candidatos que pasan el gate se enriquecen con su noticia más fresca.
  */
+/** Prioridad de orden: primero los COMPRAR, luego ESPERAR, al final NO OPERAR/sin 0DTE. */
+const ACTION_RANK: Record<VerdictAction, number> = { COMPRAR: 0, ESPERAR: 1, NO_OPERAR: 2 };
+
 export async function discoverZeroDte(
-  universe: string[] = DISCOVER_UNIVERSE,
+  universe: string[] = ZERODTE_WATCHLIST,
   now: Date = new Date(),
 ): Promise<DiscoverResult> {
   const settled = await Promise.allSettled(
@@ -152,43 +184,65 @@ export async function discoverZeroDte(
         ticker,
         error: r.reason instanceof Error ? r.reason.message : "error desconocido",
       });
+      // Aun sin datos, mostramos una tarjeta del ticker (sin 0DTE / sin datos).
+      candidates.push(noDataCandidate(ticker));
       return;
     }
     scanned += 1;
     const res = r.value;
-    // Gate 0DTE: solo los que vencen HOY.
-    if (!res.isToday || res.contractCount === 0) return;
-    withZeroDte += 1;
+    const hasZeroDte = res.isToday && res.contractCount > 0;
+    if (hasZeroDte) withZeroDte += 1;
 
-    const callV = res.summary.callVolume;
-    const putV = res.summary.putVolume;
     // Mismo veredicto que la tarjeta: buildVerdict sobre el ZeroDteResult que ya
     // tenemos. No hay datos nuevos ni segunda pasada — imposible contradecirla.
     const v = buildVerdict(res);
+
+    // Contrato sugerido solo para COMPRAR: strike del muro en la dirección del
+    // trade (o el imán), con su prima de la cadena.
+    let contract: CandidateContract | null = null;
+    if (hasZeroDte && v.action === "COMPRAR") {
+      const right: "call" | "put" = v.bias === "alcista" ? "call" : "put";
+      const strike = (right === "call" ? v.levels.resistance : v.levels.support) ?? v.levels.magnet;
+      const line = strike != null ? res.lines.find((l) => l.strike === strike) : undefined;
+      const row = right === "call" ? line?.call ?? null : line?.put ?? null;
+      contract = { right, strike, price: row?.price ?? row?.ask ?? null, expiration: res.expiration };
+    }
+
     candidates.push({
       ticker: res.ticker,
       spot: res.spot,
-      totalVolume: callV + putV,
-      callVolume: callV,
-      putVolume: putV,
+      hasZeroDte,
+      totalVolume: res.summary.callVolume + res.summary.putVolume,
+      callVolume: res.summary.callVolume,
+      putVolume: res.summary.putVolume,
       putCallRatio: res.summary.putCallRatio,
       contractCount: res.contractCount,
       magnet: res.gex.kingStrike,
       verdict: {
         action: v.action,
-        actionLabel: v.actionLabel,
-        label: fromZeroDte(v).label,
+        actionLabel: hasZeroDte ? v.actionLabel : "SIN 0DTE HOY",
+        label: hasZeroDte ? fromZeroDte(v).label : "SIN 0DTE",
         bias: v.bias,
         confidence: v.confidence,
         confidencePct: v.confidencePct,
+        strategy: v.strategy,
+        reason: v.reason,
+        stop: v.invalidation,
+        targetRange: v.targetRange,
       },
+      contract,
       news: null,
     });
   });
 
-  candidates.sort((a, b) => b.totalVolume - a.totalVolume);
+  // Orden: COMPRAR arriba, luego por confianza y volumen.
+  candidates.sort(
+    (a, b) =>
+      ACTION_RANK[a.verdict.action] - ACTION_RANK[b.verdict.action] ||
+      b.verdict.confidencePct - a.verdict.confidencePct ||
+      b.totalVolume - a.totalVolume,
+  );
 
-  // Filtro de noticias: enriquece solo los que pasaron el gate (pocas llamadas).
   await attachNews(candidates, now);
 
   return {
@@ -198,5 +252,34 @@ export async function discoverZeroDte(
     withZeroDte,
     candidates,
     errors,
+  };
+}
+
+/** Tarjeta mínima para un ticker sin datos / sin 0DTE hoy. */
+function noDataCandidate(ticker: string): DiscoverCandidate {
+  return {
+    ticker,
+    spot: null,
+    hasZeroDte: false,
+    totalVolume: 0,
+    callVolume: 0,
+    putVolume: 0,
+    putCallRatio: null,
+    contractCount: 0,
+    magnet: null,
+    verdict: {
+      action: "NO_OPERAR",
+      actionLabel: "SIN 0DTE HOY",
+      label: "SIN 0DTE",
+      bias: "neutral",
+      confidence: "baja",
+      confidencePct: 0,
+      strategy: "Este ticker no tiene vencimiento 0DTE hoy (o no llegaron datos).",
+      reason: "Sin cadena de hoy no hay tesis intradía.",
+      stop: "—",
+      targetRange: null,
+    },
+    contract: null,
+    news: null,
   };
 }

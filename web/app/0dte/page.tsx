@@ -10,7 +10,7 @@ import type { AggressorRead } from "@/lib/zerodteFlow";
 import ZeroDteChart from "@/app/components/ZeroDteChart";
 import NavTabs from "@/app/components/NavTabs";
 import ConclusionEjecutivaCard from "@/app/components/ConclusionEjecutivaCard";
-import VerdictBadge from "@/app/components/VerdictBadge";
+import ZeroDteCard from "@/app/components/ZeroDteCard";
 
 interface FlowState {
   cycles: number;
@@ -254,11 +254,11 @@ export default function ZeroDtePage() {
       <section className="z-disc">
         <div className="z-disc-top">
           <button className="z-disc-btn" onClick={runDiscover} disabled={discLoading}>
-            {discLoading ? "Buscando…" : "🔎 Buscar oportunidades 0DTE"}
+            {discLoading ? "Analizando…" : "🔎 Analizar mi watchlist 0DTE"}
           </button>
           {disc && (
             <span className="z-disc-meta">
-              {disc.withZeroDte} con 0DTE hoy · de {disc.universeSize} del universo
+              {disc.withZeroDte} con 0DTE hoy · de {disc.universeSize} en tu watchlist (Robinhood)
             </span>
           )}
         </div>
@@ -313,36 +313,9 @@ export default function ZeroDtePage() {
         )}
 
         {shownCands.length > 0 && (
-          <div className="z-disc-list">
-            {shownCands.map((c, i) => (
-              <button key={c.ticker} className="z-disc-row" onClick={() => pickCandidate(c.ticker)}>
-                <span className="z-disc-rank">{i + 1}</span>
-                <span className="z-disc-tk">{c.ticker}</span>
-                <VerdictBadge verdict={c.verdict} />
-                <span className="z-disc-spot">{dec(c.spot)}</span>
-                <span className="z-disc-vol">
-                  <b>{num(c.totalVolume)}</b> vol
-                  <i className="z-disc-bar">
-                    <em style={{ width: `${Math.min(100, (c.totalVolume / (allCands[0]?.totalVolume || 1)) * 100)}%` }} />
-                  </i>
-                </span>
-                <span className="z-disc-pcr">P/C {c.putCallRatio?.toFixed(2) ?? "—"}</span>
-                <span className="z-disc-mag">🧲 {c.magnet ?? "—"}</span>
-                <span
-                  className={`z-disc-news z-disc-news-${c.news?.bias ?? "none"}`}
-                  title={c.news?.topTitle ?? "Sin noticias de empresa recientes"}
-                >
-                  {c.news ? (
-                    <>
-                      {c.news.fresh ? "📰" : "📄"}{" "}
-                      {c.news.topAgeH != null ? `${Math.round(c.news.topAgeH)}h` : ""}
-                      {c.news.freshCount > 0 && <em className="z-disc-news-n">{c.news.freshCount}</em>}
-                    </>
-                  ) : (
-                    <span className="z-disc-news-empty">sin noticias</span>
-                  )}
-                </span>
-              </button>
+          <div className="z-disc-cards">
+            {shownCands.map((c) => (
+              <ZeroDteCard key={c.ticker} c={c} onPick={pickCandidate} />
             ))}
           </div>
         )}
@@ -1074,6 +1047,7 @@ const CSS = `
 .z-disc-empty { margin: 12px 0 0; font-size: 12.5px; color: var(--muted); line-height: 1.5;
   background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; }
 .z-disc-list { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
+.z-disc-cards { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
 .z-disc-row { display: grid; grid-template-columns: 22px 52px 84px 60px 1fr 62px 56px 92px;
   align-items: center; gap: 10px; text-align: left; font: inherit; cursor: pointer;
   background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px;
