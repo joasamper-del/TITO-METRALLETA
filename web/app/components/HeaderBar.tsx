@@ -5,7 +5,9 @@ import type { CompanyInfo } from "@/lib/types";
 import { pct, px } from "../format";
 import NavTabs from "./NavTabs";
 
-const QUICK = ["TSLA", "NVDA", "SPY", "AAPL"];
+// Watchlist 0DTE (fuente: lista ⚡0DTE de Robinhood). SPY queda como ancla de
+// índice —único con 0DTE garantizado a diario— seguido de la watchlist.
+const QUICK = ["SPY", "QQQ", "AMD", "SMH", "INTU", "SHOP"];
 
 export default function HeaderBar({
   ticker,
