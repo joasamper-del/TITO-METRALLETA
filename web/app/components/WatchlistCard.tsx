@@ -11,6 +11,8 @@ import {
   type OutboxItem,
   type WatchlistEntry,
 } from "@/lib/watchlist";
+import type { UnifiedVerdict } from "@/lib/verdict";
+import VerdictBadge from "./VerdictBadge";
 
 const money = new Intl.NumberFormat("en-US", {
   style: "currency", currency: "USD", maximumFractionDigits: 0,
@@ -65,6 +67,7 @@ export default function WatchlistCard({
   pending,
   failed = [],
   lastSyncedAt = null,
+  verdicts = {},
   onBrokerChange,
   onRemove,
 }: {
@@ -74,6 +77,8 @@ export default function WatchlistCard({
   /** Aparcados por el drenador: no se reintentan solos (ver `markOutboxFailed`). */
   failed?: OutboxItem[];
   lastSyncedAt?: string | null;
+  /** Veredicto 0DTE (hoy) por ticker del subyacente. */
+  verdicts?: Record<string, UnifiedVerdict | null>;
   onBrokerChange: (id: string) => void;
   onRemove: (symbol: string) => void;
 }) {
@@ -194,7 +199,14 @@ export default function WatchlistCard({
                 const link = chosen ? quoteLink(e.ticker, chosen) : null;
                 return (
                   <tr key={e.symbol}>
-                    <td><a className="idea-ticker" href={`/?ticker=${e.ticker}`}>{e.ticker}</a></td>
+                    <td>
+                      <a className="idea-ticker" href={`/?ticker=${e.ticker}`}>{e.ticker}</a>
+                      {verdicts[e.ticker.toUpperCase()] && (
+                        <span title="Veredicto 0DTE (hoy)" style={{ marginLeft: 6 }}>
+                          <VerdictBadge verdict={verdicts[e.ticker.toUpperCase()]!} showPct={false} />
+                        </span>
+                      )}
+                    </td>
                     <td>{contractLabel(e)}</td>
                     <td className="muted">{expiryLabel(e)}</td>
                     <td className="muted">{addedLabel(e.addedAt)}</td>

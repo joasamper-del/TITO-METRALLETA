@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import type { TradingViewAlert } from "@/lib/alert";
+import { useVerdicts } from "./useVerdicts";
+import VerdictBadge from "./VerdictBadge";
 
 // Buzón de alertas de TradingView. Lee GET /api/tradingview (buzón pasivo que llena el
 // webhook) y refresca cada REFRESH_MS. Solo muestra; no dispara nada. La lógica de
@@ -35,6 +37,8 @@ function when(iso: string): string {
 export default function AlertsCard({ ticker }: { ticker?: string }) {
   const [alerts, setAlerts] = useState<TradingViewAlert[] | null>(null);
   const [failed, setFailed] = useState(false);
+  // Veredicto 0DTE (hoy) de cada ticker con alerta.
+  const verdicts = useVerdicts((alerts ?? []).map((a) => a.ticker));
 
   useEffect(() => {
     let cancelled = false;
@@ -91,6 +95,7 @@ export default function AlertsCard({ ticker }: { ticker?: string }) {
               <tr>
                 <th className="left">Recibida</th>
                 <th className="left">Ticker</th>
+                <th className="left">0DTE</th>
                 <th>Acción</th>
                 <th>Precio</th>
                 <th>TF</th>
@@ -105,6 +110,11 @@ export default function AlertsCard({ ticker }: { ticker?: string }) {
                   <tr key={a.id}>
                     <td className="left muted">{when(a.receivedAt)}</td>
                     <td className="left">{a.ticker}</td>
+                    <td className="left">
+                      {verdicts[a.ticker.toUpperCase()]
+                        ? <VerdictBadge verdict={verdicts[a.ticker.toUpperCase()]!} />
+                        : <span className="muted">—</span>}
+                    </td>
                     <td>
                       <span className={`pill ${act.cls}`}>{act.label}</span>
                     </td>

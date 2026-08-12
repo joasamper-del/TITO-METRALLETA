@@ -6,6 +6,7 @@ import { sizeFlow, type RiskProfile } from "@/lib/risk";
 import RiskProfileCard, { DEFAULT_PROFILE, loadProfile } from "@/app/components/RiskProfileCard";
 import IdeasTable, { type SizedIdea } from "@/app/components/IdeasTable";
 import WatchlistCard from "@/app/components/WatchlistCard";
+import { useVerdicts } from "@/app/components/useVerdicts";
 import NavTabs from "@/app/components/NavTabs";
 import {
   brokerById,
@@ -120,6 +121,9 @@ export default function IdeasPage() {
     () => new Set(watchlist.map((e) => e.symbol)),
     [watchlist],
   );
+
+  // Veredicto 0DTE (hoy) por subyacente del watchlist, para el badge de cada fila.
+  const wlVerdicts = useVerdicts(watchlist.map((e) => e.ticker));
 
   /**
    * Encola el contrato solo si el broker escribe de verdad (MCP). Los demás usan enlace.
@@ -326,6 +330,7 @@ export default function IdeasPage() {
           pending={pending}
           failed={failed}
           lastSyncedAt={lastSyncedAt}
+          verdicts={wlVerdicts}
           onBrokerChange={changeBroker}
           onRemove={unstar}
         />
