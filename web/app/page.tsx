@@ -15,6 +15,7 @@ import { int } from "./format";
 import HeaderBar from "./components/HeaderBar";
 import AnalysisLoader from "./components/AnalysisLoader";
 import VeredictoCard from "./components/VeredictoCard";
+import PrepararOperacionTicker from "./components/PrepararOperacionTicker";
 import EscenariosCard from "./components/EscenariosCard";
 import SimpleChart from "./components/SimpleChart";
 import NivelesSimples from "./components/NivelesSimples";
@@ -373,6 +374,7 @@ export default function Dashboard() {
             {view === "estudiante" && (
               <>
                 <VeredictoCard ticker={ticker} prediction={prediction} horizonDays={horizonDays} />
+                <PrepararOperacionTicker ticker={ticker} prediction={prediction} />
 
                 {/* El selector de horizonte va pegado a la gráfica que controla:
                     si flota a la misma distancia que una sección, deja de leerse

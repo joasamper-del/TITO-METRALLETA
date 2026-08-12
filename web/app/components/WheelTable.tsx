@@ -2,8 +2,12 @@
 
 import { useState } from "react";
 import type { AffordableCandidate } from "@/lib/wheelAfford";
-import { fromWheel } from "@/lib/verdict";
+import { canPrepareTrade, fromWheel } from "@/lib/verdict";
+import type { OrderSpec } from "@/lib/orderTicket";
 import VerdictBadge from "./VerdictBadge";
+import PrepararOperacion from "./PrepararOperacion";
+
+const money0 = (n: number) => `$${n.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 
 const money = (n: number) => `$${n.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 const money2 = (n: number) => `$${n.toFixed(2)}`;
@@ -97,6 +101,24 @@ function WheelRow({ c, view }: { c: AffordableCandidate; view: "estudiante" | "p
               <div key={i}>· {part.why}</div>
             ))}
           </div>
+
+          {/* Preparar operación: solo si el veredicto del wheel es VENDER PUT (gate). */}
+          {canPrepareTrade(fromWheel(s.total, c.blocked)) && (
+            <PrepararOperacion
+              spec={{
+                side: "sell",
+                ticker: c.ticker,
+                instrument: "option",
+                label: "VENDER PUT",
+                right: "put",
+                strike: c.strike,
+                expiration: c.expiration,
+                quantity: 1,
+                limit: p.price,
+              } satisfies OrderSpec}
+              budgetNote={`colateral ${money0(m.collateral)} por contrato${c.afford.affordable ? "" : ` · te faltan ${money0(c.afford.shortfall)}`}`}
+            />
+          )}
         </div>
       )}
     </div>

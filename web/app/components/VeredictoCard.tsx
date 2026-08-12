@@ -40,8 +40,7 @@ export default function VeredictoCard({
     );
   }
 
-  // Veredicto unificado (mismo lenguaje que 0DTE): gobierna el badge y, más
-  // adelante, el gate de "preparar operación".
+  // Veredicto unificado (mismo lenguaje que 0DTE): gobierna el badge de acción.
   const uv = fromPrediction(prediction);
 
   // Salvaguarda de liquidez — regla prioritaria: no dar dirección si no es fiable.
