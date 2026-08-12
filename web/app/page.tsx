@@ -337,7 +337,7 @@ export default function Dashboard() {
 
   return (
     <>
-      <HeaderBar ticker={ticker} company={company} busy={busy} onSearch={runSearch} />
+      <HeaderBar ticker={ticker} company={company} busy={busy} onSearch={runSearch} horizonDays={horizonDays} />
       <main className="wrap page-stack">
 
         {!started && !busy && (

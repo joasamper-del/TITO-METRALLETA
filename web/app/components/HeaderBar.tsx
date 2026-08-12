@@ -16,26 +16,32 @@ export default function HeaderBar({
   company,
   busy,
   onSearch,
+  horizonDays,
 }: {
   ticker: string | null;
   company: CompanyInfo | null;
   busy: boolean;
   onSearch: (t: string) => void;
+  /** Horizonte activo de la vista (1 = 0DTE). El badge sigue este horizonte. */
+  horizonDays: number;
 }) {
   const [q, setQ] = useState("");
-  // Veredicto 0DTE de cada quick-link (null = sin 0DTE hoy / aún cargando).
+  // Veredicto de cada quick-link (null = sin 0DTE hoy / aún cargando).
   const [verdicts, setVerdicts] = useState<Record<string, UnifiedVerdict | null>>({});
 
-  // Propaga el estado NO OPERAR a los accesos rápidos: un solo request al montar.
-  // Degrada en silencio — si falla, los botones quedan sin badge.
+  // El badge SIGUE EL HORIZONTE ACTIVO para no contradecir la tarjeta:
+  // - 0DTE (horizonDays === 1) → veredicto 0DTE de cada quick-link.
+  // - multi-día → sin badge (la tesis multi-día se calcula en cliente por ticker;
+  //   no la afirmamos aquí para 6 tickers, así que el header calla en vez de mentir).
   useEffect(() => {
+    if (horizonDays !== 1) { setVerdicts({}); return; }
     let alive = true;
     fetch(`/api/0dte/verdict?tickers=${QUICK.join(",")}`, { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((j) => { if (alive && j?.verdicts) setVerdicts(j.verdicts); })
       .catch(() => {});
     return () => { alive = false; };
-  }, []);
+  }, [horizonDays]);
 
   const submit = () => {
     const t = q.trim().toUpperCase();
