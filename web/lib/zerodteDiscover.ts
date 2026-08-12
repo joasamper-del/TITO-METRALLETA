@@ -17,6 +17,7 @@ import {
   type VerdictBias,
   type VerdictConfidence,
 } from "./zerodteVerdict";
+import { fromZeroDte } from "./verdict";
 
 /**
  * Universo por defecto. El gate `isToday` filtra solos los que no tienen 0DTE hoy,
@@ -60,6 +61,8 @@ export interface CandidateNews {
 export interface CandidateVerdict {
   action: VerdictAction; // COMPRAR · ESPERAR · NO_OPERAR
   actionLabel: string; // "COMPRAR CALLS", "COMPRAR PUTS", "ESPERAR", "NO OPERAR"
+  /** Etiqueta corta del badge compartido: "CALLS", "PUTS", "ESPERAR", "NO OP.". */
+  label: string;
   bias: VerdictBias; // alcista · bajista · neutral
   confidence: VerdictConfidence;
   confidencePct: number;
@@ -174,6 +177,7 @@ export async function discoverZeroDte(
       verdict: {
         action: v.action,
         actionLabel: v.actionLabel,
+        label: fromZeroDte(v).label,
         bias: v.bias,
         confidence: v.confidence,
         confidencePct: v.confidencePct,

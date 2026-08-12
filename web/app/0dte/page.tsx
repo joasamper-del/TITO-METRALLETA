@@ -10,6 +10,7 @@ import type { AggressorRead } from "@/lib/zerodteFlow";
 import ZeroDteChart from "@/app/components/ZeroDteChart";
 import NavTabs from "@/app/components/NavTabs";
 import ConclusionEjecutivaCard from "@/app/components/ConclusionEjecutivaCard";
+import VerdictBadge from "@/app/components/VerdictBadge";
 
 interface FlowState {
   cycles: number;
@@ -317,12 +318,7 @@ export default function ZeroDtePage() {
               <button key={c.ticker} className="z-disc-row" onClick={() => pickCandidate(c.ticker)}>
                 <span className="z-disc-rank">{i + 1}</span>
                 <span className="z-disc-tk">{c.ticker}</span>
-                <span className={`z-disc-vd z-disc-vd-${c.verdict.action.toLowerCase()}-${c.verdict.bias}`}>
-                  {c.verdict.action === "COMPRAR"
-                    ? c.verdict.bias === "alcista" ? "CALLS" : "PUTS"
-                    : c.verdict.action === "ESPERAR" ? "ESPERAR" : "NO OP."}
-                  <em>{c.verdict.confidencePct}%</em>
-                </span>
+                <VerdictBadge verdict={c.verdict} />
                 <span className="z-disc-spot">{dec(c.spot)}</span>
                 <span className="z-disc-vol">
                   <b>{num(c.totalVolume)}</b> vol
@@ -1113,16 +1109,4 @@ const CSS = `
 .z-mode-calls.z-mode-on { color: var(--green-dark); } .z-mode-calls.z-mode-on em { background: var(--green-bg); color: var(--green-dark); }
 .z-mode-puts.z-mode-on { color: #b42318; } .z-mode-puts.z-mode-on em { background: var(--red-bg); color: #b42318; }
 .z-mode-todos.z-mode-on { color: var(--text); } .z-mode-todos.z-mode-on em { background: var(--accent-dim); color: var(--accent); }
-
-/* Chip de veredicto por fila (mismo que la Conclusión Ejecutiva). */
-.z-disc-vd { display: inline-flex; align-items: center; gap: 5px; justify-self: start;
-  font-size: 11px; font-weight: 800; letter-spacing: .03em; padding: 3px 8px; border-radius: 999px;
-  white-space: nowrap; background: var(--panel-2); color: var(--muted); }
-.z-disc-vd em { font-style: normal; font-weight: 700; font-size: 10px; opacity: .85; font-variant-numeric: tabular-nums; }
-.z-disc-vd-comprar-alcista { background: var(--green-bg); color: var(--green-dark); }
-.z-disc-vd-comprar-bajista { background: var(--red-bg); color: #b42318; }
-.z-disc-vd-esperar-alcista, .z-disc-vd-esperar-bajista, .z-disc-vd-esperar-neutral {
-  background: var(--amber-bg); color: var(--amber-text); }
-.z-disc-vd-no_operar-alcista, .z-disc-vd-no_operar-bajista, .z-disc-vd-no_operar-neutral {
-  background: var(--panel-2); color: var(--faint); }
 `;
