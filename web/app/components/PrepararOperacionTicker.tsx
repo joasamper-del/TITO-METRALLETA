@@ -29,8 +29,11 @@ export default function PrepararOperacionTicker({
   if (!canPrepareTrade(uv)) return null;
 
   // Sizing por capital a desplegar = cuenta × tolerancia%. Acciones = budget / spot.
+  // Fraccionario a 2 decimales: Robinhood permite comprar fracciones / por dólares,
+  // así que un presupuesto que no cubre 1 acción entera sigue siendo operable.
   const budget = (profile.accountSize * profile.tolerancePct) / 100;
-  const shares = prediction.spot > 0 ? Math.floor(budget / prediction.spot) : null;
+  const shares =
+    prediction.spot > 0 ? Math.round((budget / prediction.spot) * 100) / 100 : null;
 
   const spec: OrderSpec = {
     side: prediction.direction === "up" ? "buy" : "sell",

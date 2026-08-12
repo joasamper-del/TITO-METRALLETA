@@ -48,6 +48,7 @@ export default function PrepararOperacion({
   const cost = orderCost(spec);
   const isOption = spec.instrument === "option";
   const unit = isOption ? "contrato" : "acción";
+  const unitPlural = isOption ? "contratos" : "acciones";
   const qty = spec.quantity;
   const contractLabel = isOption
     ? `${spec.ticker} ${spec.strike != null ? `$${spec.strike}` : "(strike)"} ${(spec.right ?? "").toUpperCase()}`
@@ -73,7 +74,7 @@ export default function PrepararOperacion({
         </div>
         <div className="po-line">
           <span>Cantidad (a tu perfil)</span>
-          <b>{qty != null ? `${qty} ${unit}${qty === 1 ? "" : "s"}` : "—"}</b>
+          <b>{qty != null ? `${qty} ${qty === 1 ? unit : unitPlural}` : "—"}</b>
         </div>
         <div className="po-line">
           <span>{spec.side === "sell" && isOption ? "Crédito estimado" : "Coste estimado"}</span>
