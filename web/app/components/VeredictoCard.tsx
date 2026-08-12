@@ -1,6 +1,8 @@
 "use client";
 
 import type { ProPrediction } from "@/lib/prediction";
+import { fromPrediction } from "@/lib/verdict";
+import VerdictBadge from "./VerdictBadge";
 import { px } from "../format";
 
 /** Confianza 0-100 → etiqueta llana. */
@@ -38,13 +40,19 @@ export default function VeredictoCard({
     );
   }
 
+  // Veredicto unificado (mismo lenguaje que 0DTE): gobierna el badge y, más
+  // adelante, el gate de "preparar operación".
+  const uv = fromPrediction(prediction);
+
   // Salvaguarda de liquidez — regla prioritaria: no dar dirección si no es fiable.
   if (prediction.caveat) {
     return (
       <section className="verdict verdict-warn">
         <div className="verdict-icon">⚠</div>
         <div>
-          <div className="verdict-word">Datos no fiables — no operar</div>
+          <div className="verdict-word">
+            Datos no fiables — no operar <VerdictBadge verdict={uv} showPct={false} />
+          </div>
           <div className="verdict-sub">{prediction.caveat}</div>
         </div>
       </section>
@@ -60,6 +68,9 @@ export default function VeredictoCard({
     <section className={`verdict verdict-${d.cls}`}>
       <div className="verdict-icon">{d.icon}</div>
       <div className="verdict-body">
+        <div className="verdict-action" style={{ marginBottom: 6 }}>
+          <VerdictBadge verdict={uv} size="md" />
+        </div>
         <div className="verdict-word">
           {d.word} hacia <span className="verdict-target">${px.format(target)}</span>
           <span className="verdict-chg">
