@@ -18,3 +18,4 @@ export * from "./internalApi/analyzeOpportunity";
 export * from "./extensions/types";
 export * from "./extensions/ExtensionRegistry";
 export * from "./extensions/createExtension";
+export * from "./verdictAdapter";
