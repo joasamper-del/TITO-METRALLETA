@@ -15,3 +15,6 @@ export * from "./historyStore";
 export * from "./workflow";
 export * from "./internalApi/types";
 export * from "./internalApi/analyzeOpportunity";
+export * from "./extensions/types";
+export * from "./extensions/ExtensionRegistry";
+export * from "./extensions/createExtension";
