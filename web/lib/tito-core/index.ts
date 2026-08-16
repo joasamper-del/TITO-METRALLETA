@@ -13,3 +13,5 @@ export * from "./validator";
 export * from "./mockDataSource";
 export * from "./historyStore";
 export * from "./workflow";
+export * from "./internalApi/types";
+export * from "./internalApi/analyzeOpportunity";
