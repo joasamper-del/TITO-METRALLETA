@@ -16,9 +16,9 @@ async function bootstrap() {
     }),
   );
 
-  // CORS configuration
+  // CORS configuration - Development mode: Allow all localhost
   app.enableCors({
-    origin: configService.get<string>('CORS_ORIGIN') || 'http://localhost:5173',
+    origin: true, // Allow all origins during development
     credentials: true,
   });
 

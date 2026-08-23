@@ -808,7 +808,7 @@
     <script>
         // Cliente API inline
         class TitoAPI {
-          constructor(baseUrl = 'http://localhost:3000', timeout = 5000) {
+          constructor(baseUrl = 'http://localhost:3001', timeout = 5000) {
             this.baseUrl = baseUrl;
             this.timeout = timeout;
           }
@@ -867,7 +867,7 @@
         }
 
         // Inicializar cliente API
-        const titoAPI = new TitoAPI('http://localhost:3000', 5000);
+        const titoAPI = new TitoAPI('http://localhost:3001', 5000);
 
         // Motor simplificado (fallback cuando API no esté disponible)
         class TitoMotor {
