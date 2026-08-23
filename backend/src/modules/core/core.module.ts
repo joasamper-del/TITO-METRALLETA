@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { DataEngine } from '../../../src/engines/dataEngine';
-import { RulesEngine } from '../../../src/engines/rulesEngine';
-import { ReportEngine } from '../../../src/engines/reportEngine';
-import { TitoMetralletaAnalyzer } from '../../../src/core/analyzer';
+import { DataEngine } from '@engines/dataEngine';
+import { RulesEngine } from '@engines/rulesEngine';
+import { ReportEngine } from '@engines/reportEngine';
+import { TitoMetralletaAnalyzer } from '@core/analyzer';
 
 @Module({
   providers: [

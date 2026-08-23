@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { RulesEngine } from '../../../../src/engines/rulesEngine';
+import { RulesEngine } from '@engines/rulesEngine';
 
 export interface RuleDto {
   id: string;

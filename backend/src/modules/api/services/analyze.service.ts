@@ -25,9 +25,9 @@ export interface AnalyzeResponseDto {
   mainReasons: string[];
   invalidationConditions: string[];
   plan: {
-    entry: number;
-    target: number;
-    stop: number;
+    entry: number | null;
+    target: number | null;
+    stop: number | null;
   };
   createdAt: Date;
 }

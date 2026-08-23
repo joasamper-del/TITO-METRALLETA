@@ -3,41 +3,41 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 @Entity('opportunities')
 export class Opportunity {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id!: string;
 
   @Column('varchar', { length: 10 })
-  symbol: string;
+  symbol!: string;
 
   @Column('varchar', { length: 100 })
-  strategy: string;
+  strategy!: string;
 
   @Column('jsonb')
-  analysis: Record<string, any>;
+  analysis!: Record<string, any>;
 
   @Column('varchar', { length: 20 })
-  decision: string;
+  decision!: string;
 
   @Column('float')
-  confidence: number;
+  confidence!: number;
 
   @Column('varchar', { length: 20 })
-  risk: string;
+  risk!: string;
 
   @Column('float', { nullable: true })
-  entry: number;
+  entry: number | null = null;
 
   @Column('float', { nullable: true })
-  target: number;
+  target: number | null = null;
 
   @Column('float', { nullable: true })
-  stop: number;
+  stop: number | null = null;
 
   @Column('text', { nullable: true })
-  notes: string;
+  notes: string | null = null;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 }
