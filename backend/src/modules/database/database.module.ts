@@ -1,13 +1,9 @@
 import { Module } from '@nestjs/common';
-
-// TODO: Crear entities
-// - Opportunity
-// - TradeResult
-// - RuleStats
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Opportunity, TradeResult } from './entities';
 
 @Module({
-  imports: [],
-  providers: [],
-  exports: [],
+  imports: [TypeOrmModule.forFeature([Opportunity, TradeResult])],
+  exports: [TypeOrmModule],
 })
 export class DatabaseModule {}
