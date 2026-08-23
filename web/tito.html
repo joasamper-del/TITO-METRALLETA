@@ -806,7 +806,70 @@
     </div>
 
     <script>
-        // Motor simplificado
+        // Cliente API inline
+        class TitoAPI {
+          constructor(baseUrl = 'http://localhost:3000', timeout = 5000) {
+            this.baseUrl = baseUrl;
+            this.timeout = timeout;
+          }
+
+          async analyze(symbol, strategy, plan) {
+            try {
+              const response = await this.postWithTimeout(
+                `${this.baseUrl}/api/analyze`,
+                { symbol, strategy, plan },
+                this.timeout
+              );
+
+              if (!response.ok) {
+                throw new Error(`API error: ${response.status}`);
+              }
+
+              const data = await response.json();
+              return {
+                analysis: data,
+                source: 'backend',
+                error: null,
+              };
+            } catch (error) {
+              return {
+                analysis: null,
+                source: 'mock',
+                error: error.message,
+              };
+            }
+          }
+
+          postWithTimeout(url, data, timeoutMs) {
+            return Promise.race([
+              fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+              }),
+              new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Request timeout')), timeoutMs)
+              ),
+            ]);
+          }
+
+          async isBackendAvailable() {
+            try {
+              const response = await fetch(`${this.baseUrl}/health`, {
+                method: 'GET',
+                signal: AbortSignal.timeout(2000),
+              });
+              return response.ok;
+            } catch {
+              return false;
+            }
+          }
+        }
+
+        // Inicializar cliente API
+        const titoAPI = new TitoAPI('http://localhost:3000', 5000);
+
+        // Motor simplificado (fallback cuando API no esté disponible)
         class TitoMotor {
             constructor() {
                 this.rules = this.initRules();
@@ -885,7 +948,7 @@
         const motor = new TitoMotor();
 
         // UI
-        function performAnalysis() {
+        async function performAnalysis() {
             const symbol = document.getElementById('symbolInput').value.trim().toUpperCase();
             const strategy = document.getElementById('strategyInput').value.trim();
 
@@ -894,17 +957,47 @@
                 return;
             }
 
-            const analysis = motor.analyze(symbol, strategy);
-            renderDecision(analysis);
+            // Mostrar loading
+            const resultEl = document.getElementById('decisionResult');
+            resultEl.innerHTML = '<div style="text-align: center; padding: 2rem;"><p>⏳ Analizando...</p></div>';
+            resultEl.style.display = 'block';
+            document.getElementById('emptyState').style.display = 'none';
+
+            // Intenta llamar a la API real, si falla usa motor local
+            const result = await titoAPI.analyze(symbol, strategy, {
+                entry: 100,
+                target: 110,
+                stop: 95,
+                notes: 'Análisis desde frontend'
+            });
+
+            let analysis;
+            let source;
+
+            if (result.source === 'backend') {
+                analysis = result.analysis;
+                source = 'backend';
+            } else {
+                // Usar motor local como fallback
+                analysis = motor.analyze(symbol, strategy);
+                source = 'mock';
+            }
+
+            renderDecision(analysis, source);
             motor.addToWatchlist(symbol);
             renderWatchlist();
         }
 
-        function renderDecision(analysis) {
+        function renderDecision(analysis, source = 'mock') {
             const decisionMap = { 'operar': 'OPERAR', 'esperar': 'ESPERAR', 'no_operar': 'NO OPERAR' };
             const classMap = { 'operar': 'operate', 'esperar': 'wait', 'no_operar': 'no-operate' };
             const emojiMap = { 'operar': '✅', 'esperar': '⏳', 'no_operar': '❌' };
             const riskEmoji = { 'bajo': '🟢', 'medio': '🟡', 'alto': '🔴' };
+
+            // Indicador de fuente de datos
+            const sourceIndicator = source === 'backend'
+                ? '<span style="background: #10b981; color: white; padding: 0.25rem 0.75rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">✓ Backend Real</span>'
+                : '<span style="background: #f59e0b; color: white; padding: 0.25rem 0.75rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">📋 Datos Locales</span>';
 
             const now = new Date();
             const timeStr = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -936,6 +1029,7 @@
                 <div class="decision-box ${classMap[analysis.decision]}">
                     <div class="decision-meta">
                         <span>Actualizado: ${dateStr} ${timeStr}</span>
+                        ${sourceIndicator}
                         <button class="refresh-btn" onclick="performAnalysis()">🔄 Refrescar</button>
                     </div>
 
