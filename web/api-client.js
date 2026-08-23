@@ -1,9 +1,14 @@
 /**
  * TitoAPI - Cliente HTTP para conectar frontend con backend
  * Intenta conectar a /api/analyze y fallback a motor mock local si falla
+ *
+ * ACTUALIZACIÓN SESIÓN 6:
+ * - Backend migrado a puerto 3001
+ * - Endpoint: http://localhost:3001/api/analyze
+ * - Analysis ahora tiene fallback estructurado con manualReviewNeeded
  */
 class TitoAPI {
-  constructor(baseUrl = 'http://localhost:3000', timeout = 5000) {
+  constructor(baseUrl = 'http://localhost:3001', timeout = 5000) {
     this.baseUrl = baseUrl;
     this.timeout = timeout;
   }
