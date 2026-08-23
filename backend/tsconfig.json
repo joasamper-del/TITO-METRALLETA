@@ -19,9 +19,9 @@
     "noEmitOnError": false,
     "paths": {
       "@/*": ["src/*"],
-      "@core/*": ["../src/core/*"],
-      "@engines/*": ["../src/engines/*"],
-      "@types/*": ["../src/types/*"]
+      "@core/*": ["src/core/*"],
+      "@engines/*": ["src/engines/*"],
+      "@types/*": ["src/types/*"]
     }
   },
   "include": ["src/**/*"],

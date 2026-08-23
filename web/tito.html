@@ -495,8 +495,52 @@
         }
 
         @media (max-width: 768px) {
+            body {
+                font-size: 16px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: var(--spacing-md);
+                text-align: center;
+                padding: var(--spacing-lg) var(--spacing-md);
+            }
+
+            .header-content h1.logo {
+                font-size: 1.5rem;
+            }
+
+            .main-content {
+                padding: var(--spacing-lg) var(--spacing-md);
+                gap: var(--spacing-lg);
+            }
+
+            .decision-panel {
+                padding: var(--spacing-lg);
+                border-radius: var(--radius-md);
+            }
+
             .decision-input {
                 grid-template-columns: 1fr;
+                gap: var(--spacing-md);
+                margin-bottom: var(--spacing-lg);
+            }
+
+            .symbol-input, .strategy-input {
+                font-size: 16px;
+                padding: var(--spacing-lg) var(--spacing-md);
+                min-height: 48px;
+            }
+
+            .btn {
+                padding: var(--spacing-lg) var(--spacing-md);
+                font-size: 16px;
+                min-height: 48px;
+                width: 100%;
+            }
+
+            .btn-primary {
+                margin-top: var(--spacing-md);
             }
 
             .decision-header {
@@ -504,13 +548,199 @@
             }
 
             .decision-metrics {
+                grid-template-columns: 1fr 1fr;
                 grid-column: 1 !important;
             }
 
-            .header {
+            .decision-main-content {
                 flex-direction: column;
+                gap: var(--spacing-lg);
+            }
+
+            .decision-decision {
+                font-size: 2.5rem;
+            }
+
+            .metric-value {
+                font-size: 1.75rem;
+            }
+
+            .decision-box {
+                padding: var(--spacing-lg);
+                border-radius: var(--radius-md);
+            }
+
+            .market-summary {
+                grid-template-columns: repeat(3, 1fr);
+                gap: var(--spacing-sm);
+                padding: var(--spacing-md);
+                font-size: 0.75rem;
+            }
+
+            .reasons-list {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-sm);
+            }
+
+            .reasons-list li {
+                font-size: 0.75rem;
+            }
+
+            .watchlist-section {
+                max-width: 100%;
+                padding: var(--spacing-md);
+            }
+
+            .watchlist-input input {
+                font-size: 16px;
+                padding: var(--spacing-md);
+                min-height: 44px;
+            }
+
+            .watchlist-input button {
+                font-size: 16px;
+                min-width: 44px;
+                min-height: 44px;
+            }
+
+            .watchlist-item {
+                font-size: 0.875rem;
+                padding: var(--spacing-md);
+                min-height: 44px;
+            }
+
+            .footer {
+                padding: var(--spacing-md);
+                font-size: 0.75rem;
+            }
+
+            .conditions-list {
+                gap: var(--spacing-sm);
+            }
+
+            .conditions-list li {
+                font-size: 0.75rem;
+                padding: var(--spacing-sm);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: var(--spacing-md) var(--spacing-sm);
+            }
+
+            .header-content h1.logo {
+                font-size: 1.25rem;
+            }
+
+            .header-content .subtitle {
+                font-size: 0.75rem;
+            }
+
+            .main-content {
+                padding: var(--spacing-md) var(--spacing-sm);
                 gap: var(--spacing-md);
-                text-align: center;
+            }
+
+            .decision-panel {
+                padding: var(--spacing-md);
+            }
+
+            .decision-input {
+                gap: var(--spacing-sm);
+            }
+
+            .symbol-input, .strategy-input {
+                padding: var(--spacing-md) var(--spacing-sm);
+                font-size: 16px;
+            }
+
+            .btn {
+                padding: var(--spacing-md) var(--spacing-sm);
+                font-size: 14px;
+                width: 100%;
+            }
+
+            .decision-decision {
+                font-size: 2rem;
+            }
+
+            .metric-label {
+                font-size: 0.7rem;
+            }
+
+            .metric-value {
+                font-size: 1.5rem;
+            }
+
+            .decision-box {
+                padding: var(--spacing-md);
+            }
+
+            .market-summary {
+                padding: var(--spacing-sm);
+                gap: var(--spacing-xs);
+            }
+
+            .market-item {
+                gap: var(--spacing-xs);
+            }
+
+            .market-label {
+                font-size: 0.65rem;
+            }
+
+            .market-value {
+                font-size: 0.8rem;
+            }
+
+            .reasons-box {
+                padding: var(--spacing-md);
+            }
+
+            .reasons-list {
+                gap: var(--spacing-xs);
+            }
+
+            .reasons-list li {
+                font-size: 0.7rem;
+                gap: var(--spacing-xs);
+            }
+
+            .watchlist-section {
+                padding: var(--spacing-md) var(--spacing-sm);
+            }
+
+            .watchlist-section h2 {
+                font-size: 1rem;
+            }
+
+            .watchlist-input {
+                gap: var(--spacing-xs);
+            }
+
+            .watchlist-input input {
+                font-size: 16px;
+                padding: var(--spacing-sm);
+            }
+
+            .watchlist-item {
+                font-size: 0.8rem;
+                padding: var(--spacing-sm);
+            }
+
+            .footer {
+                padding: var(--spacing-sm);
+                font-size: 0.65rem;
+            }
+
+            .conditions-box {
+                padding: var(--spacing-md);
+            }
+
+            .conditions-list li {
+                font-size: 0.7rem;
+                padding: var(--spacing-xs);
             }
         }
     </style>
