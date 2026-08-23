@@ -1,66 +1,43 @@
-# Próximos Pasos - Sesión 4
+# Próximos Pasos - Sesión 4 (Continuación)
 
-**Fecha planeada**: 2026-08-24  
-**Objetivo principal**: Fase 2B - PostgreSQL Setup + Testing Backend Real
-
----
-
-## 🎯 Qué se logró en Sesión 3
-
-✅ Fase 2A completada  
-✅ api-client.js implementado  
-✅ Frontend conectado a backend (con fallback)  
-✅ Indicador visual: "Datos Reales" vs "Datos Locales"  
-✅ Testing manual validado  
-✅ Documentación completa  
-
-**Estado**: Frontend listo, backend requiere BD
+**Punto actual**: PostgreSQL instalado, esperando configuración manual
 
 ---
 
-## 🚨 BLOQUEADOR CRÍTICO: PostgreSQL
+## 🔐 PASO ACTUAL: Configurar .env.local
 
-Para avanzar a Fase 2B, **DEBE instalarse PostgreSQL**:
+**Usuario debe completar manualmente:**
 
-### 1. Instalar PostgreSQL (15+)
-```bash
-# Windows - Opción 1: Descarga manual
-https://www.postgresql.org/download/windows/
-
-# Windows - Opción 2: Chocolatey
-choco install postgresql14
-
-# Linux (WSL)
-sudo apt install postgresql postgresql-contrib
-
-# macOS
-brew install postgresql
+### 1. Editar archivo
+```
+C:\Users\18327\Downloads\Agente Tito Metralleta\backend\.env.local
 ```
 
-### 2. Crear Base de Datos
-```bash
-# Iniciar psql
-psql -U postgres
+### 2. Línea 1 - Reemplazar:
 
-# Crear BD
-CREATE DATABASE tito_metralleta;
-
-# Salir
-\q
-```
-
-### 3. Configurar .env.local
+**De:**
 ```
 DATABASE_URL=postgresql://user:password@localhost:5432/tito_metralleta
-JWT_SECRET=dev-secret-key-change-in-production
-ALPHA_VANTAGE_KEY=
-FINNHUB_KEY=
-NODE_ENV=development
 ```
 
-### 4. Iniciar Backend
+**A:**
+```
+DATABASE_URL=postgresql://postgres:TU_CONTRASEÑA@localhost:5432/tito_metralleta
+```
+
+Donde `TU_CONTRASEÑA` es la que creaste en PostgreSQL (sin caracteres especiales que rompan URLs)
+
+### 3. Guardar archivo
+
+### 4. NO subir a GitHub
+
+---
+
+## ✅ Después de configurar .env.local
+
+### Paso 1: Iniciar Backend (5 min)
 ```bash
-cd backend
+cd "C:\Users\18327\Downloads\Agente Tito Metralleta\backend"
 npm run start:dev
 ```
 
@@ -69,74 +46,59 @@ Esperar mensaje:
 🚀 Tito Metralleta Backend running on http://localhost:3000
 ```
 
----
+### Paso 2: Abrir Frontend (2 min)
+Abrir en navegador:
+```
+file:///C:/Users/18327/Downloads/Agente%20Tito%20Metralleta/web/tito.html
+```
 
-## 🚀 Plan para Sesión 4 (Fase 2B)
+### Paso 3: Test E2E (5 min)
+```
+Entrada: AAPL + Momentum
+Clic: Analizar
+Esperar: 5-10 segundos
+Verificar: Badge "✓ Backend Real" (VERDE) ← Objetivo
+```
 
-### Duración: 1-1.5 horas
-### Entrega: Frontend con datos REALES del backend
+### Paso 4: Test Fallback (5 min)
+```
+Apagar backend: Ctrl+C en terminal
+Volver a frontend
+Clic: Analizar nuevamente
+Verificar: Badge "📋 Datos Locales" (AMARILLO) ← Fallback activo
+```
 
-#### 1. PostgreSQL Setup (15 min)
-- Instalar PostgreSQL
-- Crear base de datos
-- Verificar conexión
-
-#### 2. Backend Real Testing (15 min)
-- `npm run start:dev`
-- Verificar /api/analyze disponible
-- Test con curl: `POST /api/analyze`
-
-#### 3. Frontend Real Testing (15 min)
-- Abrir tito.html
-- AAPL + Momentum
-- Badge debe mostrar "✓ Backend Real" (verde)
-- Ver análisis del backend
-
-#### 4. Error Handling Testing (10 min)
-- Apagar backend
-- Verificar fallback a mock (badge amarillo)
-- Encender backend
-- Verificar retorno a datos reales
-
-#### 5. Documentación & Commit (5 min)
-- SESSION_4_RESULTS.md
-- Commit: "Fase 2B: PostgreSQL + Backend Real"
+### Paso 5: Commit Final (5 min)
+```bash
+cd "C:\Users\18327\Downloads\Agente Tito Metralleta"
+git add SESSION_SUMMARY.md NEXT_STEPS.md SESSION_4_RESULTS.md
+git commit -m "docs(session-4): PostgreSQL setup completado - Fase 2B lista"
+git push origin feature/backend-setup
+```
 
 ---
 
-## ✅ Checklist Sesión 4
+## 📊 Checklist Sesión 4
 
-- [ ] PostgreSQL instalado
-- [ ] Base de datos creada
-- [ ] .env.local configurado
-- [ ] Backend en http://localhost:3000
-- [ ] Badge "✓ Backend Real" visible
-- [ ] Fallback funciona (apagar backend)
-- [ ] Commit realizado
-
----
-
-## 📊 Progreso General
-
-| Fase | Tarea | Status |
-|------|-------|--------|
-| 1A-1D | Backend MVP | ✅ Sesión 1 |
-| 2A | Frontend-API Integration | ✅ Sesión 3 |
-| **2B** | **PostgreSQL + Real Data** | ⏳ **Sesión 4** |
-| 2C | Error Handling Avanzado | ⏳ Sesión 5 |
-| 2D | Optimización & Deploy | ⏳ Sesión 6 |
+- [ ] PostgreSQL instalado ✓
+- [ ] Base de datos creada ✓
+- [ ] .env.local configurado ⏳
+- [ ] Backend en http://localhost:3000 ⏳
+- [ ] Badge "✓ Backend Real" visible ⏳
+- [ ] Fallback funciona (apagar backend) ⏳
+- [ ] Commit realizado ⏳
 
 ---
 
-## 📝 Referencias
+## 🎯 Objetivo Final
 
-- `SESSION_3_RESULTS.md` - Detalles completos Sesión 3
-- `web/api-client.js` - Cliente HTTP
-- `backend/.env.local` - Configuración ejemplo
-- `backend/src/main.ts` - Entrada aplicación
+Cuando veas **"✓ Backend Real"** en verde en el frontend:
+- ✅ Frontend conectado a backend REAL
+- ✅ Datos viniendo de PostgreSQL
+- ✅ Fallback mock como respaldo
+- ✅ Fase 2B COMPLETA
 
 ---
 
-**Sesión 4 comienza**: 2026-08-24  
-**Bloqueador**: PostgreSQL (CRÍTICO)  
-**Status**: Esperando PostgreSQL
+**Estado**: Esperando configuración de .env.local  
+**Próxima acción**: Usuario edita .env.local y avisa
