@@ -1,0 +1,86 @@
+# Dependencies
+node_modules/
+package-lock.json
+npm-debug.log
+yarn-error.log
+pnpm-lock.yaml
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Build outputs
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+
+# Logs
+logs/
+*.log
+
+# OS
+Thumbs.db
+.DS_Store
+
+# NestJS specific
+dist/
+node_modules/
+.env
+.env.production
+
+# React specific
+build/
+.parcel-cache/
+
+# Docker
+.dockerignore
+
+# Database
+*.db
+*.sqlite
+*.sql
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# IDE Debug
+.debug
+
+# yarn
+.yarn/
+.yarn/plugins
+.yarn/releases
+
+# Misc
+.cache/
+*.pid
+*.pid.lock
+
+# Backend dist
+backend/dist/
+backend/node_modules/
+
+# Frontend build
+frontend/dist/
+frontend/build/
+frontend/node_modules/
