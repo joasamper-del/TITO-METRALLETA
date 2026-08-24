@@ -4,11 +4,18 @@
  *
  * ACTUALIZACIÓN SESIÓN 6:
  * - Backend migrado a puerto 3001
- * - Endpoint: http://localhost:3001/api/analyze
+ * - Endpoint dinámico usando window.location.hostname
  * - Analysis ahora tiene fallback estructurado con manualReviewNeeded
  */
 class TitoAPI {
-  constructor(baseUrl = 'http://localhost:3001', timeout = 5000) {
+  constructor(baseUrl, timeout = 5000) {
+    // Si no se proporciona baseUrl, usar window.location.hostname dinámicamente
+    if (!baseUrl) {
+      const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+      this.baseUrl = `http://${hostname}:3001`;
+    } else {
+      this.baseUrl = baseUrl;
+    }
     this.baseUrl = baseUrl;
     this.timeout = timeout;
   }

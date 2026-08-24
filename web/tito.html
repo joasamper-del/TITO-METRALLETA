@@ -806,9 +806,14 @@
     </div>
 
     <script>
+        // Detectar servidor dinámicamente
+        const API_HOSTNAME = window.location.hostname || 'localhost';
+        const API_PORT = 3001;
+        const DEFAULT_API_URL = `http://${API_HOSTNAME}:${API_PORT}`;
+
         // Cliente API inline
         class TitoAPI {
-          constructor(baseUrl = 'http://localhost:3001', timeout = 5000) {
+          constructor(baseUrl = DEFAULT_API_URL, timeout = 5000) {
             this.baseUrl = baseUrl;
             this.timeout = timeout;
           }
@@ -816,7 +821,7 @@
           async analyze(symbol, strategy, plan) {
             try {
               const response = await this.postWithTimeout(
-                `${this.baseUrl}/api/analyze`,
+                `${this.baseUrl}/api/api/analyze`,
                 { symbol, strategy, plan },
                 this.timeout
               );
@@ -855,7 +860,7 @@
 
           async isBackendAvailable() {
             try {
-              const response = await fetch(`${this.baseUrl}/health`, {
+              const response = await fetch(`${this.baseUrl}/api/health`, {
                 method: 'GET',
                 signal: AbortSignal.timeout(2000),
               });
@@ -866,8 +871,8 @@
           }
         }
 
-        // Inicializar cliente API
-        const titoAPI = new TitoAPI('http://localhost:3001', 5000);
+        // Inicializar cliente API con URL dinámico
+        const titoAPI = new TitoAPI(DEFAULT_API_URL, 5000);
 
         // Motor simplificado (fallback cuando API no esté disponible)
         class TitoMotor {
@@ -1009,21 +1014,8 @@
             const vixPrice = (15 + Math.random() * 15).toFixed(2);
 
             // Determina qué condiciones faltan
-            const missingConditions = [];
-            if (analysis.score < 85) {
-                // Para pasar de NO OPERAR a ESPERAR (< 50 a >= 65)
-                if (analysis.score < 65) {
-                    missingConditions.push('Mejorar tendencia del activo');
-                    missingConditions.push('Aumentar volumen de operación');
-                    missingConditions.push('Confirmar zona de operación');
-                }
-                // Para pasar de ESPERAR a OPERAR (>= 65 a >= 85)
-                else if (analysis.score >= 65 && analysis.score < 85) {
-                    missingConditions.push('Mejorar contexto general (SPY/QQQ)');
-                    missingConditions.push('Aumentar confirmación de entrada');
-                    missingConditions.push('Reducir niveles de volatilidad (VIX)');
-                }
-            }
+            const missingConditions = analysis.invalidationConditions || [];
+            const scoreValue = analysis.score || (analysis.confidence * 100) || 50;
 
             const html = `
                 <div class="decision-box ${classMap[analysis.decision]}">
@@ -1060,7 +1052,7 @@
                         <div class="decision-metrics">
                             <div class="metric">
                                 <div class="metric-label">Confianza</div>
-                                <div class="metric-value">${analysis.score}%</div>
+                                <div class="metric-value">${Math.round((analysis.score || analysis.confidence || 0) * 100)}%</div>
                             </div>
                             <div class="metric">
                                 <div class="metric-label">Riesgo</div>
@@ -1074,7 +1066,7 @@
                     <div class="reasons-box">
                         <h3>Justificación</h3>
                         <ul class="reasons-list">
-                            ${analysis.reasons.map(r => `<li>${r}</li>`).join('')}
+                            ${(analysis.mainReasons || analysis.reasons || []).map(r => `<li>${r}</li>`).join('')}
                         </ul>
                     </div>
 

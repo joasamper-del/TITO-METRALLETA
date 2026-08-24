@@ -10,9 +10,9 @@
     },
     {
       "name": "tito-web",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--prefix", "./Agente Tito Metralleta/web"],
-      "port": 3000,
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["./web/server.js"],
+      "port": 8080,
       "autoPort": true
     }
   ]
