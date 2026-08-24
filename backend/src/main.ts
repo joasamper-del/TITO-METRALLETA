@@ -26,10 +26,11 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   const port = configService.get<number>('PORT') || 3000;
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
 
-  console.log(`🚀 Tito Metralleta Backend running on http://localhost:${port}`);
+  console.log(`🚀 Tito Metralleta Backend running on http://0.0.0.0:${port}`);
   console.log(`📚 API documentation: http://localhost:${port}/api`);
+  console.log(`📱 Access from network: http://10.0.0.13:${port}/api`);
 }
 
 bootstrap();
