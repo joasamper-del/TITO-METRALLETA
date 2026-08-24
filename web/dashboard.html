@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tito Metralleta - Dashboard Móvil</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #f1f5f9;
+            min-height: 100vh;
+            padding: 12px;
+        }
+
+        .container {
+            max-width: 420px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            border-left: 4px solid #2563eb;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header .subtitle {
+            font-size: 12px;
+            color: #cbd5e1;
+        }
+
+        .status-badge {
+            display: inline-block;
+            background: #10b981;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .status-badge.loading {
+            background: #f59e0b;
+        }
+
+        .status-badge.error {
+            background: #ef4444;
+        }
+
+        .card {
+            background: #1e293b;
+            border: 1px solid #475569;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        }
+
+        .card h2 {
+            font-size: 14px;
+            color: #cbd5e1;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .decision-box {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 12px;
+            border-left: 4px solid #2563eb;
+        }
+
+        .decision-box.operar {
+            border-left-color: #10b981;
+        }
+
+        .decision-box.esperar {
+            border-left-color: #f59e0b;
+        }
+
+        .decision-box.no-operar {
+            border-left-color: #ef4444;
+        }
+
+        .decision-text {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 8px 0;
+        }
+
+        .decision-text.operar {
+            color: #10b981;
+        }
+
+        .decision-text.esperar {
+            color: #f59e0b;
+        }
+
+        .decision-text.no-operar {
+            color: #ef4444;
+        }
+
+        .symbol {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .metric {
+            background: #0f172a;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .metric-label {
+            font-size: 11px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: #3b82f6;
+        }
+
+        .metric-value.risk-low {
+            color: #10b981;
+        }
+
+        .metric-value.risk-medium {
+            color: #f59e0b;
+        }
+
+        .metric-value.risk-high {
+            color: #ef4444;
+        }
+
+        .reasons-list {
+            list-style: none;
+        }
+
+        .reasons-list li {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            padding: 6px 0;
+            color: #cbd5e1;
+        }
+
+        .reasons-list li:before {
+            content: '✓';
+            color: #10b981;
+            font-weight: 700;
+        }
+
+        .last-operations {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .operation-item {
+            background: #0f172a;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 12px;
+            border-left: 3px solid #2563eb;
+        }
+
+        .operation-item.operar {
+            border-left-color: #10b981;
+        }
+
+        .operation-item.esperar {
+            border-left-color: #f59e0b;
+        }
+
+        .operation-item.no-operar {
+            border-left-color: #ef4444;
+        }
+
+        .operation-time {
+            color: #94a3b8;
+            font-size: 11px;
+        }
+
+        .operation-symbol {
+            color: #f1f5f9;
+            font-weight: 600;
+        }
+
+        .operation-decision {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-left: 4px;
+        }
+
+        .operation-decision.operar {
+            background: #10b981;
+            color: white;
+        }
+
+        .operation-decision.esperar {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .operation-decision.no-operar {
+            background: #ef4444;
+            color: white;
+        }
+
+        .refresh-btn {
+            width: 100%;
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 8px;
+        }
+
+        .refresh-btn:hover {
+            background: #1d4ed8;
+        }
+
+        .refresh-btn:disabled {
+            background: #475569;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            background: #7f1d1d;
+            color: #fecaca;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-size: 13px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #475569;
+            border-top-color: #2563eb;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid #475569;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 8px;
+            }
+
+            .header h1 {
+                font-size: 20px;
+            }
+
+            .card {
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Tito Metralleta</h1>
+            <p class="subtitle">Dashboard de Paper Trading</p>
+            <div class="status-badge" id="agentStatus">🔄 Conectando...</div>
+        </div>
+
+        <div id="errorContainer"></div>
+
+        <div class="card" id="latestSignalCard" style="display: none;">
+            <h2>📊 Última Señal</h2>
+            <div class="decision-box" id="decisionBox">
+                <div class="decision-text" id="decisionText">-</div>
+                <div class="symbol" id="symbolText">-</div>
+                <div class="metrics">
+                    <div class="metric">
+                        <div class="metric-label">Confianza</div>
+                        <div class="metric-value" id="confidenceValue">-</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Riesgo</div>
+                        <div class="metric-value" id="riskValue">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" id="reasonsCard" style="display: none;">
+            <h2>💡 Razones</h2>
+            <ul class="reasons-list" id="reasonsList"></ul>
+        </div>
+
+        <div class="card">
+            <h2>📈 Operaciones Guardadas</h2>
+            <div class="last-operations" id="operationsList">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Cargando operaciones...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>ℹ️ Estado del Agente</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 13px;">
+                <div>
+                    <div class="metric-label">Total Análisis</div>
+                    <div style="font-size: 18px; font-weight: 600; margin-top: 4px;" id="totalAnalyzed">-</div>
+                </div>
+                <div>
+                    <div class="metric-label">Última Actualización</div>
+                    <div style="font-size: 12px; margin-top: 4px;" id="lastUpdate">-</div>
+                </div>
+            </div>
+            <button class="refresh-btn" onclick="refreshData()">🔄 Actualizar Ahora</button>
+        </div>
+
+        <div class="footer">
+            🤖 Agente en operación | Paper Trading | Conectado a localhost:3001
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3001/api/api';
+        const REFRESH_INTERVAL = 5000; // 5 segundos
+
+        // Estado de la aplicación
+        let latestAnalysis = null;
+        let allOperations = [];
+
+        async function refreshData() {
+            try {
+                // Obtener stats
+                const statsResponse = await fetch(`${API_URL}/stats`);
+                if (!statsResponse.ok) throw new Error('Error en stats');
+                const stats = await statsResponse.json();
+
+                // Obtener última operación (análisis)
+                const analysisResponse = await fetch(`${API_URL}/rules`);
+                if (!analysisResponse.ok) throw new Error('Error en análisis');
+                const analysis = await analysisResponse.json();
+
+                // Actualizar UI
+                updateStats(stats);
+                updateLatestSignal(analysis);
+                updateAgentStatus('connected');
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError('⚠️ No se pudo conectar al backend en localhost:3001');
+                updateAgentStatus('error');
+            }
+        }
+
+        function updateStats(stats) {
+            document.getElementById('totalAnalyzed').textContent = stats.totalAnalyzed || 0;
+
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('lastUpdate').textContent = timeStr;
+
+            // Simular operaciones (en producción vendrían del backend)
+            simulateOperations(stats.totalAnalyzed || 0);
+        }
+
+        function updateLatestSignal(analysis) {
+            // Para demostración, usar análisis simulado del agente
+            const simulated = getSimulatedAnalysis();
+
+            document.getElementById('latestSignalCard').style.display = 'block';
+            document.getElementById('reasonsCard').style.display = 'block';
+
+            const decisionBox = document.getElementById('decisionBox');
+            const decisionClass = simulated.decision;
+
+            decisionBox.className = `decision-box ${decisionClass}`;
+
+            const decisionMap = {
+                'operar': '✅ OPERAR',
+                'esperar': '⏳ ESPERAR',
+                'no-operar': '❌ NO OPERAR'
+            };
+
+            document.getElementById('decisionText').className = `decision-text ${decisionClass}`;
+            document.getElementById('decisionText').textContent = decisionMap[decisionClass] || '-';
+
+            document.getElementById('symbolText').textContent = `${simulated.symbol} • ${simulated.strategy}`;
+
+            document.getElementById('confidenceValue').textContent = `${simulated.confidence}%`;
+
+            const riskElement = document.getElementById('riskValue');
+            riskElement.className = `metric-value risk-${simulated.riskLevel}`;
+            const riskMap = { 'bajo': '🟢 Bajo', 'medio': '🟡 Medio', 'alto': '🔴 Alto' };
+            riskElement.textContent = riskMap[simulated.riskLevel] || '-';
+
+            // Razones
+            const reasonsList = document.getElementById('reasonsList');
+            reasonsList.innerHTML = simulated.reasons
+                .map(reason => `<li>${reason}</li>`)
+                .join('');
+        }
+
+        function getSimulatedAnalysis() {
+            const strategies = ['Momentum', 'Support/Resistance', 'Trending', 'Volatility'];
+            const symbols = ['SPY', 'QQQ', 'IWM'];
+            const decisions = ['operar', 'esperar', 'no-operar'];
+            const risks = ['bajo', 'medio', 'alto'];
+
+            const now = new Date();
+            const hour = now.getHours();
+
+            return {
+                symbol: symbols[Math.floor(Math.random() * symbols.length)],
+                strategy: strategies[Math.floor(Math.random() * strategies.length)],
+                decision: decisions[Math.floor(Math.random() * decisions.length)],
+                confidence: Math.floor(Math.random() * 40) + 50, // 50-90%
+                riskLevel: risks[Math.floor(Math.random() * risks.length)],
+                reasons: [
+                    'Tendencia alcista confirmada',
+                    'Volumen por encima del promedio',
+                    'Zona de soporte respetada'
+                ]
+            };
+        }
+
+        function simulateOperations(total) {
+            const operations = [];
+            const symbols = ['SPY', 'QQQ', 'IWM'];
+            const strategies = ['Momentum', 'Support/Resistance', 'Trending', 'Volatility', '0DTE'];
+            const decisions = ['operar', 'esperar', 'no-operar'];
+
+            for (let i = 0; i < Math.min(total, 10); i++) {
+                const now = new Date();
+                now.setMinutes(now.getMinutes() - i * 1);
+
+                operations.push({
+                    time: now.toLocaleTimeString('es-ES', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    }),
+                    symbol: symbols[Math.floor(Math.random() * symbols.length)],
+                    strategy: strategies[Math.floor(Math.random() * strategies.length)],
+                    decision: decisions[Math.floor(Math.random() * decisions.length)],
+                    confidence: Math.floor(Math.random() * 40) + 50
+                });
+            }
+
+            renderOperations(operations);
+        }
+
+        function renderOperations(operations) {
+            const list = document.getElementById('operationsList');
+
+            if (operations.length === 0) {
+                list.innerHTML = '<div class="loading"><p>Sin operaciones aún</p></div>';
+                return;
+            }
+
+            list.innerHTML = operations
+                .map(op => `
+                    <div class="operation-item ${op.decision}">
+                        <div class="operation-time">${op.time}</div>
+                        <div style="margin-top: 4px;">
+                            <span class="operation-symbol">${op.symbol}</span>
+                            <span style="color: #94a3b8; font-size: 11px;">/ ${op.strategy}</span>
+                            <span class="operation-decision ${op.decision}">
+                                ${op.decision === 'operar' ? '✅' : op.decision === 'esperar' ? '⏳' : '❌'}
+                                ${op.decision.toUpperCase()}
+                            </span>
+                        </div>
+                        <div style="color: #64748b; font-size: 11px; margin-top: 3px;">Conf: ${op.confidence}%</div>
+                    </div>
+                `)
+                .join('');
+        }
+
+        function updateAgentStatus(status) {
+            const badge = document.getElementById('agentStatus');
+            if (status === 'connected') {
+                badge.className = 'status-badge';
+                badge.textContent = '🟢 Conectado y operando';
+            } else if (status === 'loading') {
+                badge.className = 'status-badge loading';
+                badge.innerHTML = '<div class="spinner" style="display: inline-block; margin-right: 6px; width: 12px; height: 12px;"></div>Conectando...';
+            } else {
+                badge.className = 'status-badge error';
+                badge.textContent = '🔴 Desconectado';
+            }
+        }
+
+        function showError(message) {
+            const container = document.getElementById('errorContainer');
+            container.innerHTML = `<div class="error-message">${message}</div>`;
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+
+        // Inicializar
+        refreshData();
+        setInterval(refreshData, REFRESH_INTERVAL);
+    </script>
+</body>
+</html>
