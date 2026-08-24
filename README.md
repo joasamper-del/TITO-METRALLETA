@@ -225,6 +225,49 @@ const context = await dataEngine.getMarketContext();
 const allRules = rulesEngine.getAllRules();
 ```
 
+## 🤖 Agente de Paper Trading Continuo
+
+**Sesión 7**: Tito Metralleta ahora incluye un agente automático que realiza operaciones en papel.
+
+### Requisitos Previos
+
+```bash
+# 1. Backend corriendo
+cd backend
+npm run build
+npm run start:prod
+# Responde en http://localhost:3001
+
+# 2. PostgreSQL activo
+# Base de datos: tito_metralleta
+# Usuario: enterprisedb
+```
+
+### Start the continuous agent
+
+```bash
+cd backend
+node start_continuous_trading.js
+```
+
+Este script:
+- Envía análisis de **SPY, QQQ, IWM** cada 60 segundos
+- Cicla automáticamente entre 6 estrategias diferentes
+- Guarda todas las operaciones en PostgreSQL
+- Presiona **CTRL+C** para detener
+
+### Verificar Operaciones
+
+```bash
+# Ver estadísticas
+curl http://localhost:3001/api/api/stats
+
+# Respuesta esperada:
+# {"totalAnalyzed":N,"wins":0,"losses":0,"winRate":0,...}
+```
+
+---
+
 ## 🌐 Próximo Paso: Interfaz Web
 
 Este motor está listo para ser conectado a una **interfaz web** que permitirá:
