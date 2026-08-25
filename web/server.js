@@ -79,7 +79,10 @@ httpServer.listen(8080, '0.0.0.0', () => {
   console.log('   http://10.0.0.13:8080');
 });
 
-// HTTPS Server (puerto 8443)
+// HTTPS Server (puerto 8443) - DESACTIVADO TEMPORALMENTE
+// RAZÓN: iOS rechaza certificados autofirmados. Se manteniene código para fase 2 con Alpaca real.
+// Para reactivar: descomentar bloque y crear nueva regla Firewall
+/*
 try {
   const options = {
     key: fs.readFileSync(path.join(__dirname, 'certs', 'server.key')),
@@ -88,7 +91,6 @@ try {
 
   const httpsServer = https.createServer(options, requestHandler);
 
-  // Event listeners para TLS diagnostics
   httpsServer.on('clientError', (err, socket) => {
     logTLS(`TLS CLIENT ERROR: ${err.code} - ${err.message}`);
     if (socket.writable) {
@@ -120,3 +122,6 @@ try {
   console.log('   - ./certs/server.key');
   console.log('   - ./certs/server.crt');
 }
+*/
+
+console.log('⏸️  HTTPS server desactivado (Solo HTTP:8080 activo)');

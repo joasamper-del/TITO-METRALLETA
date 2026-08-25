@@ -221,12 +221,46 @@ node start_continuous_trading.js
 
 ---
 
-## 🚀 Sesión 10 - Próximos Pasos
+## 🚀 Sesión 10 - Resultados y Cambios
 
-1. **Aplicar regla de Firewall** (si usuario autoriza)
-2. **Prueba HTTPS desde iPhone** (https://10.0.0.13:8443/)
-3. **Agregar PWA capabilities** (agregar a pantalla principal)
-4. **Merge a main** o continuar con Phase 2
+### **✅ Completado en Sesión 10**
+
+1. **Regla Firewall Creada** ✅
+   - Nombre: "Tito Metralleta HTTPS Local"
+   - Perfil: Private (LocalSubnet)
+   - Puerto: 8443
+   - Estado: Activa (pero HTTPS desactivado)
+
+2. **Diagnóstico iPhone** ✅
+   - ✅ Conexión al puerto 8443 SÍ llega
+   - ❌ Safari rechaza certificado autofirmado (Alert 46: certificate_unknown)
+   - 📊 iOS no confía en certs self-signed sin instalación previa
+
+3. **Decisión Arquitectónica** ✅
+   - **HTTPS Local: DESACTIVADO** (reversible, documentado)
+   - Razón: iOS rechaza certs autofirmados sin instalación
+   - Código mantiene estructura HTTPS para Fase 2
+   - HTTP:8080 sigue funcionando (backup)
+
+4. **Firewall: ELIMINADO** ✅
+   - Regla "Tito Metralleta HTTPS Local" eliminada
+   - No hay restricciones en red privada
+   - HTTPS:8443 desactivado en server.js
+
+5. **Auditoría de Datos Completada** ✅
+   - 100% datos SIMULADOS confirmados
+   - Alpha Vantage: key=demo (sin acceso real)
+   - Finnhub: key=demo (sin acceso real)
+   - Alpaca: NO integrado
+   - Análisis: Todos marcados "manualReviewNeeded"
+
+### **📋 Próximos Pasos (Sesión 11)**
+
+1. **Crear cuenta Alpaca** (joasamper80@gmail.com)
+2. **Integrar cliente Alpaca** (lectura datos reales, SIN órdenes)
+3. **Reemplazar DataEngine** (real + fallback)
+4. **Auditoría endpoint** (/audit/data-origin)
+5. **Pruebas desde iPhone** (HTTP:8080 con datos reales)
 
 ---
 
