@@ -119,9 +119,19 @@ export default function Dashboard() {
   // GEX (Gamma Exposure) — nodos de concentración + predicción (nodo imán).
   // Se calcula una vez con toda la cadena de Massive + los trades reales.
   const gex = useMemo(() => {
-    if (!chainRows || chainRows.length === 0 || !bars || bars.length === 0) return null;
-    const spot = company?.price ?? chainMeta?.underlyingPrice ?? bars[bars.length - 1].close;
-    if (!spot || spot <= 0) return null;
+    if (!chainRows || chainRows.length === 0) {
+      if (ticker && chainRows) console.log(`[gex] No chainRows for ${ticker}`);
+      return null;
+    }
+    if (!bars || bars.length === 0) {
+      if (ticker) console.log(`[gex] No bars for ${ticker}, chainRows=${chainRows?.length ?? 0}`);
+      return null;
+    }
+    const spot = (company?.price && company.price > 0) ? company.price : (chainMeta?.underlyingPrice || bars[bars.length - 1]?.close);
+    if (!spot || spot <= 0) {
+      if (ticker) console.log(`[gex] Invalid spot for ${ticker}: company=${company?.price}, chainMeta=${chainMeta?.underlyingPrice}, bars=${bars[bars.length - 1]?.close}`);
+      return null;
+    }
     // Une convicción + inusuales (dedupe por id) como los trades reales.
     const seen = new Set<number>();
     const trades: TradeLite[] = [];
@@ -161,29 +171,40 @@ export default function Dashboard() {
 
   // Prediction Pro — junta los 6 sub-agentes, el mapa GEX y la σ en tres escenarios.
   const prediction = useMemo(() => {
-    if (!gex || !(gex.spot > 0)) return null;
-    return predictPro({
-      spot: gex.spot,
-      iv: gex.iv,
-      horizonDays,
-      nodes: gex.nodes.map((n) => ({
-        strike: n.strike, concentration: n.concentration, side: n.side, netGex: n.netGex,
-      })),
-      scores: {
-        aggression: aggScore?.score ?? null,
-        conviction: conviction?.score ?? null,
-        unusuality: unusuality?.score ?? null,
-        structure: structure?.score ?? null,
-        ivContext: ivContext?.score ?? null,
-        validation: validation?.score ?? null,
-      },
-      regime: gex.regime,
-      callPct,
-      hitRate: validation?.hitRate.value ?? null,
-      lowLiquidity: gex.lowLiquidity,
-      calibration: calib,
-    });
-  }, [gex, horizonDays, aggScore, conviction, unusuality, structure, ivContext, validation, callPct, calib]);
+    if (!gex || !(gex.spot > 0)) {
+      if (ticker && !gex) console.log(`[prediction] gex is null for ${ticker}`);
+      return null;
+    }
+    try {
+      const p = predictPro({
+        spot: gex.spot,
+        iv: gex.iv,
+        horizonDays,
+        nodes: gex.nodes.map((n) => ({
+          strike: n.strike, concentration: n.concentration, side: n.side, netGex: n.netGex,
+        })),
+        scores: {
+          aggression: aggScore?.score ?? null,
+          conviction: conviction?.score ?? null,
+          unusuality: unusuality?.score ?? null,
+          structure: structure?.score ?? null,
+          ivContext: ivContext?.score ?? null,
+          validation: validation?.score ?? null,
+        },
+        regime: gex.regime,
+        callPct,
+        hitRate: validation?.hitRate.value ?? null,
+        lowLiquidity: gex.lowLiquidity,
+        calibration: calib,
+      });
+      if (p) console.log(`[prediction] Generated for ${ticker}:`, p.direction, p.confidence);
+      else console.log(`[prediction] predictPro returned null for ${ticker}`);
+      return p;
+    } catch (e) {
+      console.error(`[prediction] Error for ${ticker}:`, e);
+      return null;
+    }
+  }, [gex, horizonDays, aggScore, conviction, unusuality, structure, ivContext, validation, callPct, calib, ticker]);
 
   // Memoria del agente: guarda la predicción del día (una vez por ticker/sesión). El
   // dedupe por fecha ET vive en el servidor, así que reenviar el mismo día no duplica.
@@ -227,7 +248,7 @@ export default function Dashboard() {
   // Soportes y resistencias: pivotes del precio × muros de opciones.
   const levels = useMemo(() => {
     if (!bars || bars.length === 0) return null;
-    const spot = company?.price ?? chainMeta?.underlyingPrice ?? bars[bars.length - 1].close;
+    const spot = (company?.price && company.price > 0) ? company.price : (chainMeta?.underlyingPrice || bars[bars.length - 1]?.close);
     if (!spot || spot <= 0) return null;
 
     const chain: ChainLevel[] = (chainRows ?? []).map((r) => ({
@@ -337,8 +358,18 @@ export default function Dashboard() {
         chainDoneRef.current = true;
         finish();
         fetch(`/api/history?ticker=${encodeURIComponent(d.meta.ticker)}`)
-          .then((r) => r.json()).then((h) => setBars(Array.isArray(h.bars) ? h.bars : []))
-          .catch(() => setBars([]));
+          .then((r) => {
+            console.log("[history] Response status:", r.status);
+            return r.json();
+          })
+          .then((h) => {
+            console.log("[history] Got bars:", h.bars?.length ?? 0);
+            setBars(Array.isArray(h.bars) ? h.bars : []);
+          })
+          .catch((e) => {
+            console.error("[history] Error:", e);
+            setBars([]);
+          });
       } else if (d.type === "error") {
         console.error("[chain] Error:", d.message);
         setChainErr(d.message); chainDoneRef.current = true; finish();
