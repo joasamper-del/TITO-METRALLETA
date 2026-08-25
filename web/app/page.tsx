@@ -252,6 +252,47 @@ export default function Dashboard() {
 
   const addStep = (s: string) => setSteps((p) => (p[p.length - 1] === s ? p : [...p, s]));
 
+  async function readStream<T>(url: string, onMessage: (data: T) => void): Promise<void> {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.body) throw new Error("No response body");
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+
+        // Split by double newline (SSE event boundary)
+        const events = buffer.split(/\r?\n\r?\n/);
+        buffer = events.pop() || "";
+
+        for (const event of events) {
+          const lines = event.split(/\r?\n/);
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (trimmed.startsWith("data: ")) {
+              try {
+                const json = JSON.parse(trimmed.slice(6));
+                onMessage(json);
+              } catch (e) {
+                console.error("Parse error:", e, "line:", trimmed.substring(0, 100));
+              }
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Stream error:", err);
+      throw err;
+    }
+  }
+
   function runSearch(t: string) {
     const tk = t.trim().toUpperCase();
     if (!tk || busy) return;
@@ -277,7 +318,6 @@ export default function Dashboard() {
       .catch(() => {});
 
     // Memoria: lee el sesgo histórico ANTES de fijar el target para auto-corregirlo.
-    // Es rápido (JSON + barras cacheadas) y termina mucho antes que las streams.
     fetch(`/api/prediction?ticker=${encodeURIComponent(tk)}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d: { biasPct?: number | null; maturedCount?: number; error?: string } | null) => {
@@ -286,65 +326,51 @@ export default function Dashboard() {
       .catch(() => {})
       .finally(() => setCalibReady(true));
 
-    // Stream 1 — Massive: empresa + option chain + estructura
-    const c = new EventSource(`/api/chain?ticker=${encodeURIComponent(tk)}`);
-    chainEs.current = c;
-    console.log("[chain] EventSource created for", tk);
-    c.onmessage = (ev) => {
-      try {
-        const d = JSON.parse(ev.data) as ChainEvent;
-        if (d.type === "step") addStep(d.label);
-        else if (d.type === "company") setCompany(d.company);
-        else if (d.type === "done") {
-          console.log("[chain] Received done event with", d.rows?.length ?? 0, "rows");
-          setChainRows(d.rows); setChainMeta(d.meta); setStructure(d.structure ?? null);
-          setChainHistory(d.history ?? []);
-          chainDoneRef.current = true;
-          console.log("[chain] chainDoneRef set to true, calling finish()");
-          finish(); c.close();
-          fetch(`/api/history?ticker=${encodeURIComponent(d.meta.ticker)}`)
-            .then((r) => r.json()).then((h) => setBars(Array.isArray(h.bars) ? h.bars : []))
-            .catch(() => setBars([]));
-        } else if (d.type === "error") {
-          console.error("[chain] Error:", d.message);
-          setChainErr(d.message); chainDoneRef.current = true; finish(); c.close();
-        }
-      } catch (err) {
-        console.error("[chain] Parse error:", err);
+    // Stream 1 — Massive: empresa + option chain + estructura (usando fetch streaming)
+    readStream<ChainEvent>(`/api/chain?ticker=${encodeURIComponent(tk)}`, (d) => {
+      if (d.type === "step") addStep(d.label);
+      else if (d.type === "company") setCompany(d.company);
+      else if (d.type === "done") {
+        console.log("[chain] Done event with", d.rows?.length ?? 0, "rows");
+        setChainRows(d.rows); setChainMeta(d.meta); setStructure(d.structure ?? null);
+        setChainHistory(d.history ?? []);
+        chainDoneRef.current = true;
+        finish();
+        fetch(`/api/history?ticker=${encodeURIComponent(d.meta.ticker)}`)
+          .then((r) => r.json()).then((h) => setBars(Array.isArray(h.bars) ? h.bars : []))
+          .catch(() => setBars([]));
+      } else if (d.type === "error") {
+        console.error("[chain] Error:", d.message);
+        setChainErr(d.message); chainDoneRef.current = true; finish();
       }
-    };
-    c.onerror = () => { chainDoneRef.current = true; finish(); c.close(); };
+    }).catch((err) => {
+      console.error("[chain] Stream failed:", err);
+      setChainErr(err.message); chainDoneRef.current = true; finish();
+    });
 
-    // Stream 2 — MarketSnack: agresividad + convicción + inusualidad
-    const f = new EventSource(`/api/flow?ticker=${encodeURIComponent(tk)}`);
-    flowEs.current = f;
-    console.log("[flow] EventSource created for", tk);
-    f.onmessage = (ev) => {
-      try {
-        const d = JSON.parse(ev.data) as FlowEvent;
-        if (d.type === "step") addStep(d.label);
-        else if (d.type === "done") {
-          console.log("[flow] Received done event");
-          setNotable(d.rows); setAggScore(d.score);
-          setConviction(d.conviction ?? null);
-          setConvRows(d.convictionRows ?? null);
-          setConvMeta(d.convictionMeta ?? null);
-          setUnusuality(d.unusuality ?? null);
-          setUnusualRows(d.unusualRows ?? null);
-          setIvContext(d.ivContext ?? null);
-          setFlowMeta(d.meta);
-          flowDoneRef.current = true;
-          console.log("[flow] flowDoneRef set to true, calling finish()");
-          finish(); f.close();
-        } else if (d.type === "error") {
-          console.error("[flow] Error:", d.message);
-          setFlowErr(d.message); flowDoneRef.current = true; finish(); f.close();
-        }
-      } catch (err) {
-        console.error("[flow] Parse error:", err);
+    // Stream 2 — MarketSnack: agresividad + convicción + inusualidad (usando fetch streaming)
+    readStream<FlowEvent>(`/api/flow?ticker=${encodeURIComponent(tk)}`, (d) => {
+      if (d.type === "step") addStep(d.label);
+      else if (d.type === "done") {
+        console.log("[flow] Done event");
+        setNotable(d.rows); setAggScore(d.score);
+        setConviction(d.conviction ?? null);
+        setConvRows(d.convictionRows ?? null);
+        setConvMeta(d.convictionMeta ?? null);
+        setUnusuality(d.unusuality ?? null);
+        setUnusualRows(d.unusualRows ?? null);
+        setIvContext(d.ivContext ?? null);
+        setFlowMeta(d.meta);
+        flowDoneRef.current = true;
+        finish();
+      } else if (d.type === "error") {
+        console.error("[flow] Error:", d.message);
+        setFlowErr(d.message); flowDoneRef.current = true; finish();
       }
-    };
-    f.onerror = () => { flowDoneRef.current = true; finish(); f.close(); };
+    }).catch((err) => {
+      console.error("[flow] Stream failed:", err);
+      setFlowErr(err.message); flowDoneRef.current = true; finish();
+    });
   }
 
   const started = steps.length > 0 || company != null || aggScore != null;
