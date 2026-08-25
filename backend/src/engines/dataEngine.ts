@@ -1,13 +1,28 @@
 import axios from 'axios';
 import { MarketData, MarketContext } from '../types';
+import { AlpacaClient } from '../integrations/alpaca/alpaca.client';
 
 export class DataEngine {
   private alphaVantageKey: string;
   private finnhubKey: string;
+  private alpacaClient: AlpacaClient | null = null;
 
   constructor(alphaVantageKey: string = '', finnhubKey: string = '') {
     this.alphaVantageKey = alphaVantageKey;
     this.finnhubKey = finnhubKey;
+
+    // Inicializar cliente Alpaca si está habilitado
+    const alpacaEnabled = process.env.ALPACA_ENABLED === 'true';
+    if (alpacaEnabled) {
+      const apiKey = process.env.ALPACA_API_KEY;
+      const apiSecret = process.env.ALPACA_SECRET_KEY;
+      const baseUrl = process.env.ALPACA_BASE_URL || 'https://paper-api.alpaca.markets';
+
+      if (apiKey && apiSecret) {
+        this.alpacaClient = new AlpacaClient(apiKey, apiSecret, baseUrl);
+        console.log('✅ Alpaca Paper Trading inicializado');
+      }
+    }
   }
 
   /**
@@ -29,13 +44,20 @@ export class DataEngine {
         timestamp: new Date(),
       };
 
-      // Intenta obtener datos de Alpha Vantage
-      if (this.alphaVantageKey) {
+      // Intenta obtener datos de Alpaca Paper Trading PRIMERO (datos reales)
+      if (this.alpacaClient) {
+        await this.fetchAlpacaData(symbol, marketData);
+      }
+
+      // Fallback: Intenta obtener datos de Alpha Vantage
+      if (marketData.price === 0 && this.alphaVantageKey) {
+        console.log(`⚠️ Fallback a Alpha Vantage para ${symbol}`);
         await this.fetchAlphaVantageData(symbol, marketData);
       }
 
-      // Intenta obtener datos adicionales de Finnhub
-      if (this.finnhubKey) {
+      // Fallback: Intenta obtener datos adicionales de Finnhub
+      if (marketData.price === 0 && this.finnhubKey) {
+        console.log(`⚠️ Fallback a Finnhub para ${symbol}`);
         await this.fetchFinnhubData(symbol, marketData);
       }
 
@@ -75,6 +97,47 @@ export class DataEngine {
     } catch (error) {
       console.error('❌ Error al obtener contexto de mercado:', error);
       return null;
+    }
+  }
+
+  /**
+   * Obtiene datos de Alpaca Paper Trading (datos reales)
+   */
+  private async fetchAlpacaData(symbol: string, marketData: MarketData): Promise<void> {
+    try {
+      // Obtener cotización actual (Market Data API - IEX)
+      const quote = await this.alpacaClient!.getLatestQuote(symbol);
+      if (quote && quote.ap && quote.bp) {
+        // Usar el precio promedio bid-ask
+        marketData.price = (quote.bp + quote.ap) / 2;
+      }
+
+      // Obtener histórico para calcular volumen y tendencia
+      const bars = await this.alpacaClient!.getHistoricalBars(symbol, '1day', 30);
+      if (bars && bars.length > 0) {
+        // Volumen del último día
+        marketData.volume = bars[bars.length - 1].v || 0;
+
+        // Calcular SMA20 para la tendencia
+        const sma20Values = bars.slice(-20).map((b) => b.c);
+        const sma20 = sma20Values.reduce((a, b) => a + b, 0) / sma20Values.length;
+
+        if (marketData.price > sma20) {
+          marketData.trend = 'alcista';
+        } else if (marketData.price < sma20) {
+          marketData.trend = 'bajista';
+        } else {
+          marketData.trend = 'lateral';
+        }
+
+        // Calcular liquidez aproximada
+        const avgVolume = bars.reduce((sum, b) => sum + b.v, 0) / bars.length;
+        marketData.liquidity = this.calculateLiquidity(avgVolume);
+      }
+
+      console.log(`✅ Datos de Alpaca obtenidos para ${symbol}: $${marketData.price}, Vol: ${marketData.volume}`);
+    } catch (error) {
+      console.error(`⚠️ Error al obtener datos de Alpaca para ${symbol}:`, error);
     }
   }
 
