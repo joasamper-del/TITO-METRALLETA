@@ -289,37 +289,60 @@ export default function Dashboard() {
     // Stream 1 — Massive: empresa + option chain + estructura
     const c = new EventSource(`/api/chain?ticker=${encodeURIComponent(tk)}`);
     chainEs.current = c;
+    console.log("[chain] EventSource created for", tk);
     c.onmessage = (ev) => {
-      const d = JSON.parse(ev.data) as ChainEvent;
-      if (d.type === "step") addStep(d.label);
-      else if (d.type === "company") setCompany(d.company);
-      else if (d.type === "done") {
-        setChainRows(d.rows); setChainMeta(d.meta); setStructure(d.structure ?? null);
-        setChainHistory(d.history ?? []);
-        chainDoneRef.current = true; finish(); c.close();
-        fetch(`/api/history?ticker=${encodeURIComponent(d.meta.ticker)}`)
-          .then((r) => r.json()).then((h) => setBars(Array.isArray(h.bars) ? h.bars : []))
-          .catch(() => setBars([]));
-      } else if (d.type === "error") { setChainErr(d.message); chainDoneRef.current = true; finish(); c.close(); }
+      try {
+        const d = JSON.parse(ev.data) as ChainEvent;
+        if (d.type === "step") addStep(d.label);
+        else if (d.type === "company") setCompany(d.company);
+        else if (d.type === "done") {
+          console.log("[chain] Received done event with", d.rows?.length ?? 0, "rows");
+          setChainRows(d.rows); setChainMeta(d.meta); setStructure(d.structure ?? null);
+          setChainHistory(d.history ?? []);
+          chainDoneRef.current = true;
+          console.log("[chain] chainDoneRef set to true, calling finish()");
+          finish(); c.close();
+          fetch(`/api/history?ticker=${encodeURIComponent(d.meta.ticker)}`)
+            .then((r) => r.json()).then((h) => setBars(Array.isArray(h.bars) ? h.bars : []))
+            .catch(() => setBars([]));
+        } else if (d.type === "error") {
+          console.error("[chain] Error:", d.message);
+          setChainErr(d.message); chainDoneRef.current = true; finish(); c.close();
+        }
+      } catch (err) {
+        console.error("[chain] Parse error:", err);
+      }
     };
     c.onerror = () => { chainDoneRef.current = true; finish(); c.close(); };
 
     // Stream 2 — MarketSnack: agresividad + convicción + inusualidad
     const f = new EventSource(`/api/flow?ticker=${encodeURIComponent(tk)}`);
     flowEs.current = f;
+    console.log("[flow] EventSource created for", tk);
     f.onmessage = (ev) => {
-      const d = JSON.parse(ev.data) as FlowEvent;
-      if (d.type === "step") addStep(d.label);
-      else if (d.type === "done") {
-        setNotable(d.rows); setAggScore(d.score);
-        setConviction(d.conviction ?? null);
-        setConvRows(d.convictionRows ?? null);
-        setConvMeta(d.convictionMeta ?? null);
-        setUnusuality(d.unusuality ?? null);
-        setUnusualRows(d.unusualRows ?? null);
-        setIvContext(d.ivContext ?? null);
-        setFlowMeta(d.meta); flowDoneRef.current = true; finish(); f.close();
-      } else if (d.type === "error") { setFlowErr(d.message); flowDoneRef.current = true; finish(); f.close(); }
+      try {
+        const d = JSON.parse(ev.data) as FlowEvent;
+        if (d.type === "step") addStep(d.label);
+        else if (d.type === "done") {
+          console.log("[flow] Received done event");
+          setNotable(d.rows); setAggScore(d.score);
+          setConviction(d.conviction ?? null);
+          setConvRows(d.convictionRows ?? null);
+          setConvMeta(d.convictionMeta ?? null);
+          setUnusuality(d.unusuality ?? null);
+          setUnusualRows(d.unusualRows ?? null);
+          setIvContext(d.ivContext ?? null);
+          setFlowMeta(d.meta);
+          flowDoneRef.current = true;
+          console.log("[flow] flowDoneRef set to true, calling finish()");
+          finish(); f.close();
+        } else if (d.type === "error") {
+          console.error("[flow] Error:", d.message);
+          setFlowErr(d.message); flowDoneRef.current = true; finish(); f.close();
+        }
+      } catch (err) {
+        console.error("[flow] Parse error:", err);
+      }
     };
     f.onerror = () => { flowDoneRef.current = true; finish(); f.close(); };
   }
