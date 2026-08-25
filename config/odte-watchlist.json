@@ -1,0 +1,116 @@
+{
+  "metadata": {
+    "name": "ODTE Watchlist - Tito Metralleta",
+    "version": "1.0.0",
+    "created": "2026-08-25",
+    "updated": "2026-08-25",
+    "description": "Opportunity Data Tracking Entities (ODTE) - Initial watchlist configuration",
+    "source": "backend/start_continuous_trading.js:13",
+    "status": "VERIFIED - NO CHANGES AUTHORIZED"
+  },
+  "initialWatchlist": {
+    "description": "Primary symbols for continuous analysis (no modifications without approval)",
+    "symbols": [
+      {
+        "ticker": "SPY",
+        "name": "SPDR S&P 500 ETF Trust",
+        "type": "ETF (US Equities)",
+        "region": "US",
+        "sector": "Broad Market",
+        "verified": true,
+        "addedDate": "2026-08-25"
+      },
+      {
+        "ticker": "QQQ",
+        "name": "Invesco QQQ Trust (Nasdaq-100)",
+        "type": "ETF (Tech-Heavy)",
+        "region": "US",
+        "sector": "Technology",
+        "verified": true,
+        "addedDate": "2026-08-25"
+      },
+      {
+        "ticker": "IWM",
+        "name": "iShares Russell 2000 ETF",
+        "type": "ETF (Small-Cap)",
+        "region": "US",
+        "sector": "Small-Cap",
+        "verified": true,
+        "addedDate": "2026-08-25"
+      }
+    ],
+    "totalVerified": 3
+  },
+  "strategies": {
+    "description": "Trading strategies paired with ODTE symbols",
+    "list": [
+      {
+        "name": "Momentum",
+        "type": "Technical",
+        "description": "Trend-following strategy based on price momentum"
+      },
+      {
+        "name": "Support/Resistance",
+        "type": "Technical",
+        "description": "Mean-reversion strategy using key price levels"
+      },
+      {
+        "name": "Volatility Play",
+        "type": "Options/Technical",
+        "description": "Strategy based on implied volatility changes"
+      },
+      {
+        "name": "Trending",
+        "type": "Technical",
+        "description": "Directional strategy following market trends"
+      },
+      {
+        "name": "Gap Fill",
+        "type": "Technical",
+        "description": "Strategy trading intraday price gaps"
+      },
+      {
+        "name": "0DTE",
+        "type": "Options",
+        "description": "Zero Days to Expiration options strategy"
+      }
+    ],
+    "total": 6
+  },
+  "continuousAnalysisConfig": {
+    "source": "backend/start_continuous_trading.js",
+    "intervalMs": 60000,
+    "intervalSeconds": 60,
+    "description": "Automated analysis runs every 60 seconds on random symbol + strategy combo",
+    "enabled": true
+  },
+  "restrictions": {
+    "noAdditions": "No symbols can be added without approval",
+    "noDeletions": "Existing symbols cannot be deleted without approval",
+    "noModifications": "No ticker changes or strategy updates without approval",
+    "noAnalysisChanges": "No analysis logic changes without documentation",
+    "approvalRequired": true
+  },
+  "nextSteps": {
+    "phase": "Session 11+",
+    "alpacaIntegration": "Real market data from Alpaca (currently demo)",
+    "dataSource": "Alpha Vantage (demo) → Alpaca Paper Trading",
+    "scheduledApprovals": [
+      "Add new symbols (requires explicit approval)",
+      "Activate Alpaca API (requires account creation approval)",
+      "Execute paper trades (currently simulated)",
+      "Expand to additional ETFs/stocks (requires review)"
+    ]
+  },
+  "audit": {
+    "verifiedBy": "Claude AI - Session 10",
+    "verificationDate": "2026-08-25",
+    "sourcesChecked": [
+      "backend/start_continuous_trading.js:13",
+      "web/motor.js (watchlist storage)"
+    ],
+    "noUnauthorizedChanges": true,
+    "readyForProduction": false,
+    "comment": "Configuration verified. All symbols and strategies match source code. Ready for Alpaca integration in Phase 2."
+  }
+}

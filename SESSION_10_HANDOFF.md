@@ -82,6 +82,21 @@ web/
 | **Dinero real** | $0 (paper trading simulado) |
 | **Base datos** | Análisis + Resultados locales |
 
+## 📋 ODTE Watchlist (Verificado)
+
+**Status**: ✅ VERIFICADO - SIN CAMBIOS SIN APROBACIÓN
+
+| Ticker | Nombre | Tipo | Status |
+|--------|--------|------|--------|
+| **SPY** | SPDR S&P 500 ETF Trust | ETF | ✅ Activo |
+| **QQQ** | Invesco QQQ Trust (Nasdaq-100) | ETF | ✅ Activo |
+| **IWM** | iShares Russell 2000 ETF | ETF | ✅ Activo |
+
+**Fuente**: `backend/start_continuous_trading.js:13`  
+**Estrategias Asociadas**: 6 (Momentum, Support/Resistance, Volatility, Trending, Gap Fill, 0DTE)  
+**Configuración**: `config/odte-watchlist.json` (versionado)  
+**Documentación**: `docs/ODTE-CONFIGURATION.md` (verificado)
+
 ---
 
 ## 📋 Estado de Componentes
