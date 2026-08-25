@@ -27,7 +27,7 @@ interface SseEvent {
   [k: string]: unknown;
 }
 function sse(event: SseEvent): string {
-  return `data: ${JSON.stringify(event)}\n\n`;
+  return `data: ${JSON.stringify(event)}\r\n\r\n`;
 }
 
 // Presets para el flujo de la gráfica por ventana de días (piso alto = pocas páginas).

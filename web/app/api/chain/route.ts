@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function sse(event: ChainEvent): string {
-  return `data: ${JSON.stringify(event)}\n\n`;
+  return `data: ${JSON.stringify(event)}\r\n\r\n`;
 }
 
 export async function GET(request: Request) {
