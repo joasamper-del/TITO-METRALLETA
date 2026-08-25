@@ -2,31 +2,39 @@
 
 **Fecha**: 2026-08-25  
 **Rama**: `feature/backend-setup`  
-**Estado**: ✅ HTTPS Local Configurado + Verificación de Datos
+**Estado**: ⏳ HTTPS Local Configurado - Firewall Pendiente
 
 ---
 
 ## 🎯 Sesión 9 - Resumen de Logros
 
-### 1. **Verificación de Sistema Operativo**
-- ✅ Backend NestJS puerto 3001: Operando
+### 1. **Verificación de Sistema Operativo** ✅
+- ✅ Backend NestJS puerto 3001: Operando (48+ análisis)
 - ✅ PostgreSQL puerto 5432: Activo
-- ✅ Agente continuo: 47+ análisis realizados
-- ✅ Web server puerto 8080: Respondiendo
+- ✅ Agente continuo: Análisis cada 60s
+- ✅ Web server HTTP:8080: Respondiendo
+- ✅ Web server HTTPS:8443: Respondiendo (desde PC)
 
-### 2. **Investigación de Datos**
+### 2. **Investigación de Datos** ✅
 - ✅ **Datos: 100% SIMULADOS** (paper trading, NO Alpaca)
-  - `start_continuous_trading.js` genera análisis locales
-  - Estrategias con `entry/target/stop` hardcodeadas
-  - Base de datos `opportunities` solo contiene análisis
-  - **Sin dinero real involucrado**
+- ✅ Base de datos solo contiene análisis locales
+- ✅ Sin dinero real involucrado
 
-### 3. **Implementación HTTPS Local**
+### 3. **Implementación HTTPS Local** ✅
 - ✅ Certificado autofirmado generado con SAN 10.0.0.13
 - ✅ HTTPS servidor puerto 8443 activo
 - ✅ Proxy interno /api → localhost:3001 (sin contenido mixto)
 - ✅ HTTP puerto 8080 mantiene como respaldo
 - ✅ Certificados y claves privadas excluidas de git
+- ✅ Logging diagnostico activado
+
+### 4. **Diagnóstico iPhone** ⏳
+- ✅ iPhone abre HTTP:8080 correctamente
+- ✅ Ambos en misma red (10.0.0.x)
+- ✅ HTTPS:8443 falla: "network connection was lost" (2-5 segundos)
+- ✅ No aparece en servidor (nunca llega TLS handshake)
+- **Causa identificada**: Windows Firewall bloquea TCP 8443
+- ⏳ Regla de Firewall pendiente de aplicar (en Sesión 10)
 
 ---
 
@@ -37,172 +45,147 @@
 #### **1. `web/certs/` (NUEVO - No versionado)**
 ```
 web/certs/
-├── server.key       (Clave privada RSA 2048 - PROTEGIDA)
+├── server.key       (Clave privada RSA 2048 - EXCLUIDA de git)
 └── server.crt       (Certificado X509 autofirmado)
 
-Propiedades del Certificado:
+Certificado:
 - CN: 10.0.0.13
 - SAN: IP:10.0.0.13, IP:127.0.0.1, DNS:localhost
-- Válido por: 365 días
-- No se versiona en git
+- Válido: 365 días
 ```
 
-#### **2. `web/server.js` (MODIFICADO)**
-**Antes:**
-- Solo HTTP en puerto 8080
-
-**Después:**
-```javascript
-// HTTP Server (puerto 8080 - respaldo)
-- Mantiene funcionalidad actual
-- Accesible en http://10.0.0.13:8080
-
-// HTTPS Server (puerto 8443 - producción)
-- Carga certificado autofirmado
+#### **2. `web/server.js` (MODIFICADO - HTTPS + Logging)**
+- HTTP Server: Puerto 8080 (respaldo)
+- HTTPS Server: Puerto 8443 (producción)
 - Proxy interno: /api → localhost:3001
-- Sin exposición HTTP de API calls
+- Logging diagnostico: Eventos TLS capturados
+
+#### **3. `web/https-diagnostic.log` (NUEVO - No versionado)**
+```
+Eventos capturados:
+- Servidor iniciado
+- Conexiones TLS exitosas (PC: TLSv1.3, AES_256_GCM)
+- Intento del iPhone: NO capturado (Firewall bloquea)
 ```
 
-**Proxy Middleware:**
-```javascript
-// Rutas /api/* se redirigen internamente a localhost:3001
-- iPhone solo ve: https://10.0.0.13:8443/*
-- Backendllamadas internas (no HTTP puro)
+#### **4. `.gitignore` (ACTUALIZADO)**
 ```
-
-#### **3. `.gitignore` (ACTUALIZADO)**
-```
-# HTTPS Certificates (keep private keys secure)
 web/certs/
 *.key
 *.crt
 ```
 
-**Resultado:** Certificados y claves privadas nunca se versionar
-
-#### **4. `package.json` (ACTUALIZADO)**
-```javascript
-// Agregado: http-proxy
-"dependencies": {
-  "http-proxy": "^1.x.x"
-}
-```
+#### **5. `package.json` (ACTUALIZADO)**
+- Agregado: http-proxy
 
 ---
 
 ## ✅ Verificación Realizada
 
-### **1. HTTPS Server Activo**
+### **1. Conectividad Local**
 ```
-✅ https://localhost:8443/ → Respondiendo
-✅ https://10.0.0.13:8443/ → Respondiendo (iPhone)
-✅ Certificado SAN correcto: 10.0.0.13 presente
-```
-
-### **2. Sin Contenido Mixto**
-```
-✅ Página HTTPS no hace calls HTTP directos
-✅ /api proxy → interno (no HTTP visible)
-✅ Safari no bloqueará "Agregar a pantalla principal"
+✅ PC → HTTPS:8443: HTTP 200 OK (TLSv1.3)
+✅ iPhone → HTTP:8080: OK
+✅ iPhone → HTTPS:8443: FALLA (Firewall)
 ```
 
-### **3. HTTP Respaldo Funcional**
+### **2. Certificado**
 ```
-✅ http://localhost:8080/ → Respondiendo
-✅ http://10.0.0.13:8080/ → Respondiendo
-✅ Útil para desarrollo sin HTTPS
-```
-
-### **4. Backend Proxy Funcional**
-```
-✅ POST /api/api/analyze → localhost:3001 (internamente)
-✅ GET /api/api/stats → localhost:3001 (internamente)
-✅ Sin exposición de backend HTTP
+✅ CN: 10.0.0.13
+✅ SAN: IP:10.0.0.13, IP:127.0.0.1, DNS:localhost
+✅ No versionado en git
 ```
 
-### **5. Servicios Operativos**
+### **3. Servicios Operativos**
 ```
-✅ Backend NestJS: 47+ análisis procesados
-✅ PostgreSQL: Base de datos activa
-✅ Agente continuo: Enviando análisis cada 60s
-✅ Web servers: HTTP + HTTPS ambos respondiendo
+✅ Backend: 48+ análisis
+✅ PostgreSQL: Activo
+✅ Agente continuo: Corriendo
+✅ HTTP:8080: Respondiendo
+✅ HTTPS:8443: Respondiendo (PC)
 ```
-
-### **6. Seguridad Git**
-```
-✅ git status: Certificados excluidos
-✅ .gitignore: web/certs/, *.key, *.crt
-✅ Ningún archivo privado será versionado
-```
-
----
-
-## 📊 Datos del Sistema - Verificado
-
-### **Fuente de Datos: SIMULADOS (Paper Trading)**
-- Agente: `start_continuous_trading.js` (línea 3: "Simula operaciones")
-- Símbolos: SPY, QQQ, IWM
-- Estrategias con planes hardcodeados
-- Base de datos `opportunities`: Solo análisis locales
-- **Sin conexión a Alpaca API**
-
-### **Registros "Operaciones"**
-- 47+ análisis generados
-- 100% paper trading
-- Sin dinero real
-- Útiles para testing/desarrollo
 
 ---
 
 ## 📋 Commits Realizados en Sesión 9
 
 1. **1ef8712** - feat(session-9): Add HTTPS support with auto-proxy to backend
+2. **4544e61** - docs(session-9): Complete handoff documentation
 
 ---
 
-## 🚀 Cómo Acceder Ahora
+## ⏳ FIREWALL - PENDIENTE PARA SESIÓN 10
 
-### **Opción 1: HTTPS (Recomendado para iPhone)**
-```
-URL: https://10.0.0.13:8443/
-Primera vez: Safari muestra warning de certificado autofirmado
-Usuario: Tap "Continue" → "Trust" → Acceso seguro
-Luego: Puede agregar a pantalla principal
-```
+### **Problema Identificado**
+Windows Firewall bloquea conexiones entrantes a puerto TCP 8443 desde red local.
 
-### **Opción 2: HTTP (Respaldo/Desarrollo)**
+### **Evidencia**
+- ✅ PC puede conectar (firewall local permite proceso node)
+- ❌ iPhone no puede conectar (firewall bloquea desde red)
+- ❌ Servidor nunca recibe intento del iPhone (log vacío)
+
+### **Solución Propuesta**
+Regla de Firewall (sin aplicar todavía):
 ```
-URL: http://10.0.0.13:8080/
-Acceso inmediato sin warnings
-Útil para verificar que funciona
+Nombre:           Tito Metralleta HTTPS Local
+Protocolo:        TCP
+Puerto:           8443
+LocalAddress:     10.0.0.13
+RemoteAddress:    LocalSubnet (10.0.0.x)
+Perfil:           Private SOLAMENTE
+Acción:           Allow entrada
+Restricciones:    NO Public, NO Domain
 ```
 
 ---
 
-## ⚠️ Notas Importantes
+## 🔧 Cómo Verificar, Eliminar y Reanudar (Sesión 10)
 
-### **Certificado Autofirmado**
-- ✅ Es seguro localmente (red 10.0.0.x)
-- ✅ No se expone en internet
-- ✅ No requiere tomar acciones en iPhone (aprobado por usuario)
-- ⚠️ Safari mostrará warning primera vez (normal para auto-signed)
+### **Verificar si regla existe**
+```bash
+netsh advfirewall firewall show rule name="Tito Metralleta HTTPS Local"
+```
 
-### **Datos y Privacidad**
-- ✅ Todos los datos son simulados (paper trading)
-- ✅ Sin dinero real en juego
-- ✅ Sin credenciales Alpaca guardadas
-- ✅ Base de datos local (no en la nube)
+### **Si la regla NO existe, crearla**
+```powershell
+# Ejecutar como Administrador
+netsh advfirewall firewall add rule name="Tito Metralleta HTTPS Local" ^
+  dir=in action=allow protocol=tcp ^
+  localip=10.0.0.13 localport=8443 ^
+  remoteip=LocalSubnet profile=private
+```
 
-### **Seguridad Git**
-- ✅ Certificados excluidos de .gitignore
-- ✅ Clave privada nunca se versiona
-- ✅ Seguro hacer git push sin riesgos
+### **Si necesitas eliminar la regla**
+```powershell
+# Ejecutar como Administrador
+netsh advfirewall firewall delete rule name="Tito Metralleta HTTPS Local"
+```
 
-### **NO HACER**
-- ❌ No modificar configuración HTTPS del iPhone
-- ❌ No marcar certificado como confiable en iPhone (Safari maneja automáticamente)
-- ❌ No activar dinero real
-- ❌ No exponer en internet
+### **Reanudar todos los procesos (Sesión 10)**
+```bash
+# 1. Backend
+cd backend
+npm run build
+npm run start:prod
+
+# 2. Web Server (HTTP + HTTPS)
+cd web
+node server.js
+
+# 3. Agente continuo
+cd backend
+node start_continuous_trading.js
+```
+
+---
+
+## 📊 Datos del Sistema
+
+### **Fuente de Datos: SIMULADOS**
+- 100% paper trading
+- Sin conexión a Alpaca
+- 48+ análisis generados
+- Base de datos local
 
 ---
 
@@ -210,103 +193,67 @@ Acceso inmediato sin warnings
 
 | Métrica | Valor |
 |---------|-------|
-| Commits | 1 |
-| Archivos Modificados | 3 (.gitignore, server.js, package.json) |
-| Nuevos Archivos | 2 (certs/server.key, server.crt) |
-| Líneas Agregadas | 294+ |
-| Problemas Resueltos | 1 (HTTPS local + proxy) |
-| Verificaciones | 6 (HTTPS, HTTP, proxy, servicios, git, datos) |
+| Commits | 2 |
+| Archivos Modificados | 3 (server.js, .gitignore, package.json) |
+| Archivos Creados (no versionados) | 2 (certs, log) |
+| Problemas Resueltos | 1 (HTTPS con proxy) |
+| Problemas Identificados | 1 (Firewall bloquea 8443) |
+| Verificaciones Realizadas | 8 |
 
 ---
 
-## 🎯 Arquitectura Final
+## ⚠️ Notas Importantes
 
-```
-iPhone (Safari)
-    ↓ HTTPS (seguro)
- 10.0.0.13:8443
-    ├─ Frontend (tito.html - dinámico)
-    └─ Proxy interno
-         ↓
-      localhost:3001 (Backend - solo interno)
+### **Seguridad**
+- ✅ Certificados excluidos de git
+- ✅ Claves privadas nunca versionadas
+- ✅ Firewall propuesto es LOCAL ONLY (no abre internet)
 
-Desarrollo (PC)
-    ↓ HTTP (rápido)
- localhost:8080
-    └─ Frontend + Backend (acceso directo)
-```
+### **Datos**
+- ✅ 100% paper trading (sin dinero real)
+- ✅ No se activó Alpaca
+- ✅ Seguro para desarrollo/testing
 
-**Beneficios:**
-- ✅ iPhone accede seguro por HTTPS
-- ✅ Sin contenido mixto (Safari feliz)
-- ✅ Backend nunca expuesto a iPhone vía HTTP
-- ✅ Desarrollo local sigue siendo rápido
-- ✅ 100% reversible
+### **NO HACER**
+- ❌ No modificar configuración iPhone
+- ❌ No abrir puertos públicos
+- ❌ No habilitar perfiles Public/Domain
 
 ---
 
-## 🔄 Cómo Revertir TODO (si fuera necesario)
+## 🚀 Sesión 10 - Próximos Pasos
 
-**Opción 1: Volver a HTTP puro**
-```bash
-git checkout web/server.js
-rm -rf web/certs/
-# Servidor vuelve a HTTP:8080 únicamente
-```
-
-**Opción 2: Desactivar solo HTTPS**
-```bash
-# Editar web/server.js
-# Comentar la sección de HTTPS Server
-# Mantener solo HTTP
-```
-
-**Opción 3: Limpiar todo**
-```bash
-git restore .
-rm -rf web/certs/
-# Repositorio en estado anterior a Sesión 9
-```
-
----
-
-## ✅ Próximo Paso: Verificación en iPhone
-
-**Esperando aprobación del usuario antes de tocar el iPhone.**
-
-Una vez aprobado, el usuario debe:
-1. En iPhone: Safari → https://10.0.0.13:8443/
-2. Ver warning de certificado (normal)
-3. Tap: "Continue" → "Trust"
-4. Acceso a dashboard HTTPS
+1. **Aplicar regla de Firewall** (si usuario autoriza)
+2. **Prueba HTTPS desde iPhone** (https://10.0.0.13:8443/)
+3. **Agregar PWA capabilities** (agregar a pantalla principal)
+4. **Merge a main** o continuar con Phase 2
 
 ---
 
 ## 📌 Resumen Final
 
-**✅ HTTPS local completamente operativo**
+**✅ HTTPS local completamente funcional en PC**
 - Certificado autofirmado con SAN 10.0.0.13
-- Proxy interno de API (sin exposición HTTP)
-- HTTP respaldo mantiene funcionalidad
-- Certificados protegidos (no versionados)
-- Todo reversible
+- Proxy interno /api (sin contenido mixto)
+- Logging diagnostico activo
 
-**✅ Sistema verificado:**
-- Backend operando
-- Agente continuo activo (47+ análisis)
-- PostgreSQL funcional
-- Datos 100% simulados (paper trading)
-- Git status limpio (sin secretos)
+**✅ iPhone diagnosticado**
+- Conectividad de red: OK (HTTP:8080 funciona)
+- HTTPS:8443: Bloqueado por Windows Firewall
+- Solución: Regla de Firewall propuesta (pendiente)
 
-**✅ Listo para iPhone:**
-- Dashboard accesible por HTTPS
-- Sin contenido mixto
-- Safari puede guardar en pantalla principal
-- Respaldo HTTP disponible
+**✅ Servicios operativos**
+- Backend, PostgreSQL, Agente continuo: OK
+- HTTP:8080, HTTPS:8443: Respondiendo
+- Git: Seguro (certificados excluidos)
+
+**⏳ Siguiente sesión**
+- Aplicar regla Firewall
+- Prueba final iPhone
+- PWA setup (si aplica)
 
 ---
 
-**Sesión 9 Completada**: 2026-08-25 00:30 UTC  
+**Sesión 9 Pausa**: 2026-08-25 01:00 UTC  
 **Rama**: feature/backend-setup  
-**Push**: ✅ GitHub (commit 1ef8712)  
-**Próximo**: Verificación en iPhone (esperando aprobación)
+**Esperando**: Comando Firewall (Sesión 10)
