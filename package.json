@@ -10,16 +10,21 @@
     "start": "node dist/index.js",
     "test": "jest"
   },
-  "keywords": ["trading", "analysis", "opportunities"],
+  "keywords": [
+    "trading",
+    "analysis",
+    "opportunities"
+  ],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "axios": "^1.6.0",
-    "dotenv": "^16.3.1"
+    "dotenv": "^16.3.1",
+    "http-proxy": "^1.18.1"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "typescript": "^5.0.0",
-    "ts-node": "^10.9.0"
+    "ts-node": "^10.9.0",
+    "typescript": "^5.0.0"
   }
 }
