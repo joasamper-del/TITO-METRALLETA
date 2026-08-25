@@ -4,6 +4,17 @@ const fs = require('fs');
 const path = require('path');
 const http_proxy = require('http-proxy');
 
+// ============ LOGGING DETALLADO ============
+const LOG_FILE = path.join(__dirname, 'https-diagnostic.log');
+function logTLS(msg) {
+  const timestamp = new Date().toISOString();
+  const line = `[${timestamp}] ${msg}\n`;
+  console.log(line.trim());
+  fs.appendFileSync(LOG_FILE, line);
+}
+
+logTLS('=== HTTPS Server Starting ===');
+
 // Crear proxy para API calls
 const apiProxy = http_proxy.createProxyServer({
   target: 'http://localhost:3001',
@@ -15,15 +26,18 @@ const apiProxy = http_proxy.createProxyServer({
 
 // Manejador de errores del proxy
 apiProxy.on('error', (err, req, res) => {
-  console.error('Proxy error:', err);
+  logTLS(`Proxy error: ${err.message}`);
   res.writeHead(502, { 'Content-Type': 'text/html' });
   res.end('<h1>502 Bad Gateway - Backend no disponible</h1>');
 });
 
 // Handler para ambos servidores
 const requestHandler = (req, res) => {
+  logTLS(`${req.method} ${req.url} from ${req.socket.remoteAddress}:${req.socket.remotePort}`);
+
   // Proxy API requests
   if (req.url.startsWith('/api')) {
+    logTLS(`  → Proxy to backend: ${req.url}`);
     apiProxy.web(req, res);
     return;
   }
@@ -73,15 +87,35 @@ try {
   };
 
   const httpsServer = https.createServer(options, requestHandler);
+
+  // Event listeners para TLS diagnostics
+  httpsServer.on('clientError', (err, socket) => {
+    logTLS(`TLS CLIENT ERROR: ${err.code} - ${err.message}`);
+    if (socket.writable) {
+      socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
+    }
+  });
+
+  httpsServer.on('secureConnection', (socket) => {
+    logTLS(`TLS SECURE CONNECTION: ${socket.remoteAddress}:${socket.remotePort} - Protocol: ${socket.getProtocol()}, Cipher: ${socket.getCipher().name}`);
+  });
+
+  httpsServer.on('tlsClientError', (err, socket) => {
+    logTLS(`TLS HANDSHAKE ERROR: ${err.code} - ${err.message}`);
+  });
+
   httpsServer.listen(8443, '0.0.0.0', () => {
+    logTLS('✅ HTTPS Server listening on 0.0.0.0:8443');
     console.log('✅ HTTPS Server en puerto 8443 (producción)');
     console.log('   https://localhost:8443');
     console.log('   https://10.0.0.13:8443 (iPhone)');
     console.log('\n📝 API proxy activo: /api → localhost:3001');
     console.log('⚠️  HTTPS con certificado autofirmado (SAN: 10.0.0.13)');
+    console.log(`📋 Diagnostic log: ${LOG_FILE}`);
   });
 } catch (err) {
   console.error('❌ Error iniciando HTTPS server:', err.message);
+  logTLS(`FATAL ERROR: ${err.message}`);
   console.log('   Asegúrate de que existen los archivos:');
   console.log('   - ./certs/server.key');
   console.log('   - ./certs/server.crt');
