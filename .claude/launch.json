@@ -11,10 +11,10 @@
     {
       "name": "tito-web",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--prefix", "\"Agente Tito Metralleta\\web\""],
+      "runtimeArgs": ["run", "dev"],
       "port": 3000,
-      "autoPort": true,
-      "cwd": "."
+      "cwd": "Agente Tito Metralleta/web",
+      "autoPort": true
     }
   ]
 }
