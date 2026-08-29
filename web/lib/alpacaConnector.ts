@@ -22,6 +22,8 @@ export interface CryptoQuote {
   price: number;
   size: number;
   timestamp: string;
+  bid?: number;
+  ask?: number;
 }
 
 export interface ConnectionResult {
@@ -157,6 +159,293 @@ export async function getCryptoPrice(
     return { price: mockPrices[symbol] };
   } catch (err) {
     return { price: null, error: `Error fetching ${symbol} price: ${err}` };
+  }
+}
+
+/**
+ * OBTENER QUOTES (bid/ask spread) de Alpaca para liquidez
+ * Endpoint: /v1beta3/crypto/latest/quotes?symbols=BTC,ETH
+ */
+export async function getCryptoQuotes(
+  symbols: ("BTC" | "ETH")[],
+  apiKey: string,
+  apiSecret: string,
+  baseUrl: string
+): Promise<{ quotes: Record<string, { bid: number; ask: number; timestamp: string }> | null; error?: string }> {
+  try {
+    // Validar endpoint
+    const endpointCheck = validateEndpoint(baseUrl);
+    if (!endpointCheck.valid) {
+      return { quotes: null, error: endpointCheck.reason };
+    }
+
+    // En producción: llamar a Alpaca /v1beta3/crypto/latest/quotes
+    // Por ahora: retornar datos simulados para testing
+    // Estructura esperada: { BTC: { bid: 77640, ask: 77657, timestamp }, ... }
+
+    const mockQuotes: Record<string, { bid: number; ask: number; timestamp: string }> = {
+      BTC: {
+        bid: 77640.00,   // Comprador (menor precio)
+        ask: 77657.00,   // Vendedor (mayor precio)
+        timestamp: new Date().toISOString(),
+      },
+      ETH: {
+        bid: 2449.50,
+        ask: 2450.75,
+        timestamp: new Date().toISOString(),
+      },
+    };
+
+    // Filtrar solo los símbolos solicitados
+    const filtered = Object.fromEntries(
+      symbols.map(s => [s, mockQuotes[s]]).filter(([_, v]) => v)
+    );
+
+    return { quotes: Object.keys(filtered).length > 0 ? filtered : null };
+  } catch (err) {
+    return { quotes: null, error: `Error fetching crypto quotes: ${err}` };
+  }
+}
+
+/**
+ * OBTENER BARRAS HISTÓRICAS de crypto desde Alpaca (lectura segura)
+ * Endpoint: /v1beta3/crypto/latest/bars?symbols=BTC,ETH&timeframe=1D
+ * Retorna volumen diario intradía para el cálculo de pipeline
+ */
+export async function getCryptoHistoricalBars(
+  symbols: ("BTC" | "ETH")[],
+  apiKey: string,
+  apiSecret: string,
+  baseUrl: string,
+  limit: number = 1  // 1 = solo hoy, 200 = 200 días, 30 = 30 días
+): Promise<{ bars: Record<string, { c: number; v: number; t: number }[]> | null; error?: string }> {
+  try {
+    // Validar endpoint
+    const endpointCheck = validateEndpoint(baseUrl);
+    if (!endpointCheck.valid) {
+      return { bars: null, error: endpointCheck.reason };
+    }
+
+    // En producción: llamar a Alpaca /v1beta3/crypto/bars?symbols=BTC,ETH&timeframe=1D&limit={limit}
+    // Por ahora: generar histórico simulado para testing
+    // Estructura: array de { c (close), v (volume), t (timestamp) }
+
+    const generateMockBars = (basePrice: number, baseVolume: number, days: number) => {
+      const bars = [];
+      let price = basePrice;
+      for (let i = days - 1; i >= 0; i--) {
+        // Simular movimiento de precio aleatorio (±2% diario)
+        const change = (Math.random() - 0.5) * 0.04 * price;
+        price += change;
+        bars.push({
+          c: price,
+          v: baseVolume + Math.random() * baseVolume * 0.5,
+          t: Date.now() - i * 86_400_000,
+        });
+      }
+      return bars;
+    };
+
+    const mockBarsData: Record<string, any[]> = {
+      BTC: generateMockBars(77648.5, 2500000, limit),
+      ETH: generateMockBars(2450.25, 12000000, limit),
+    };
+
+    // Filtrar solo los símbolos solicitados
+    const filtered = Object.fromEntries(
+      symbols.map(s => [s, mockBarsData[s]]).filter(([_, v]) => v)
+    );
+
+    return { bars: Object.keys(filtered).length > 0 ? filtered : null };
+  } catch (err) {
+    return { bars: null, error: `Error fetching crypto bars: ${err}` };
+  }
+}
+
+/**
+ * CALCULAR TENDENCIA desde barras históricas (MA50/MA200)
+ * Entrada: array de closes desde getCryptoHistoricalBars
+ * Salida: "alcista" | "bajista" | "lateral" | null
+ */
+export function calculateTrendFromBars(
+  bars: { c: number }[] | null
+): { value: "alcista" | "bajista" | "lateral"; source: string; ts: string } | null {
+  if (!bars || bars.length < 200) return null;
+
+  const closes = bars.map(b => b.c);
+
+  // Calcular MA50 y MA200
+  const ma50 = closes.slice(-50).reduce((a, b) => a + b, 0) / 50;
+  const ma200 = closes.slice(-200).reduce((a, b) => a + b, 0) / 200;
+
+  const diff = Math.abs((ma50 - ma200) / ma200);
+
+  let trendValue: "alcista" | "bajista" | "lateral";
+  if (diff < 0.01) {
+    trendValue = "lateral";
+  } else if (ma50 > ma200) {
+    trendValue = "alcista";
+  } else {
+    trendValue = "bajista";
+  }
+
+  return {
+    value: trendValue,
+    source: "MA50/MA200 (Alpaca barras históricas)",
+    ts: new Date().toISOString(),
+  };
+}
+
+/**
+ * CALCULAR PATRÓN desde barras históricas (RSI + Volatilidad)
+ * Entrada: array de closes desde getCryptoHistoricalBars (últimas 30 barras)
+ * Salida: "RSI XX, σ YY%" | null si insuficientes datos
+ */
+export function calculatePatternFromBars(
+  bars: { c: number }[] | null
+): { value: string; source: string; ts: string } | null {
+  if (!bars || bars.length < 14) return null;
+
+  const closes = bars.slice(-30).map(b => b.c);
+
+  // Calcular RSI (14 períodos)
+  const rsi = calculateRSI(closes, 14);
+
+  // Calcular volatilidad realizada (últimas 30 barras)
+  const volatility = calculateVolatilityFromCloses(closes);
+
+  if (rsi === null || volatility === null) return null;
+
+  return {
+    value: `RSI ${Math.round(rsi)}, σ ${volatility.toFixed(1)}%`,
+    source: "RSI + σ realizada (Alpaca barras históricas)",
+    ts: new Date().toISOString(),
+  };
+}
+
+/**
+ * RSI (Relative Strength Index) — 14 períodos
+ */
+function calculateRSI(closes: number[], period: number): number | null {
+  if (closes.length < period + 1) return null;
+
+  const changes = [];
+  for (let i = 1; i < closes.length; i++) {
+    changes.push(closes[i] - closes[i - 1]);
+  }
+
+  const gains = changes.slice(-period).map(c => c > 0 ? c : 0);
+  const losses = changes.slice(-period).map(c => c < 0 ? -c : 0);
+
+  const avgGain = gains.reduce((a, b) => a + b, 0) / period;
+  const avgLoss = losses.reduce((a, b) => a + b, 0) / period;
+
+  if (avgLoss === 0) return avgGain === 0 ? 50 : 100;
+
+  const rs = avgGain / avgLoss;
+  return 100 - (100 / (1 + rs));
+}
+
+/**
+ * Volatilidad realizada (σ) desde closes
+ */
+function calculateVolatilityFromCloses(closes: number[]): number | null {
+  if (closes.length < 2) return null;
+
+  const returns: number[] = [];
+  for (let i = 1; i < closes.length; i++) {
+    returns.push(Math.log(closes[i] / closes[i - 1]));
+  }
+
+  const variance = returns.reduce((sum, r) => sum + r * r, 0) / returns.length;
+  let sigma = Math.sqrt(variance) * Math.sqrt(252) * 100; // Anualizada
+
+  return sigma;
+}
+
+/**
+ * OBTENER BARRAS HISTÓRICAS de equities desde Alpaca (fallback para Massive)
+ * Endpoint: /v2/stocks/bars?symbols=SPY&timeframe=1D&limit={limit}
+ */
+export async function getEquityHistoricalBars(
+  symbol: string,
+  apiKey: string,
+  apiSecret: string,
+  baseUrl: string,
+  limit: number = 200
+): Promise<{ bars: { c: number; v: number; t: number }[] | null; error?: string }> {
+  try {
+    // Validar endpoint
+    const endpointCheck = validateEndpoint(baseUrl);
+    if (!endpointCheck.valid) {
+      return { bars: null, error: endpointCheck.reason };
+    }
+
+    // En producción: llamar a Alpaca /v2/stocks/bars?symbols={symbol}&timeframe=1D&limit={limit}
+    // Por ahora: generar histórico simulado para testing
+
+    const generateMockBars = (basePrice: number, days: number) => {
+      const bars = [];
+      let price = basePrice;
+      for (let i = days - 1; i >= 0; i--) {
+        const change = (Math.random() - 0.5) * 0.02 * price;
+        price += change;
+        bars.push({
+          c: price,
+          v: 50000000 + Math.random() * 20000000,  // Volumen típico SPY
+          t: Date.now() - i * 86_400_000,
+        });
+      }
+      return bars;
+    };
+
+    return { bars: generateMockBars(769.3278, limit) };
+  } catch (err) {
+    return { bars: null, error: `Error fetching equity bars: ${err}` };
+  }
+}
+
+/**
+ * OBTENER QUOTES de equities desde Alpaca (fallback para Massive)
+ * Endpoint: /v2/stocks/quotes?symbols=SPY
+ */
+export async function getEquityQuotes(
+  symbol: string,
+  apiKey: string,
+  apiSecret: string,
+  baseUrl: string
+): Promise<{ quote: { bid: number; ask: number; size: number; timestamp: string } | null; error?: string }> {
+  try {
+    // Validar endpoint
+    const endpointCheck = validateEndpoint(baseUrl);
+    if (!endpointCheck.valid) {
+      return { quote: null, error: endpointCheck.reason };
+    }
+
+    // En producción: llamar a Alpaca /v2/stocks/quotes?symbols={symbol}
+    // Por ahora: retornar datos simulados
+
+    const mockQuotes: Record<string, { bid: number; ask: number; size: number }> = {
+      SPY: {
+        bid: 769.20,
+        ask: 769.45,
+        size: 1000,
+      },
+    };
+
+    const quote = mockQuotes[symbol];
+    if (!quote) return { quote: null };
+
+    return {
+      quote: {
+        bid: quote.bid,
+        ask: quote.ask,
+        size: quote.size,
+        timestamp: new Date().toISOString(),
+      },
+    };
+  } catch (err) {
+    return { quote: null, error: `Error fetching equity quotes: ${err}` };
   }
 }
 

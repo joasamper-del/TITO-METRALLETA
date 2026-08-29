@@ -6,7 +6,15 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getCryptoPrice } from "@/lib/alpacaConnector";
+import {
+  getCryptoPrice,
+  getCryptoHistoricalBars,
+  getCryptoQuotes,
+  getEquityHistoricalBars,
+  getEquityQuotes,
+  calculateTrendFromBars,
+  calculatePatternFromBars,
+} from "@/lib/alpacaConnector";
 import { evaluateBlockingEvents } from "@/lib/blockingEvents";
 import { earningsForTicker } from "@/lib/earnings";
 import { buildNewsReport } from "@/lib/news";
@@ -203,35 +211,92 @@ export async function GET(request: NextRequest) {
   // FUENTE 2: Tendencia (MA50/MA200 calculada)
   let trend: StrategyOperativeData["trend"] = null;
   try {
-    const closes = await getMassiveBars(ticker, 200);
+    if (["BTC", "ETH"].includes(ticker)) {
+      // Crypto: Obtener 200 barras históricas de Alpaca y calcular tendencia
+      const barsResult = await getCryptoHistoricalBars(
+        [ticker as "BTC" | "ETH"],
+        process.env.ALPACA_PAPER_KEY || "",
+        process.env.ALPACA_PAPER_SECRET || "",
+        "https://paper-api.alpaca.markets",
+        200  // Solicitar 200 barras para MA50/MA200
+      );
 
-    // Requerimiento estricto: >= 200 barras para MA50/MA200
-    // Si < 200 barras: null (no fallback, no proxy, no invención)
-    if (closes.length >= 200) {
-      const ma50 = calculateMA(closes, 50);
-      const ma200 = calculateMA(closes, 200);
-
-      if (ma50 !== null && ma200 !== null) {
-        const diff = Math.abs((ma50 - ma200) / ma200);
-
-        let trendValue: "alcista" | "bajista" | "lateral";
-        if (diff < 0.01) {
-          trendValue = "lateral";
-        } else if (ma50 > ma200) {
-          trendValue = "alcista";
-        } else {
-          trendValue = "bajista";
+      if (barsResult.bars && barsResult.bars[ticker]) {
+        const trendResult = calculateTrendFromBars(barsResult.bars[ticker]);
+        if (trendResult) {
+          trend = {
+            value: trendResult.value,
+            source: trendResult.source,
+            ts: now,
+          };
         }
+      }
+    } else {
+      // Equities: Massive /v2/aggs (con fallback a Alpaca)
+      const closes = await getMassiveBars(ticker, 200);
 
-        trend = {
-          value: trendValue,
-          source: "MA50/MA200",
-          ts: now,
-        };
+      if (closes.length >= 200) {
+        const ma50 = calculateMA(closes, 50);
+        const ma200 = calculateMA(closes, 200);
+
+        if (ma50 !== null && ma200 !== null) {
+          const diff = Math.abs((ma50 - ma200) / ma200);
+
+          let trendValue: "alcista" | "bajista" | "lateral";
+          if (diff < 0.01) {
+            trendValue = "lateral";
+          } else if (ma50 > ma200) {
+            trendValue = "alcista";
+          } else {
+            trendValue = "bajista";
+          }
+
+          trend = {
+            value: trendValue,
+            source: "MA50/MA200 (Massive)",
+            ts: now,
+          };
+        }
+      }
+
+      // Fallback: Si Massive falla, usar Alpaca /v2/stocks/bars
+      if (!trend) {
+        const alpacaBarsResult = await getEquityHistoricalBars(
+          ticker,
+          process.env.ALPACA_PAPER_KEY || "",
+          process.env.ALPACA_PAPER_SECRET || "",
+          "https://paper-api.alpaca.markets",
+          200
+        );
+
+        if (alpacaBarsResult.bars && alpacaBarsResult.bars.length >= 200) {
+          const closes_alpaca = alpacaBarsResult.bars.map(b => b.c);
+          const ma50 = calculateMA(closes_alpaca, 50);
+          const ma200 = calculateMA(closes_alpaca, 200);
+
+          if (ma50 !== null && ma200 !== null) {
+            const diff = Math.abs((ma50 - ma200) / ma200);
+
+            let trendValue: "alcista" | "bajista" | "lateral";
+            if (diff < 0.01) {
+              trendValue = "lateral";
+            } else if (ma50 > ma200) {
+              trendValue = "alcista";
+            } else {
+              trendValue = "bajista";
+            }
+
+            trend = {
+              value: trendValue,
+              source: "MA50/MA200 (Alpaca fallback)",
+              ts: now,
+            };
+          }
+        }
       }
     }
   } catch (err) {
-    // No fallback: null si Massive falla o barras insuficientes
+    // No fallback: null si datos insuficientes
   }
   if (!trend) {
     missingData.push("trend");
@@ -267,11 +332,27 @@ export async function GET(request: NextRequest) {
   let volume: StrategyOperativeData["volume"] = null;
   try {
     if (["BTC", "ETH"].includes(ticker)) {
-      // Crypto: Alpaca no expone /crypto/latest/bars intradía
-      // TODO: Conectar a Alpaca /crypto/latest/bars o MarketSnack 24h
-      // Por ahora: null (defer a Sesión 33)
+      // Crypto: Alpaca /v1beta3/crypto/latest/bars (volumen intradía)
+      const barsResult = await getCryptoHistoricalBars(
+        [ticker as "BTC" | "ETH"],
+        process.env.ALPACA_PAPER_KEY || "",
+        process.env.ALPACA_PAPER_SECRET || "",
+        "https://paper-api.alpaca.markets",
+        1  // Solo la barra de hoy para volumen
+      );
+
+      if (barsResult.bars && barsResult.bars[ticker] && Array.isArray(barsResult.bars[ticker])) {
+        const todayBar = barsResult.bars[ticker][barsResult.bars[ticker].length - 1];
+        if (todayBar && typeof todayBar.v === "number" && todayBar.v > 0) {
+          volume = {
+            value: todayBar.v,
+            source: `Alpaca /v1beta3/crypto/latest/bars (volumen)`,
+            ts: now,
+          };
+        }
+      }
     } else {
-      // Equities: Massive /v2/aggs/ticker/{ticker}/range/1/day/{startDate}/{endDate}
+      // Equities: Massive /v2/aggs (con fallback a Alpaca)
       const today = new Date().toISOString().split("T")[0];
       const url = `https://api.massive.com/v2/aggs/ticker/${ticker}/range/1/day/${today}/${today}`;
       const response = await fetch(url, {
@@ -283,12 +364,33 @@ export async function GET(request: NextRequest) {
       if (response.ok) {
         const data: any = await response.json();
         if (data.results && data.results.length > 0) {
-          // Volumen diario intradía: results[0].v
           const dailyVolume = data.results[0].v;
           if (typeof dailyVolume === "number" && dailyVolume > 0) {
             volume = {
               value: dailyVolume,
               source: `Massive /v2/aggs (volumen diario)`,
+              ts: now,
+            };
+          }
+        }
+      }
+
+      // Fallback: Si Massive falla, usar Alpaca /v2/stocks/bars
+      if (!volume) {
+        const alpacaBarsResult = await getEquityHistoricalBars(
+          ticker,
+          process.env.ALPACA_PAPER_KEY || "",
+          process.env.ALPACA_PAPER_SECRET || "",
+          "https://paper-api.alpaca.markets",
+          1  // Solo hoy
+        );
+
+        if (alpacaBarsResult.bars && alpacaBarsResult.bars.length > 0) {
+          const dailyVolume = alpacaBarsResult.bars[0].v;
+          if (typeof dailyVolume === "number" && dailyVolume > 0) {
+            volume = {
+              value: dailyVolume,
+              source: `Alpaca /v2/stocks/bars (fallback)`,
               ts: now,
             };
           }
@@ -306,12 +408,28 @@ export async function GET(request: NextRequest) {
   let liquidity: StrategyOperativeData["liquidity"] = null;
   try {
     if (["BTC", "ETH"].includes(ticker)) {
-      // Crypto: Alpaca no expone lastQuote / bid/ask directos
-      // TODO: Conectar a Alpaca /crypto/latest/bars o MarketSnack snapshot
-      // Por ahora: null (defer a Sesión 34)
+      // Crypto: Alpaca /v1beta3/crypto/latest/quotes (bid/ask spread)
+      const quotesResult = await getCryptoQuotes(
+        [ticker as "BTC" | "ETH"],
+        process.env.ALPACA_PAPER_KEY || "",
+        process.env.ALPACA_PAPER_SECRET || "",
+        "https://paper-api.alpaca.markets"
+      );
+
+      if (quotesResult.quotes && quotesResult.quotes[ticker]) {
+        const { bid, ask } = quotesResult.quotes[ticker];
+        if (typeof bid === "number" && typeof ask === "number" && bid > 0 && ask > bid) {
+          const mid = (bid + ask) / 2;
+          const spreadPct = ((ask - bid) / mid) * 100;
+          liquidity = {
+            value: spreadPct.toFixed(3) + "%",
+            source: "Alpaca /v1beta3/crypto/latest/quotes (spread)",
+            ts: now,
+          };
+        }
+      }
     } else {
-      // Equities: Massive /v2/snapshot/locale/us/markets/stocks/tickers/{ticker}
-      // Reutilizar estructura para obtener lastQuote (bid/ask)
+      // Equities: Massive /v2/snapshot (con fallback a Alpaca)
       const url = `https://api.massive.com/v2/snapshot/locale/us/markets/stocks/tickers/${ticker}`;
       const response = await fetch(url, {
         headers: {
@@ -334,6 +452,29 @@ export async function GET(request: NextRequest) {
           }
         }
       }
+
+      // Fallback: Si Massive falla, usar Alpaca /v2/stocks/quotes
+      if (!liquidity) {
+        const alpacaQuoteResult = await getEquityQuotes(
+          ticker,
+          process.env.ALPACA_PAPER_KEY || "",
+          process.env.ALPACA_PAPER_SECRET || "",
+          "https://paper-api.alpaca.markets"
+        );
+
+        if (alpacaQuoteResult.quote) {
+          const { bid, ask, size } = alpacaQuoteResult.quote;
+          if (typeof bid === "number" && typeof ask === "number" && bid > 0 && ask > bid) {
+            const mid = (bid + ask) / 2;
+            const spreadPct = ((ask - bid) / mid) * 100;
+            liquidity = {
+              value: `${spreadPct.toFixed(3)}% (size: ${size})`,
+              source: "Alpaca /v2/stocks/quotes (fallback)",
+              ts: now,
+            };
+          }
+        }
+      }
     }
   } catch (err) {
     // No fallback: null si Massive falla o no devuelve bid/ask
@@ -342,12 +483,34 @@ export async function GET(request: NextRequest) {
     missingData.push("liquidity");
   }
 
-  // FUENTE 6: Patrón (TVContext alerts + valores reales)
+  // FUENTE 6: Patrón (TVContext alerts o análisis técnico de barras)
   let pattern: StrategyOperativeData["pattern"] = null;
   try {
-    const fs = await import("fs").catch(() => null);
-    if (fs) {
-      try {
+    if (["BTC", "ETH"].includes(ticker)) {
+      // Crypto: Obtener 30 barras y calcular patrón (RSI + σ realizada)
+      const patternBarsResult = await getCryptoHistoricalBars(
+        [ticker as "BTC" | "ETH"],
+        process.env.ALPACA_PAPER_KEY || "",
+        process.env.ALPACA_PAPER_SECRET || "",
+        "https://paper-api.alpaca.markets",
+        30  // Solicitar 30 barras para RSI + σ
+      );
+
+      if (patternBarsResult.bars && patternBarsResult.bars[ticker]) {
+        const patternResult = calculatePatternFromBars(patternBarsResult.bars[ticker]);
+        if (patternResult) {
+          pattern = {
+            value: patternResult.value,
+            source: patternResult.source,
+            ts: now,
+          };
+        }
+      }
+    } else {
+      // Equities: TVContext alerts desde webhook
+      const fs = await import("fs").catch(() => null);
+      if (fs) {
+        try {
         const alertPath = "data/alerts.json";
         const alertsContent = fs.readFileSync(alertPath, "utf-8");
         const alertsData: any = JSON.parse(alertsContent);
@@ -393,8 +556,9 @@ export async function GET(request: NextRequest) {
           };
         }
         // Si < 2 indicadores: pattern sigue null (fail-safe)
-      } catch (fsErr) {
-        // No fallback: null si lectura falla
+        } catch (fsErr) {
+          // No fallback: null si lectura falla
+        }
       }
     }
   } catch (err) {
