@@ -49,6 +49,18 @@ export interface HistoricalProbability {
   comparableCases: number;
 }
 
+/** Salida enriquecida del Decision Engine — el corazón de Tito. */
+export interface DecisionDetails {
+  status: OpportunityStatus;
+  confidence: number; // 0-100
+  razones: string[]; // por qué es "Entrar/Esperar/No operar"
+  riskFactors: string[]; // factores de riesgo específicos
+  invalidationConditions: string[]; // condiciones que harían invalidar la oportunidad
+  stopLoss: number | null; // precio de stop loss, null si no aplica
+  takeProfit: number | null; // precio de take profit, null si no aplica
+  historicalProbability: HistoricalProbability | null; // placeholder para datos históricos
+}
+
 export interface OpportunityReport extends ReportVersions {
   /** Identificador único de esta corrida de análisis (no del símbolo). */
   id: string;
@@ -62,8 +74,14 @@ export interface OpportunityReport extends ReportVersions {
   historicalProbability: HistoricalProbability | null;
   /** 3 a 5 factores principales a favor y en contra. */
   razones: string[];
+  /** Factores de riesgo específicos de esta oportunidad. */
+  riskFactors?: string[];
   /** Condiciones específicas y observables que invalidarían la oportunidad. */
   invalidationConditions: string[];
+  /** Niveles de riesgo: stop loss. */
+  stopLoss?: number | null;
+  /** Nivel de ganancia objetivo: take profit. */
+  takeProfit?: number | null;
   /** Próximo evento que justifica reevaluar; null si no aplica. */
   nextTrigger: string | null;
   createdAt: string;

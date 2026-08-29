@@ -8,7 +8,7 @@
 // (no determinista) queda en workflow.ts, que sí hace I/O.
 
 import type {
-  OpportunityPriority, OpportunityReport, OpportunityStatus, ReportVersions,
+  OpportunityPriority, OpportunityReport, OpportunityStatus, ReportVersions, DecisionDetails,
 } from "./types";
 import type { MarketSnapshot } from "./marketSnapshot";
 import type { RuleResult } from "./ruleEngine";
@@ -39,7 +39,7 @@ export interface ReportMeta {
 export function buildReport(
   snapshot: MarketSnapshot,
   rules: RuleResult[],
-  status: OpportunityStatus,
+  decision: DecisionDetails,
   metrics: Metrics,
   versions: ReportVersions,
   meta: ReportMeta,
@@ -48,15 +48,20 @@ export function buildReport(
     id: meta.id,
     symbol: snapshot.symbol,
     ...versions,
-    status,
-    priority: derivePriority(status, metrics.confidence),
-    confidence: metrics.confidence,
+    status: decision.status,
+    priority: derivePriority(decision.status, decision.confidence),
+    confidence: decision.confidence,
     risk: metrics.risk,
     dataQuality: metrics.dataQuality,
-    historicalProbability: metrics.historicalProbability,
-    razones: explainReasons(rules),
-    invalidationConditions: explainInvalidationConditions(rules),
-    nextTrigger: explainNextTrigger(status, rules),
+    historicalProbability: decision.historicalProbability ?? metrics.historicalProbability,
+    razones: decision.razones.length > 0 ? decision.razones : explainReasons(rules),
+    riskFactors: decision.riskFactors,
+    invalidationConditions: decision.invalidationConditions.length > 0
+      ? decision.invalidationConditions
+      : explainInvalidationConditions(rules),
+    stopLoss: decision.stopLoss,
+    takeProfit: decision.takeProfit,
+    nextTrigger: explainNextTrigger(decision.status, rules),
     createdAt: meta.createdAt,
   };
 }

@@ -22,7 +22,7 @@ import { evaluateRules, type RuleResult } from "./ruleEngine";
 import { validateReport, type ValidationResult } from "./validator";
 import { getMockSnapshot, MOCK_VERSIONS } from "./mockDataSource";
 import { saveHistory } from "./historyStore";
-import type { OpportunityReport } from "./types";
+import type { OpportunityReport, DecisionDetails } from "./types";
 
 export interface AnalysisResult {
   report: OpportunityReport;
@@ -47,8 +47,11 @@ export async function runAnalysis(
   const snapshot = await getMockSnapshot(symbol); // get_data
   const rules = evaluateRules(snapshot); // evaluate_rules
   const metrics = calculateMetrics(snapshot, rules); // calculate_metrics
-  const status = buildDecision(rules, metrics.dataQuality); // build_decision
-  const report = buildReport(snapshot, rules, status, metrics, MOCK_VERSIONS, {
+  const decision = buildDecision(rules, metrics.dataQuality, {
+    spot: snapshot.spot,
+    iv: snapshot.iv,
+  }); // build_decision
+  const report = buildReport(snapshot, rules, decision, metrics, MOCK_VERSIONS, {
     id: randomUUID(),
     createdAt: now.toISOString(),
   }); // build_report
