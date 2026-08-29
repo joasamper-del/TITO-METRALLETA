@@ -36,16 +36,24 @@ function checkGit() {
   try {
     const { execSync } = require("child_process");
 
-    const status = execSync("git status --porcelain", { encoding: "utf8" });
+    // Check for uncommitted changes (excluding untracked files)
+    const status = execSync("git diff-index --quiet HEAD --", { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] }).toString();
     const branch = execSync("git branch --show-current", { encoding: "utf8" }).trim();
     const commit = execSync("git log -1 --format=%H", { encoding: "utf8" }).trim().substring(0, 7);
 
-    const hasUncommitted = status.trim().length > 0;
+    // git diff-index returns exit code 1 if there are changes, 0 if clean
+    let hasUncommittedChanges = false;
+    try {
+      execSync("git diff-index --quiet HEAD --", { stdio: "pipe" });
+    } catch {
+      hasUncommittedChanges = true;
+    }
 
     checks.push({
       name: "Git Repository",
-      passed: branch === "main" && !hasUncommitted,
-      message: `Branch: ${branch} | Commit: ${commit}${hasUncommitted ? " | ⚠ Uncommitted changes" : ""}`,
+      passed: branch === "main" && !hasUncommittedChanges,
+      message: `Branch: ${branch} | Commit: ${commit}${hasUncommittedChanges ? " | ⚠ Uncommitted tracked changes" : " | ✓ Clean"}`,
+      detail: "(Untracked files like phase_d_logs/* are ignored)",
     });
   } catch (e) {
     checks.push({
