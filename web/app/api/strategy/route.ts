@@ -263,13 +263,38 @@ export async function GET(request: NextRequest) {
   // FUENTE 5: Liquidez (bid/ask spread real)
   let liquidity: StrategyOperativeData["liquidity"] = null;
   try {
-    // Equities: Massive last_quote (bid/ask)
-    // Crypto: Alpaca crypto quotes (bid/ask)
-    // Calcular: (ask - bid) / mid * 100%
-    // TODO: Conectar a Massive /v3/snapshot/options/ o Alpaca quotes
-    // Por ahora: null si no disponible (fail-safe)
+    if (["BTC", "ETH"].includes(ticker)) {
+      // Crypto: Alpaca no expone lastQuote / bid/ask directos
+      // TODO: Conectar a Alpaca /crypto/latest/bars o MarketSnack snapshot
+      // Por ahora: null (defer a Sesión 34)
+    } else {
+      // Equities: Massive /v2/snapshot/locale/us/markets/stocks/tickers/{ticker}
+      // Reutilizar estructura para obtener lastQuote (bid/ask)
+      const url = `https://api.massive.com/v2/snapshot/locale/us/markets/stocks/tickers/${ticker}`;
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${process.env.MASSIVE_API_KEY || ""}`,
+        },
+      });
+
+      if (response.ok) {
+        const data: any = await response.json();
+        if (data.ticker?.lastQuote) {
+          const { bid, ask } = data.ticker.lastQuote;
+          if (typeof bid === "number" && typeof ask === "number" && bid > 0 && ask > bid) {
+            const mid = (bid + ask) / 2;
+            const spreadPct = ((ask - bid) / mid) * 100;
+            liquidity = {
+              value: spreadPct.toFixed(3) + "%",
+              source: "Massive /v2/snapshot (spread)",
+              ts: now,
+            };
+          }
+        }
+      }
+    }
   } catch (err) {
-    missingData.push("liquidity");
+    // No fallback: null si Massive falla o no devuelve bid/ask
   }
   if (!liquidity) {
     missingData.push("liquidity");
