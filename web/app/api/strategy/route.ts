@@ -117,29 +117,19 @@ export async function GET(request: NextRequest) {
   try {
     const closes = await getMassiveBars(ticker, 200);
 
-    // Estrategia flexible: MA50 requiere >= 50 barras, MA200 requiere >= 200
-    // Si solo tenemos 100-199 barras, usamos MA50/MA100 como proxy
-    if (closes.length >= 100) {
-      let ma1: number | null = null;
-      let ma2: number | null = null;
-      let source = "MA50/MA200";
+    // Requerimiento estricto: >= 200 barras para MA50/MA200
+    // Si < 200 barras: null (no fallback, no proxy, no invención)
+    if (closes.length >= 200) {
+      const ma50 = calculateMA(closes, 50);
+      const ma200 = calculateMA(closes, 200);
 
-      if (closes.length >= 200) {
-        ma1 = calculateMA(closes, 50);
-        ma2 = calculateMA(closes, 200);
-      } else if (closes.length >= 100) {
-        ma1 = calculateMA(closes, 50);
-        ma2 = calculateMA(closes, 100);
-        source = "MA50/MA100";
-      }
-
-      if (ma1 !== null && ma2 !== null) {
-        const diff = Math.abs((ma1 - ma2) / ma2);
+      if (ma50 !== null && ma200 !== null) {
+        const diff = Math.abs((ma50 - ma200) / ma200);
 
         let trendValue: "alcista" | "bajista" | "lateral";
         if (diff < 0.01) {
           trendValue = "lateral";
-        } else if (ma1 > ma2) {
+        } else if (ma50 > ma200) {
           trendValue = "alcista";
         } else {
           trendValue = "bajista";
@@ -147,13 +137,13 @@ export async function GET(request: NextRequest) {
 
         trend = {
           value: trendValue,
-          source: source,
+          source: "MA50/MA200",
           ts: now,
         };
       }
     }
   } catch (err) {
-    // No fallback: null si Massive falla
+    // No fallback: null si Massive falla o barras insuficientes
   }
   if (!trend) {
     missingData.push("trend");
