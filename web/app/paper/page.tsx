@@ -7,6 +7,8 @@
 "use client";
 
 import PhaseDResults from "@/app/components/PhaseDResults";
+import { OpenPositions } from "@/app/components/OpenPositions";
+import { CryptoAnalysis } from "@/app/components/CryptoAnalysis";
 
 export default function PaperTrading() {
   return (
@@ -19,6 +21,17 @@ export default function PaperTrading() {
           <p className="text-sm text-gray-500 mt-1">
             Validación en mercado real • Sin capital en riesgo • Arquitectura congelada
           </p>
+        </div>
+
+        {/* Open Positions — Real-time */}
+        <div className="mb-8 bg-white rounded-lg border border-gray-200 p-6">
+          <OpenPositions />
+        </div>
+
+        {/* Crypto Market Regime Analysis — Session 22 */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">📈 Análisis de Régimen Crypto — Sesión 22</h2>
+          <CryptoAnalysis />
         </div>
 
         {/* Results Component */}

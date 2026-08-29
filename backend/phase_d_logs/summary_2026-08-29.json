@@ -1,0 +1,31 @@
+{
+  "date": "2026-08-29",
+  "totalTrades": 3,
+  "winnersCount": 2,
+  "losersCount": 0,
+  "breakEvenCount": 1,
+  "winRate": 66.66666666666666,
+  "totalPnlDollars": 4.600000000000023,
+  "totalPnlPercent": 0.2999725650935296,
+  "byTicker": {
+    "SPY": {
+      "ticker": "SPY",
+      "trades": 2,
+      "wins": 1,
+      "losses": 0,
+      "winRate": 50,
+      "pnlDollars": 3.3500000000000227,
+      "pnlPercent": 0.28772653096281225
+    },
+    "QQQ": {
+      "ticker": "QQQ",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "winRate": 100,
+      "pnlDollars": 1.25,
+      "pnlPercent": 0.32446463335496434
+    }
+  },
+  "lastUpdate": "2026-08-29T06:04:04.334Z"
+}

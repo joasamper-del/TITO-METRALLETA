@@ -1,0 +1,21 @@
+{"timestamp":"2026-08-29T05:11:24.731Z","event":"PHASE_D_START","symbol":"SYSTEM"}
+{"timestamp":"2026-08-29T05:11:25.159Z","event":"ERROR","symbol":"SYSTEM","error":"Alpaca API 429: {\"message\": \"too many requests.\"}\n"}
+{"timestamp":"2026-08-29T13:11:04.178Z","event":"PHASE_D_START","symbol":"SYSTEM"}
+{"timestamp":"2026-08-29T13:11:04.671Z","event":"ERROR","symbol":"SYSTEM","error":"Alpaca API 429: {\"message\": \"too many requests.\"}\n"}
+{"timestamp":"2026-08-29T13:11:26.029Z","event":"PHASE_D_START","symbol":"SYSTEM"}
+{"timestamp":"2026-08-29T13:11:26.331Z","event":"ERROR","symbol":"SYSTEM","error":"Alpaca API 401: {\"message\": \"unauthorized.\"}\n"}
+{"timestamp":"2026-08-29T13:12:22.388Z","event":"PHASE_D_START","symbol":"SYSTEM"}
+{"timestamp":"2026-08-29T13:12:22.649Z","event":"ACCOUNT_VERIFIED","symbol":"SYSTEM"}
+{"timestamp":"2026-08-29T13:12:22.820Z","event":"ERROR","symbol":"SYSTEM","error":"Alpaca API 404: Not Found"}
+{"timestamp":"2026-08-29T13:13:45.384Z","event":"PHASE_D_START","symbol":"SYSTEM"}
+{"timestamp":"2026-08-29T13:13:45.653Z","event":"ACCOUNT_VERIFIED","symbol":"SYSTEM"}
+{"timestamp":"2026-08-29T13:13:45.654Z","event":"TITO_DECISION","symbol":"SPY","decision":"CALL","confidence":90}
+{"timestamp":"2026-08-29T13:13:45.837Z","event":"ERROR","symbol":"SYSTEM","error":"Alpaca API 422: {\"code\":40010001,\"message\":\"oco orders must be limit orders\"}"}
+{"timestamp":"2026-08-29T13:14:07.331Z","event":"PHASE_D_START","symbol":"SYSTEM"}
+{"timestamp":"2026-08-29T13:14:07.612Z","event":"ACCOUNT_VERIFIED","symbol":"SYSTEM"}
+{"timestamp":"2026-08-29T13:14:07.614Z","event":"TITO_DECISION","symbol":"SPY","decision":"CALL","confidence":90}
+{"timestamp":"2026-08-29T13:14:07.823Z","event":"ERROR","symbol":"SYSTEM","error":"Alpaca API 422: {\"code\":42210000,\"message\":\"take_profit.limit_price must be \\u003c stop_loss.stop_price\"}"}
+{"timestamp":"2026-08-29T13:14:32.194Z","event":"PHASE_D_START","symbol":"SYSTEM"}
+{"timestamp":"2026-08-29T13:14:32.482Z","event":"ACCOUNT_VERIFIED","symbol":"SYSTEM"}
+{"timestamp":"2026-08-29T13:14:32.483Z","event":"TITO_DECISION","symbol":"SPY","decision":"CALL","confidence":90}
+{"timestamp":"2026-08-29T13:14:32.665Z","event":"ORDER_EXECUTED","symbol":"SPY","orderStatus":"accepted","fill":582.9,"slippage":0,"stopLoss":580.4,"takeProfit":586.4}
