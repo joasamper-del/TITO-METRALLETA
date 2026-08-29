@@ -224,12 +224,37 @@ export async function GET(request: NextRequest) {
   // FUENTE 4: Volumen (24h intradía)
   let volume: StrategyOperativeData["volume"] = null;
   try {
-    // Equities: Massive volumen intradía (últimas 24h)
-    // Crypto: Alpaca volumen 24h
-    // TODO: Conectar a Massive /v2/aggs o Alpaca barras
-    // Por ahora: null si no disponible (fail-safe)
+    if (["BTC", "ETH"].includes(ticker)) {
+      // Crypto: Alpaca no expone /crypto/latest/bars intradía
+      // TODO: Conectar a Alpaca /crypto/latest/bars o MarketSnack 24h
+      // Por ahora: null (defer a Sesión 33)
+    } else {
+      // Equities: Massive /v2/aggs/ticker/{ticker}/range/1/day/{startDate}/{endDate}
+      const today = new Date().toISOString().split("T")[0];
+      const url = `https://api.massive.com/v2/aggs/ticker/${ticker}/range/1/day/${today}/${today}`;
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${process.env.MASSIVE_API_KEY || ""}`,
+        },
+      });
+
+      if (response.ok) {
+        const data: any = await response.json();
+        if (data.results && data.results.length > 0) {
+          // Volumen diario intradía: results[0].v
+          const dailyVolume = data.results[0].v;
+          if (typeof dailyVolume === "number" && dailyVolume > 0) {
+            volume = {
+              value: dailyVolume,
+              source: `Massive /v2/aggs (volumen diario)`,
+              ts: now,
+            };
+          }
+        }
+      }
+    }
   } catch (err) {
-    missingData.push("volume");
+    // No fallback: null si Massive falla o no devuelve volumen
   }
   if (!volume) {
     missingData.push("volume");
