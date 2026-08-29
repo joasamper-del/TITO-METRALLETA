@@ -12,9 +12,25 @@
  * - Integración con Tito Core (sin cambios)
  */
 
+import * as fs from "fs";
+import * as path from "path";
+
+// Cargar variables del .env.local
+const envFilePath = path.join(__dirname, ".env.local");
+const envContent = fs.readFileSync(envFilePath, "utf8");
+const envLines = envContent.split("\n");
+const envVars: Record<string, string> = {};
+
+envLines.forEach((line) => {
+  if (line && !line.startsWith("#")) {
+    const [key, ...valueParts] = line.split("=");
+    envVars[key.trim()] = valueParts.join("=").trim();
+  }
+});
+
 const ALPACA_PAPER_BASE = "https://paper-api.alpaca.markets";
-const API_KEY = process.env.ALPACA_API_KEY!;
-const SECRET_KEY = process.env.ALPACA_SECRET_KEY!;
+const API_KEY = envVars.ALPACA_API_KEY;
+const SECRET_KEY = envVars.ALPACA_SECRET_KEY;
 
 // Validar PAPER
 if (!ALPACA_PAPER_BASE.includes("paper-api")) {
