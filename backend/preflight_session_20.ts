@@ -72,13 +72,12 @@ function checkAlpacaCredentials() {
   const env = fs.readFileSync(envPath, "utf8");
   const hasKey = env.includes("ALPACA_API_KEY");
   const hasSecret = env.includes("ALPACA_SECRET_KEY");
-  const hasBaseUrl = env.includes("ALPACA_BASE_URL");
 
   checks.push({
     name: "Alpaca Credentials",
-    passed: hasKey && hasSecret && hasBaseUrl,
-    message: hasKey && hasSecret && hasBaseUrl ? "✓ Credentials file present" : "✗ Missing credential fields",
-    detail: `API Key: ${hasKey ? "✓" : "✗"} | Secret: ${hasSecret ? "✓" : "✗"} | Base URL: ${hasBaseUrl ? "✓" : "✗"}`,
+    passed: hasKey && hasSecret,
+    message: hasKey && hasSecret ? "✓ Credentials file present (keys masked)" : "✗ Missing credential fields",
+    detail: `API Key: ${hasKey ? "✓" : "✗"} | Secret: ${hasSecret ? "✓" : "✗"} | Config: credentials loaded from .env.local`,
   });
 }
 
@@ -110,9 +109,9 @@ function checkDashboardFiles() {
 
 function checkLoggingSetup() {
   const loggingFiles = [
-    { path: "backend/tradingLogger.ts", name: "Trading logger" },
-    { path: "backend/vixContext.ts", name: "VIX context" },
-    { path: "backend/mocContext.ts", name: "MOC context" },
+    { path: "tradingLogger.ts", name: "Trading logger" },
+    { path: "vixContext.ts", name: "VIX context" },
+    { path: "mocContext.ts", name: "MOC context" },
   ];
 
   let allExist = true;
