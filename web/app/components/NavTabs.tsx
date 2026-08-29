@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 // Navegación entre las vistas del agente (Ticker / 0DTE / Ideas / Wheel /
-// Time & Sales / Alertas). Vive en la barra superior de cada página para que
+// Time & Sales / Alertas / Estrategia). Vive en la barra superior de cada página para que
 // moverse entre ellas sea un clic, no un enlace perdido.
 const TABS = [
   { href: "/", label: "Ticker", icon: "📈" },
@@ -12,6 +12,7 @@ const TABS = [
   { href: "/ideas", label: "Ideas", icon: "💡" },
   { href: "/wheel", label: "Wheel", icon: "🎡" },
   { href: "/flow", label: "Time & Sales", icon: "⚡" },
+  { href: "/strategy", label: "Estrategia", icon: "🎲" },
   { href: "/alertas", label: "Alertas", icon: "🔔" },
 ];
 
