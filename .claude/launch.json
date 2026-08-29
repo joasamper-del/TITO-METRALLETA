@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "tito-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "./Agente Tito Metralleta/web"],
+      "port": 3000,
+      "autoPort": true
+    }
+  ]
+}

@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tito Metralleta - Sistema de Análisis de Trading</title>
+    <style>
+        :root {
+            --color-primary: #2563eb;
+            --color-primary-light: #3b82f6;
+            --color-success: #10b981;
+            --color-warning: #f59e0b;
+            --color-danger: #ef4444;
+            --color-error: #dc2626;
+            --color-bg-primary: #0f172a;
+            --color-bg-secondary: #1e293b;
+            --color-bg-tertiary: #334155;
+            --color-text-primary: #f1f5f9;
+            --color-text-secondary: #cbd5e1;
+            --color-text-tertiary: #94a3b8;
+            --color-border: #475569;
+            --color-operate: #10b981;
+            --color-wait: #f59e0b;
+            --color-no-operate: #ef4444;
+            --color-risk-low: #10b981;
+            --color-risk-medium: #f59e0b;
+            --color-risk-high: #ef4444;
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
+            --spacing-2xl: 3rem;
+            --radius-sm: 0.375rem;
+            --radius-md: 0.5rem;
+            --radius-lg: 0.75rem;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--color-bg-primary);
+            color: var(--color-text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: var(--color-bg-primary);
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%);
+            border-bottom: 2px solid var(--color-primary);
+            padding: var(--spacing-xl) var(--spacing-2xl);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .header-content h1.logo {
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: var(--spacing-xs);
+            color: var(--color-primary-light);
+        }
+
+        .header-content .subtitle {
+            font-size: 0.875rem;
+            color: var(--color-text-tertiary);
+        }
+
+        .header-status {
+            display: flex;
+            gap: var(--spacing-lg);
+            align-items: center;
+            font-size: 0.875rem;
+        }
+
+        .market-status {
+            padding: var(--spacing-sm) var(--spacing-md);
+            background-color: var(--color-bg-primary);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border);
+        }
+
+        .main-content {
+            flex: 1;
+            padding: var(--spacing-2xl);
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-2xl);
+        }
+
+        .decision-panel {
+            background: linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-bg-tertiary) 100%);
+            border: 2px solid var(--color-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-2xl);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .decision-input {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .symbol-input, .strategy-input {
+            background-color: var(--color-bg-primary);
+            border: 1px solid var(--color-border);
+            color: var(--color-text-primary);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+        }
+
+        .symbol-input::placeholder, .strategy-input::placeholder {
+            color: var(--color-text-tertiary);
+        }
+
+        .symbol-input:focus, .strategy-input:focus {
+            outline: none;
+            border-color: var(--color-primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn {
+            padding: var(--spacing-md) var(--spacing-lg);
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background-color: var(--color-primary);
+            color: white;
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--color-primary-light);
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .decision-result {
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .decision-box {
+            background-color: var(--color-bg-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-2xl);
+            margin-bottom: var(--spacing-xl);
+            border-left: 6px solid;
+        }
+
+        .decision-box.operate {
+            border-left-color: var(--color-operate);
+        }
+
+        .decision-box.wait {
+            border-left-color: var(--color-wait);
+        }
+
+        .decision-box.no-operate {
+            border-left-color: var(--color-no-operate);
+        }
+
+        .decision-main-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: var(--spacing-xl);
+            padding-bottom: var(--spacing-lg);
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .decision-left {
+            flex: 1;
+        }
+
+        .decision-decision {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .decision-left .decision-decision.operate {
+            color: var(--color-operate);
+        }
+
+        .decision-left .decision-decision.wait {
+            color: var(--color-wait);
+        }
+
+        .decision-left .decision-decision.no-operate {
+            color: var(--color-no-operate);
+        }
+
+        .decision-symbol {
+            color: var(--color-text-tertiary);
+            font-size: 0.875rem;
+        }
+
+        .decision-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-xl);
+            flex: 1;
+        }
+
+        .metric {
+            display: flex;
+            flex-direction: column;
+            text-align: right;
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            color: var(--color-text-tertiary);
+            margin-bottom: var(--spacing-xs);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .metric-risk.low { color: var(--color-risk-low); }
+        .metric-risk.medium { color: var(--color-risk-medium); }
+        .metric-risk.high { color: var(--color-risk-high); }
+
+        .decision-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: var(--color-text-tertiary);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .refresh-btn {
+            background-color: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: var(--spacing-sm) var(--spacing-md);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.75rem;
+            transition: all 0.2s ease;
+        }
+
+        .refresh-btn:hover {
+            background-color: var(--color-primary-light);
+            transform: scale(1.05);
+        }
+
+        .reasons-box {
+            background-color: var(--color-bg-secondary);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+        }
+
+        .reasons-box h3 {
+            font-size: 0.75rem;
+            color: var(--color-text-tertiary);
+            margin-bottom: var(--spacing-md);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .reasons-list {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: var(--spacing-md);
+        }
+
+        .reasons-list li {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-size: 0.8rem;
+        }
+
+        .reasons-list li::before {
+            content: '✓';
+            color: var(--color-operate);
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .market-summary {
+            background-color: var(--color-bg-secondary);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--spacing-md);
+            font-size: 0.8rem;
+        }
+
+        .market-item {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-xs);
+        }
+
+        .market-label {
+            color: var(--color-text-tertiary);
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 0.05em;
+        }
+
+        .market-value {
+            color: var(--color-text-primary);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .conditions-box {
+            background-color: var(--color-bg-secondary);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            margin-top: var(--spacing-lg);
+        }
+
+        .conditions-box h3 {
+            font-size: 0.75rem;
+            color: var(--color-text-tertiary);
+            margin-bottom: var(--spacing-md);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .conditions-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+
+        .conditions-list li {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            font-size: 0.8rem;
+            padding: var(--spacing-sm);
+            background-color: var(--color-bg-primary);
+            border-radius: var(--radius-sm);
+            border-left: 3px solid var(--color-warning);
+        }
+
+        .conditions-list li::before {
+            content: '→';
+            color: var(--color-warning);
+            font-weight: 700;
+            flex-shrink: 0;
+            font-size: 1rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: var(--spacing-2xl);
+            color: var(--color-text-tertiary);
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .watchlist-section {
+            background: var(--color-bg-secondary);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            max-width: 300px;
+        }
+
+        .watchlist-section h2 {
+            margin-bottom: var(--spacing-md);
+        }
+
+        .watchlist-input {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .watchlist-input input {
+            flex: 1;
+            background-color: var(--color-bg-primary);
+            border: 1px solid var(--color-border);
+            color: var(--color-text-primary);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+        }
+
+        .watchlist-input button {
+            background-color: var(--color-primary);
+            color: white;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: var(--spacing-sm) var(--spacing-md);
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .watchlist-items {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+
+        .watchlist-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--color-bg-primary);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--color-border);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+
+        .watchlist-item:hover {
+            background-color: var(--color-bg-tertiary);
+            border-color: var(--color-primary);
+        }
+
+        .footer {
+            background-color: var(--color-bg-secondary);
+            border-top: 1px solid var(--color-border);
+            padding: var(--spacing-lg) var(--spacing-2xl);
+            text-align: center;
+            font-size: 0.875rem;
+            color: var(--color-text-tertiary);
+        }
+
+        .error-message {
+            background-color: var(--color-danger);
+            color: white;
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-md);
+            text-align: center;
+            margin-bottom: var(--spacing-xl);
+        }
+
+        @media (max-width: 768px) {
+            .decision-input {
+                grid-template-columns: 1fr;
+            }
+
+            .decision-header {
+                grid-template-columns: 1fr;
+            }
+
+            .decision-metrics {
+                grid-column: 1 !important;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: var(--spacing-md);
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="header-content">
+                <h1 class="logo">🎯 Tito Metralleta</h1>
+                <p class="subtitle">Sistema Inteligente de Análisis de Trading</p>
+            </div>
+            <div class="header-status">
+                <span id="marketStatus" class="market-status">🔴 Mercado Cerrado</span>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <section class="decision-panel">
+                <div class="decision-input">
+                    <input
+                        type="text"
+                        id="symbolInput"
+                        placeholder="Ingresa símbolo (ej: AAPL)"
+                        class="symbol-input"
+                        autocomplete="off"
+                    >
+                    <input
+                        type="text"
+                        id="strategyInput"
+                        placeholder="Estrategia (ej: Momentum)"
+                        class="strategy-input"
+                        autocomplete="off"
+                    >
+                    <button id="analyzeBtn" class="btn btn-primary">Analizar</button>
+                </div>
+
+                <div class="decision-result" id="decisionResult" style="display: none;"></div>
+
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-icon">📊</div>
+                    <p>Ingresa un símbolo y estrategia para comenzar el análisis</p>
+                </div>
+            </section>
+
+            <div class="watchlist-section">
+                <h2>📋 Watchlist</h2>
+                <div class="watchlist-input">
+                    <input
+                        type="text"
+                        id="watchlistInput"
+                        placeholder="Agregar símbolo"
+                    >
+                    <button onclick="addToWatchlist()">+</button>
+                </div>
+                <ul class="watchlist-items" id="watchlistItems"></ul>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <p>Tito Metralleta v1.0 | Motor de Análisis Inteligente</p>
+            <p>Este es un sistema de análisis educativo. No es asesor financiero.</p>
+        </footer>
+    </div>
+
+    <script>
+        // Motor simplificado
+        class TitoMotor {
+            constructor() {
+                this.rules = this.initRules();
+                this.watchlist = this.loadWatchlist();
+            }
+
+            initRules() {
+                return {
+                    trend_bullish: { name: 'Tendencia Alcista', weight: 25 },
+                    zone_premium: { name: 'Zona Premium', weight: 25 },
+                    volume_high: { name: 'Volumen Alto', weight: 20 },
+                    gex_positive: { name: 'GEX Positivo', weight: 20 },
+                    rsi_not_overbought: { name: 'RSI No Sobrecomprado', weight: 10 },
+                    market_context: { name: 'Contexto Alcista', weight: 15 },
+                    vix_low: { name: 'VIX Bajo', weight: 10 },
+                    liquidity: { name: 'Liquidez Suficiente', weight: 10 }
+                };
+            }
+
+            analyze(symbol, strategy) {
+                const score = Math.floor(Math.random() * 100);
+                let decision = 'no_operar';
+                let risk = 'alto';
+
+                if (score >= 85) {
+                    decision = 'operar';
+                    risk = 'bajo';
+                } else if (score >= 65) {
+                    decision = 'esperar';
+                    risk = 'medio';
+                } else {
+                    risk = 'alto';
+                }
+
+                const ruleNames = Object.values(this.rules).slice(0, Math.floor(Math.random() * 4) + 2).map(r => r.name);
+
+                return {
+                    symbol,
+                    strategy,
+                    score,
+                    decision,
+                    risk,
+                    reasons: ruleNames
+                };
+            }
+
+            loadWatchlist() {
+                try {
+                    return JSON.parse(localStorage.getItem('tito_watchlist') || '[]');
+                } catch {
+                    return [];
+                }
+            }
+
+            saveWatchlist() {
+                localStorage.setItem('tito_watchlist', JSON.stringify(this.watchlist));
+            }
+
+            addToWatchlist(symbol) {
+                if (!this.watchlist.includes(symbol.toUpperCase())) {
+                    this.watchlist.push(symbol.toUpperCase());
+                    this.saveWatchlist();
+                }
+            }
+
+            removeFromWatchlist(symbol) {
+                this.watchlist = this.watchlist.filter(s => s !== symbol.toUpperCase());
+                this.saveWatchlist();
+            }
+
+            getWatchlist() {
+                return this.watchlist;
+            }
+        }
+
+        const motor = new TitoMotor();
+
+        // UI
+        function performAnalysis() {
+            const symbol = document.getElementById('symbolInput').value.trim().toUpperCase();
+            const strategy = document.getElementById('strategyInput').value.trim();
+
+            if (!symbol || !strategy) {
+                showError('Por favor ingresa símbolo y estrategia');
+                return;
+            }
+
+            const analysis = motor.analyze(symbol, strategy);
+            renderDecision(analysis);
+            motor.addToWatchlist(symbol);
+            renderWatchlist();
+        }
+
+        function renderDecision(analysis) {
+            const decisionMap = { 'operar': 'OPERAR', 'esperar': 'ESPERAR', 'no_operar': 'NO OPERAR' };
+            const classMap = { 'operar': 'operate', 'esperar': 'wait', 'no_operar': 'no-operate' };
+            const emojiMap = { 'operar': '✅', 'esperar': '⏳', 'no_operar': '❌' };
+            const riskEmoji = { 'bajo': '🟢', 'medio': '🟡', 'alto': '🔴' };
+
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const dateStr = now.toLocaleDateString('es-ES', { year: 'numeric', month: 'short', day: 'numeric' });
+
+            // Simula contexto de mercado
+            const spyTrend = Math.random() > 0.5 ? 'alcista' : 'bajista';
+            const qqqTrend = Math.random() > 0.5 ? 'alcista' : 'bajista';
+            const vixPrice = (15 + Math.random() * 15).toFixed(2);
+
+            // Determina qué condiciones faltan
+            const missingConditions = [];
+            if (analysis.score < 85) {
+                // Para pasar de NO OPERAR a ESPERAR (< 50 a >= 65)
+                if (analysis.score < 65) {
+                    missingConditions.push('Mejorar tendencia del activo');
+                    missingConditions.push('Aumentar volumen de operación');
+                    missingConditions.push('Confirmar zona de operación');
+                }
+                // Para pasar de ESPERAR a OPERAR (>= 65 a >= 85)
+                else if (analysis.score >= 65 && analysis.score < 85) {
+                    missingConditions.push('Mejorar contexto general (SPY/QQQ)');
+                    missingConditions.push('Aumentar confirmación de entrada');
+                    missingConditions.push('Reducir niveles de volatilidad (VIX)');
+                }
+            }
+
+            const html = `
+                <div class="decision-box ${classMap[analysis.decision]}">
+                    <div class="decision-meta">
+                        <span>Actualizado: ${dateStr} ${timeStr}</span>
+                        <button class="refresh-btn" onclick="performAnalysis()">🔄 Refrescar</button>
+                    </div>
+
+                    <div class="market-summary">
+                        <div class="market-item">
+                            <div class="market-label">SPY</div>
+                            <div class="market-value">${spyTrend === 'alcista' ? '📈 Alcista' : '📉 Bajista'}</div>
+                        </div>
+                        <div class="market-item">
+                            <div class="market-label">QQQ</div>
+                            <div class="market-value">${qqqTrend === 'alcista' ? '📈 Alcista' : '📉 Bajista'}</div>
+                        </div>
+                        <div class="market-item">
+                            <div class="market-label">VIX</div>
+                            <div class="market-value">${vixPrice}</div>
+                        </div>
+                    </div>
+
+                    <div class="decision-main-content">
+                        <div class="decision-left">
+                            <div class="decision-decision ${classMap[analysis.decision]}">
+                                ${emojiMap[analysis.decision]} ${decisionMap[analysis.decision]}
+                            </div>
+                            <div class="decision-symbol">
+                                ${analysis.symbol} • ${analysis.strategy}
+                            </div>
+                        </div>
+                        <div class="decision-metrics">
+                            <div class="metric">
+                                <div class="metric-label">Confianza</div>
+                                <div class="metric-value">${analysis.score}%</div>
+                            </div>
+                            <div class="metric">
+                                <div class="metric-label">Riesgo</div>
+                                <div class="metric-value metric-risk ${analysis.risk}">
+                                    ${riskEmoji[analysis.risk]} ${analysis.risk.charAt(0).toUpperCase() + analysis.risk.slice(1)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reasons-box">
+                        <h3>Justificación</h3>
+                        <ul class="reasons-list">
+                            ${analysis.reasons.map(r => `<li>${r}</li>`).join('')}
+                        </ul>
+                    </div>
+
+                    ${missingConditions.length > 0 ? `
+                        <div class="conditions-box">
+                            <h3>¿Qué se necesita para cambiar la decisión?</h3>
+                            <ul class="conditions-list">
+                                ${missingConditions.map(c => `<li>${c}</li>`).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+
+            document.getElementById('decisionResult').innerHTML = html;
+            document.getElementById('decisionResult').style.display = 'block';
+            document.getElementById('emptyState').style.display = 'none';
+        }
+
+        function showError(msg) {
+            const resultEl = document.getElementById('decisionResult');
+            resultEl.innerHTML = `<div class="error-message">⚠️ ${msg}</div>`;
+            resultEl.style.display = 'block';
+            document.getElementById('emptyState').style.display = 'none';
+        }
+
+        function addToWatchlist() {
+            const input = document.getElementById('watchlistInput');
+            const symbol = input.value.trim().toUpperCase();
+            if (!symbol) return;
+            motor.addToWatchlist(symbol);
+            input.value = '';
+            renderWatchlist();
+        }
+
+        function renderWatchlist() {
+            const list = motor.getWatchlist();
+            const html = list.map(s => `
+                <li class="watchlist-item" onclick="analyzeFromWatchlist('${s}')">
+                    <span>${s}</span>
+                    <span onclick="event.stopPropagation(); motor.removeFromWatchlist('${s}'); renderWatchlist();">✕</span>
+                </li>
+            `).join('');
+            document.getElementById('watchlistItems').innerHTML = html;
+        }
+
+        function analyzeFromWatchlist(symbol) {
+            document.getElementById('symbolInput').value = symbol;
+            if (!document.getElementById('strategyInput').value) {
+                document.getElementById('strategyInput').value = 'Análisis Automático';
+            }
+        }
+
+        // Event listeners
+        document.getElementById('analyzeBtn').addEventListener('click', performAnalysis);
+        document.getElementById('symbolInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') performAnalysis();
+        });
+        document.getElementById('strategyInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') performAnalysis();
+        });
+
+        renderWatchlist();
+    </script>
+</body>
+</html>

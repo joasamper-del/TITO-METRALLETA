@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tito Metralleta - Sistema de Análisis de Trading</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- HEADER -->
+        <header class="header">
+            <div class="header-content">
+                <h1 class="logo">🎯 Tito Metralleta</h1>
+                <p class="subtitle">Sistema Inteligente de Análisis de Trading</p>
+            </div>
+            <div class="header-status">
+                <span id="marketStatus" class="market-status">🔴 Mercado Cerrado</span>
+                <span id="timeToClose" class="time-to-close"></span>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <!-- PANEL PRINCIPAL DE DECISIÓN -->
+            <section class="decision-panel" id="decisionPanel">
+                <div class="decision-input">
+                    <input
+                        type="text"
+                        id="symbolInput"
+                        placeholder="Ingresa símbolo (ej: AAPL)"
+                        class="symbol-input"
+                        autocomplete="off"
+                    >
+                    <input
+                        type="text"
+                        id="strategyInput"
+                        placeholder="Estrategia (ej: Momentum)"
+                        class="strategy-input"
+                        autocomplete="off"
+                    >
+                    <button id="analyzeBtn" class="btn btn-primary">Analizar</button>
+                </div>
+
+                <div class="decision-result" id="decisionResult" style="display: none;">
+                    <!-- Decisión principal se renderiza aquí -->
+                </div>
+
+                <div class="empty-state" id="emptyState">
+                    <div class="empty-icon">📊</div>
+                    <p>Ingresa un símbolo y estrategia para comenzar el análisis</p>
+                </div>
+            </section>
+
+            <div class="content-grid">
+                <!-- PANEL LATERAL IZQUIERDO: WATCHLIST -->
+                <aside class="sidebar sidebar-left">
+                    <section class="watchlist-section">
+                        <h2>📋 Watchlist</h2>
+
+                        <div class="watchlist-input">
+                            <input
+                                type="text"
+                                id="watchlistInput"
+                                placeholder="Agregar símbolo"
+                                class="watchlist-input-field"
+                            >
+                            <button id="addWatchlistBtn" class="btn btn-sm btn-secondary">+</button>
+                        </div>
+
+                        <ul class="watchlist-items" id="watchlistItems">
+                            <!-- Se generan dinámicamente -->
+                        </ul>
+
+                        <button id="clearWatchlistBtn" class="btn btn-sm btn-danger" style="width: 100%; margin-top: 1rem;">
+                            Limpiar Watchlist
+                        </button>
+                    </section>
+
+                    <!-- PANEL DE REGLAS -->
+                    <section class="rules-section">
+                        <h2>⚙️ Reglas Activas</h2>
+                        <div class="rules-list" id="rulesList">
+                            <!-- Se generan dinámicamente -->
+                        </div>
+                    </section>
+                </aside>
+
+                <!-- PANEL LATERAL DERECHO: DETALLES -->
+                <aside class="sidebar sidebar-right">
+                    <section class="details-section">
+                        <h2>📊 Detalles del Análisis</h2>
+
+                        <!-- Datos de Mercado -->
+                        <div class="detail-group" id="marketDataGroup" style="display: none;">
+                            <h3>Datos de Mercado</h3>
+                            <div class="detail-item">
+                                <span class="label">Precio:</span>
+                                <span id="detailPrice">—</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Volumen:</span>
+                                <span id="detailVolume">—</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">RSI:</span>
+                                <span id="detailRSI">—</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Tendencia:</span>
+                                <span id="detailTrend">—</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">GEX:</span>
+                                <span id="detailGEX">—</span>
+                            </div>
+                        </div>
+
+                        <!-- Plan de Operación -->
+                        <div class="detail-group" id="planGroup" style="display: none;">
+                            <h3>Plan de Operación</h3>
+                            <div class="plan-inputs">
+                                <div class="input-group">
+                                    <label>Entrada:</label>
+                                    <input type="number" id="entryInput" placeholder="150.50" step="0.01">
+                                </div>
+                                <div class="input-group">
+                                    <label>Objetivo:</label>
+                                    <input type="number" id="targetInput" placeholder="155.00" step="0.01">
+                                </div>
+                                <div class="input-group">
+                                    <label>Stop:</label>
+                                    <input type="number" id="stopInput" placeholder="148.00" step="0.01">
+                                </div>
+                                <div class="input-group full">
+                                    <label>Notas:</label>
+                                    <textarea id="notesInput" placeholder="Notas sobre la operación" rows="3"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Evaluación de Reglas -->
+                        <div class="detail-group" id="rulesEvalGroup" style="display: none;">
+                            <h3>Evaluación de Reglas</h3>
+                            <div class="rules-evaluation" id="rulesEvaluation">
+                                <!-- Se generan dinámicamente -->
+                            </div>
+                        </div>
+
+                        <!-- Contexto de Mercado -->
+                        <div class="detail-group" id="contextGroup" style="display: none;">
+                            <h3>Contexto de Mercado</h3>
+                            <div class="market-context">
+                                <div class="context-item">
+                                    <span class="label">SPY:</span>
+                                    <div class="context-value">
+                                        <span id="contextSPY">—</span>
+                                    </div>
+                                </div>
+                                <div class="context-item">
+                                    <span class="label">QQQ:</span>
+                                    <div class="context-value">
+                                        <span id="contextQQQ">—</span>
+                                    </div>
+                                </div>
+                                <div class="context-item">
+                                    <span class="label">VIX:</span>
+                                    <div class="context-value">
+                                        <span id="contextVIX">—</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </aside>
+            </div>
+
+            <!-- PANEL DE HISTORIAL (ABAJO) -->
+            <section class="history-section">
+                <h2>📝 Historial de Análisis</h2>
+                <div class="history-controls">
+                    <button id="toggleHistoryBtn" class="btn btn-sm btn-secondary">Mostrar Historial</button>
+                    <button id="clearHistoryBtn" class="btn btn-sm btn-danger">Limpiar Historial</button>
+                </div>
+                <div class="history-list" id="historyList" style="display: none;">
+                    <!-- Se generan dinámicamente -->
+                </div>
+            </section>
+        </main>
+
+        <!-- FOOTER -->
+        <footer class="footer">
+            <p>Tito Metralleta v1.0 | Motor de Análisis Inteligente</p>
+            <p class="footer-note">Este es un sistema de análisis educativo. No es asesor financiero.</p>
+        </footer>
+    </div>
+
+    <script src="motor.js"></script>
+    <script src="ui.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
