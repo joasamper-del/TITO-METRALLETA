@@ -44,6 +44,10 @@ export default function StrategyPage() {
 
   const loading = coreLoading || (mode === "operative" && opLoading);
 
+  // Distinguir entre fail-safe (datos insuficientes) y error técnico real
+  const failSafeActive = mode === "operative" && operativeData?.failSafeReason;
+  const finalError = failSafeActive ? null : coreError || (mode === "operative" ? opError : null);
+
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto">
@@ -297,8 +301,11 @@ export default function StrategyPage() {
                 </span>
               </div>
               {operativeData?.failSafeReason && (
-                <div className="text-xs text-red-600 mt-2 bg-red-50 p-2 rounded">
-                  🚫 {operativeData.failSafeReason}
+                <div className="text-sm font-semibold text-red-600 mt-3 bg-red-50 p-3 rounded border border-red-200">
+                  🚫 DECISIÓN BLOQUEADA POR FAIL-SAFE
+                  <div className="text-xs text-red-700 mt-2 font-normal">
+                    {operativeData.failSafeReason}
+                  </div>
                 </div>
               )}
             </div>
@@ -310,12 +317,25 @@ export default function StrategyPage() {
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
             Decisión Tito Core {mode === "operative" && "(Datos Reales)"}
           </h2>
-          <TitoDecisionPanel
-            decision={decision}
-            ticker={ticker}
-            loading={loading}
-            error={coreError || (mode === "operative" ? opError : null)}
-          />
+          {failSafeActive ? (
+            <div className="bg-red-50 rounded-lg border border-red-200 p-6">
+              <h3 className="text-lg font-semibold text-red-900 mb-3">
+                🚫 DECISIÓN BLOQUEADA POR FAIL-SAFE — NO OPERAR
+              </h3>
+              <p className="text-sm text-red-700 mb-2">{operativeData?.failSafeReason}</p>
+              <p className="text-xs text-red-600 mt-3">
+                El pipeline de Tito no puede procesar esta solicitud porque faltan datos críticos.
+                Espera a que todas las fuentes estén disponibles antes de ejecutar.
+              </p>
+            </div>
+          ) : (
+            <TitoDecisionPanel
+              decision={decision}
+              ticker={ticker}
+              loading={loading}
+              error={finalError}
+            />
+          )}
         </div>
 
         {/* Info Panel */}

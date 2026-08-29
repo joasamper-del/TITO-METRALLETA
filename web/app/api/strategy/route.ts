@@ -6,6 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
+import { getCryptoPrice } from "@/lib/alpacaConnector";
 
 export interface StrategyOperativeData {
   symbol: string;
@@ -41,122 +42,109 @@ export async function GET(request: NextRequest) {
   let failSafeReason: string | undefined;
   const missingData: string[] = [];
 
-  // FUENTE 1: Precio actual (Massive, Schwab, o mock)
+  // FUENTE 1: Precio actual (Massive o Alpaca)
   let price: StrategyOperativeData["price"] = null;
   try {
-    // TODO: Conectar a Massive /v2/snapshot/ o Schwab
-    // Por ahora: mock data para demostración
-    const mockPrices: Record<string, number> = { SPY: 450.32, QQQ: 385.15, BTC: 77648.5, ETH: 2450.25 };
-    if (mockPrices[ticker]) {
-      price = {
-        value: mockPrices[ticker],
-        source: "mock",
-        ts: now,
-      };
+    // Crypto: Usar alpacaConnector.getCryptoPrice
+    if (["BTC", "ETH"].includes(ticker)) {
+      try {
+        const cryptoResult = await getCryptoPrice(
+          ticker as "BTC" | "ETH",
+          process.env.ALPACA_PAPER_KEY || "",
+          process.env.ALPACA_PAPER_SECRET || "",
+          "https://paper-api.alpaca.markets"
+        );
+        if (cryptoResult.price) {
+          price = {
+            value: cryptoResult.price,
+            source: "Alpaca /crypto/latest/quotes",
+            ts: now,
+          };
+        }
+      } catch (cryptoErr) {
+        // No fallback: null si Alpaca falla
+      }
+    } else {
+      // Equities: Usar Massive (cuando disponible)
+      // TODO: Conectar a Massive /v2/snapshot/locale/us/markets/stocks/tickers/{ticker}
+      // Por ahora: null si no está disponible (fail-safe)
+    }
+
+    if (!price) {
+      missingData.push("price");
     }
   } catch (err) {
     missingData.push("price");
   }
 
-  // FUENTE 2: Tendencia (de histórico de precios)
+  // FUENTE 2: Tendencia (MA50/MA200 calculada)
   let trend: StrategyOperativeData["trend"] = null;
   try {
-    // TODO: Conectar a cálculo real de MA50/MA200
-    // Por ahora: mock data
-    const mockTrends: Record<string, "alcista" | "bajista" | "lateral"> = {
-      SPY: "alcista",
-      QQQ: "alcista",
-      BTC: "lateral",
-      ETH: "bajista",
-    };
-    if (mockTrends[ticker]) {
-      trend = {
-        value: mockTrends[ticker],
-        source: "mock_ma",
-        ts: now,
-      };
-    }
+    // Requiere histórico de barras diarias (últimos 200 días)
+    // TODO: Conectar a Massive /v2/aggs/ticker/{ticker}/range/1/day o Alpaca barras
+    // Por ahora: null si no disponible (fail-safe)
+    // Cuando disponible: MA50 > MA200 → alcista, MA50 < MA200 → bajista
+    // Diferencia < 1% → lateral
   } catch (err) {
     missingData.push("trend");
   }
+  if (!trend) {
+    missingData.push("trend");
+  }
 
-  // FUENTE 3: Volatilidad (IV o σ realizada)
+  // FUENTE 3: Volatilidad (IV Rank o σ realizada)
   let volatility: StrategyOperativeData["volatility"] = null;
   try {
-    // TODO: Conectar a Massive IV o σ realizada
-    // Por ahora: mock data
-    const mockVolatilities: Record<string, number> = {
-      SPY: 22.5,
-      QQQ: 25.8,
-      BTC: 3.2,
-      ETH: 4.1,
-    };
-    if (mockVolatilities[ticker]) {
-      volatility = {
-        value: mockVolatilities[ticker],
-        source: "mock_iv",
-        ts: now,
-      };
-    }
+    // Equities: Massive /implied_volatility si disponible, sino σ realizada
+    // Crypto: σ realizada desde últimas 30 barras diarias
+    // TODO: Conectar a Massive IV Rank o calcular σ desde barras
+    // Por ahora: null si no disponible (fail-safe)
   } catch (err) {
     missingData.push("volatility");
   }
+  if (!volatility) {
+    missingData.push("volatility");
+  }
 
-  // FUENTE 4: Volumen
+  // FUENTE 4: Volumen (24h intradía)
   let volume: StrategyOperativeData["volume"] = null;
   try {
-    // TODO: Conectar a Massive volumen intradía o MarketSnack
-    // Por ahora: mock data
-    const mockVolumes: Record<string, number> = {
-      SPY: 48200000,
-      QQQ: 32500000,
-      BTC: 1850000,
-      ETH: 2250000,
-    };
-    if (mockVolumes[ticker]) {
-      volume = {
-        value: mockVolumes[ticker],
-        source: "mock_volume",
-        ts: now,
-      };
-    }
+    // Equities: Massive volumen intradía (últimas 24h)
+    // Crypto: Alpaca volumen 24h
+    // TODO: Conectar a Massive /v2/aggs o Alpaca barras
+    // Por ahora: null si no disponible (fail-safe)
   } catch (err) {
     missingData.push("volume");
   }
+  if (!volume) {
+    missingData.push("volume");
+  }
 
-  // FUENTE 5: Liquidez (bid/ask spread)
+  // FUENTE 5: Liquidez (bid/ask spread real)
   let liquidity: StrategyOperativeData["liquidity"] = null;
   try {
-    // TODO: Conectar a Massive bid/ask o Schwab
-    // Por ahora: mock data
-    const mockSpreads: Record<string, string> = {
-      SPY: "0.01",
-      QQQ: "0.01",
-      BTC: "0.08%",
-      ETH: "0.12%",
-    };
-    if (mockSpreads[ticker]) {
-      liquidity = {
-        value: mockSpreads[ticker],
-        source: "mock_liquidity",
-        ts: now,
-      };
-    }
+    // Equities: Massive last_quote (bid/ask)
+    // Crypto: Alpaca crypto quotes (bid/ask)
+    // Calcular: (ask - bid) / mid * 100%
+    // TODO: Conectar a Massive /v3/snapshot/options/ o Alpaca quotes
+    // Por ahora: null si no disponible (fail-safe)
   } catch (err) {
     missingData.push("liquidity");
   }
+  if (!liquidity) {
+    missingData.push("liquidity");
+  }
 
-  // FUENTE 6: Patrón (TVContext + GEX)
+  // FUENTE 6: Patrón (TVContext alerts + valores reales)
   let pattern: StrategyOperativeData["pattern"] = null;
   try {
-    // TODO: Conectar a TVContext alerts + GEX analysis
-    // Por ahora: mock data
-    pattern = {
-      value: "RSI 65, ADX 42",
-      source: "mock_pattern",
-      ts: now,
-    };
+    // TODO: Conectar a TVContext alerts API para RSI, ADX, etc.
+    // Si disponible: "RSI X, ADX Y" (valores reales de alerts)
+    // Por ahora: null si no disponible (fail-safe)
   } catch (err) {
+    missingData.push("pattern");
+  }
+  if (!pattern) {
     missingData.push("pattern");
   }
 
