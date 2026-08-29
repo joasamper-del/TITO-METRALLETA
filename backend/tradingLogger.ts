@@ -56,6 +56,14 @@ export interface TradeRecord {
   vixRegime?: "baja" | "normal" | "media" | "alta";
   vixConfirmation?: "alcista" | "neutral" | "bajista";
   vixAlignment?: "confirmada" | "neutral" | "contradice";
+
+  // MOC Context (confirmación al cierre, NO señal principal)
+  mocNetImbalance?: number; // Compra - Venta neto
+  mocDirection?: "compra" | "venta" | "balance";
+  mocMagnitude?: "muy alta" | "alta" | "media" | "baja";
+  mocConfirmation?: "alcista" | "neutral" | "bajista";
+  mocAlignment?: "confirmada" | "neutral" | "contradice";
+  mocChangeFromOpen?: number;
 }
 
 export interface TradingSummary {
