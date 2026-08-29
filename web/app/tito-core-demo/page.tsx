@@ -14,9 +14,10 @@ export default function TitoCoreDemo() {
   const [ticker, setTicker] = useState<string>("SPY");
   const [spot, setSpot] = useState<number>(450);
   const [iv, setIv] = useState<number>(25);
+  const [direction, setDirection] = useState<"LONG" | "SHORT">("LONG");
   const [trend, setTrend] = useState<"alcista" | "bajista" | "lateral">("alcista");
 
-  const { decision, loading, error } = useTitoDecision(ticker, spot, iv, trend);
+  const { decision, loading, error } = useTitoDecision(ticker, spot, iv, trend, direction);
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -88,6 +89,35 @@ export default function TitoCoreDemo() {
                 <option value="bajista">Bajista ↓</option>
               </select>
             </div>
+
+            {/* Direction (S23a) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Dirección (S23a Bidireccional)
+              </label>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setDirection("LONG")}
+                  className={`flex-1 px-3 py-2 rounded-lg font-medium transition ${
+                    direction === "LONG"
+                      ? "bg-green-500 text-white"
+                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  }`}
+                >
+                  🔵 LONG (Compra)
+                </button>
+                <button
+                  onClick={() => setDirection("SHORT")}
+                  className={`flex-1 px-3 py-2 rounded-lg font-medium transition ${
+                    direction === "SHORT"
+                      ? "bg-red-500 text-white"
+                      : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  }`}
+                >
+                  🔴 SHORT (Venta)
+                </button>
+              </div>
+            </div>
           </div>
 
           <p className="text-xs text-gray-500 mt-4 p-3 bg-blue-50 rounded">
@@ -112,7 +142,7 @@ export default function TitoCoreDemo() {
           <pre className="text-xs text-gray-700 overflow-auto max-h-48">
             {JSON.stringify(
               {
-                input: { ticker, spot, iv, trend },
+                input: { ticker, spot, iv, direction, trend },
                 output: decision,
                 loading,
                 error,

@@ -15,12 +15,20 @@ export interface RuleResult {
 
 type Rule = (s: MarketSnapshot) => RuleResult;
 
-const trendRule: Rule = (s) => ({
-  id: "trend-alcista",
-  category: "trend",
-  passed: s.trend === "alcista",
-  detail: `tendencia ${s.trend}`,
-});
+const trendRule: Rule = (s) => {
+  const isValidTrend =
+    (s.direction === "LONG" && s.trend === "alcista") ||
+    (s.direction === "SHORT" && s.trend === "bajista");
+
+  return {
+    id: "trend-bidireccional",
+    category: "trend",
+    passed: isValidTrend,
+    detail: isValidTrend
+      ? `tendencia ${s.trend} válida para ${s.direction}`
+      : `tendencia ${s.trend} inválida para ${s.direction}`,
+  };
+};
 
 const volumeRule: Rule = (s) => ({
   id: "volumen-suficiente",

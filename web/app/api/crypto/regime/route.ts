@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import fetch from "node-fetch";
 
 interface MarketRegime {
   classification: "BULLISH" | "BEARISH" | "SIDEWAYS";
@@ -76,7 +75,7 @@ async function getCurrentBTCPrice(): Promise<number> {
 
   try {
     // Intentar CoinGecko
-    const response = await (fetch as any)(
+    const response = await fetch(
       "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
     );
     if (response.ok) {

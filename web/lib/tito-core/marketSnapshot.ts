@@ -12,7 +12,9 @@ export type RuleCategory =
 
 export interface MarketSnapshot {
   symbol: string;
-  /** Tendencia del subyacente. La estrategia mock solo opera a favor de "alcista". */
+  /** Dirección de la operación: LONG (compra) o SHORT (venta). Se evalúa antes de tendencia. */
+  direction: "LONG" | "SHORT";
+  /** Tendencia del subyacente. Requerida: alcista para LONG, bajista para SHORT. */
   trend: "alcista" | "bajista" | "lateral";
   volumeSufficient: boolean;
   liquidityAdequate: boolean;

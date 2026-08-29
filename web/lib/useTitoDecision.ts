@@ -23,12 +23,14 @@ function createSnapshot(
   ticker: string,
   spot: number,
   iv: number,
+  direction: "LONG" | "SHORT" = "LONG",
   trend: "alcista" | "bajista" | "lateral" = "lateral",
   volumeSufficient: boolean = true,
   liquidityAdequate: boolean = true
 ): MarketSnapshot {
   return {
     symbol: ticker,
+    direction,
     trend,
     volumeSufficient,
     liquidityAdequate,
@@ -45,12 +47,14 @@ function createSnapshot(
 /**
  * Hook que obtiene decisiones reales de Tito Core
  * Llamar cuando el ticker o precios cambien
+ * @param direction LONG (compra) o SHORT (venta) — determina si se requiere alcista o bajista
  */
 export function useTitoDecision(
   ticker: string | null,
   spot: number | null,
   iv: number | null,
-  trend?: "alcista" | "bajista" | "lateral"
+  trend?: "alcista" | "bajista" | "lateral",
+  direction: "LONG" | "SHORT" = "LONG"
 ): TitoDecisionState {
   const [state, setState] = useState<TitoDecisionState>({
     decision: null,
@@ -72,6 +76,7 @@ export function useTitoDecision(
         ticker,
         spot,
         iv / 100, // IV como decimal
+        direction,
         trend || "lateral"
       );
 
@@ -98,7 +103,7 @@ export function useTitoDecision(
         error: `Error en Tito Core: ${errMsg}`,
       });
     }
-  }, [ticker, spot, iv, trend]);
+  }, [ticker, spot, iv, trend, direction]);
 
   // Recomputar cuando los datos cambien
   useEffect(() => {

@@ -19,12 +19,13 @@ export const MOCK_VERSIONS: ReportVersions = {
 };
 
 const NAMED_SCENARIOS: Record<string, Omit<MarketSnapshot, "symbol">> = {
-  // Mismo escenario cualitativo que la referencia auditada de la bitácora (§13): alcista,
+  // Mismo escenario cualitativo que la referencia auditada de la bitácora (§13): alcista + LONG,
   // volumen/liquidez/régimen OK, vela sin confirmar → debe quedar en "esperar". La
   // confidence exacta (0.82 en la bitácora) no se reproduce bit a bit: ese número salió
   // de una corrida conceptual sin motor de métricas persistido; este commit calcula la
   // suya con una fórmula trazable propia (metricsEngine.ts), documentada y testeada.
   META: {
+    direction: "LONG",
     trend: "alcista",
     volumeSufficient: true,
     liquidityAdequate: true,
@@ -36,8 +37,9 @@ const NAMED_SCENARIOS: Record<string, Omit<MarketSnapshot, "symbol">> = {
     historicalProbability: { min: 65, max: 72, comparableCases: 18 },
     dataQuality: "alta",
   },
-  // Todo aprobado, incluida la vela — debe resolver a "operar".
+  // Todo aprobado, incluida la vela — debe resolver a "operar" (LONG alcista).
   GOOD: {
+    direction: "LONG",
     trend: "alcista",
     volumeSufficient: true,
     liquidityAdequate: true,
@@ -49,8 +51,23 @@ const NAMED_SCENARIOS: Record<string, Omit<MarketSnapshot, "symbol">> = {
     historicalProbability: { min: 70, max: 78, comparableCases: 22 },
     dataQuality: "alta",
   },
-  // Tendencia en contra — regla dura rota → "no operar".
+  // SHORT bajista — regla dura de tendencia VÁLIDA, pero todo lo demás requiere aprobación.
+  SHORTGOOD: {
+    direction: "SHORT",
+    trend: "bajista",
+    volumeSufficient: true,
+    liquidityAdequate: true,
+    regimeValidated: true,
+    patternDetected: true,
+    candleConfirmed: true,
+    volatilityInRange: true,
+    blockingEvent: false,
+    historicalProbability: { min: 70, max: 78, comparableCases: 22 },
+    dataQuality: "alta",
+  },
+  // Tendencia en contra para LONG (bajista vs LONG) — regla dura rota → "no operar".
   BADX: {
+    direction: "LONG",
     trend: "bajista",
     volumeSufficient: true,
     liquidityAdequate: true,
@@ -64,6 +81,7 @@ const NAMED_SCENARIOS: Record<string, Omit<MarketSnapshot, "symbol">> = {
   },
   // Señal de patrón ambigua → "revisar manualmente".
   MIXD: {
+    direction: "LONG",
     trend: "alcista",
     volumeSufficient: true,
     liquidityAdequate: true,
@@ -77,6 +95,7 @@ const NAMED_SCENARIOS: Record<string, Omit<MarketSnapshot, "symbol">> = {
   },
   // Datos incompletos → "revisar manualmente" por calidad de datos, sin importar reglas.
   LOWQ: {
+    direction: "LONG",
     trend: "alcista",
     volumeSufficient: true,
     liquidityAdequate: true,
@@ -100,12 +119,19 @@ function hashString(s: string): number {
  * Genera un snapshot determinista para cualquier símbolo sin escenario nombrado —
  * mismo símbolo siempre produce el mismo snapshot (bitácora §11, AC-08). Existe para
  * que el flujo corra sin excepciones sobre cualquier ticker (AC-02), no para simular
- * mercado real.
+ * mercado real. S23a: dirección también determinista según hash.
  */
 function proceduralSnapshot(symbol: string): Omit<MarketSnapshot, "symbol"> {
   const h = hashString(symbol);
+  const direction = h % 2 === 0 ? ("LONG" as const) : ("SHORT" as const);
+  const trend =
+    direction === "LONG"
+      ? h % 3 === 0 ? "bajista" : h % 3 === 1 ? "lateral" : "alcista"
+      : h % 3 === 0 ? "alcista" : h % 3 === 1 ? "lateral" : "bajista";
+
   return {
-    trend: h % 3 === 0 ? "bajista" : h % 3 === 1 ? "lateral" : "alcista",
+    direction,
+    trend,
     volumeSufficient: h % 5 !== 0,
     liquidityAdequate: h % 7 !== 0,
     regimeValidated: h % 4 !== 0,
