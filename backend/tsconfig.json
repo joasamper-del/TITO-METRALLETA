@@ -21,7 +21,8 @@
       "@/*": ["src/*"],
       "@core/*": ["src/core/*"],
       "@engines/*": ["src/engines/*"],
-      "@types/*": ["src/types/*"]
+      "@types/*": ["src/types/*"],
+      "@tito-core/*": ["../web/lib/tito-core/*"]
     }
   },
   "include": ["src/**/*"],
