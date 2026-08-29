@@ -7,6 +7,9 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getCryptoPrice } from "@/lib/alpacaConnector";
+import { evaluateBlockingEvents } from "@/lib/blockingEvents";
+import { earningsForTicker } from "@/lib/earnings";
+import { buildNewsReport } from "@/lib/news";
 
 // Helper: Obtiene barras diarias históricas desde Massive
 async function getMassiveBars(ticker: string, days: number = 200): Promise<number[]> {
@@ -401,17 +404,91 @@ export async function GET(request: NextRequest) {
     missingData.push("pattern");
   }
 
-  // FUENTE 7: Evento bloqueante (earnings, news)
+  // FUENTE 7: Evento bloqueante (earnings, news) — Sesión 35
   let blockingEvent: StrategyOperativeData["blockingEvent"] = null;
   try {
-    // TODO: Conectar a earnings calendar + news alerts
-    // Por ahora: mock data
+    let earningsData: { flag: any; daysUntilEarnings: number | null } | null = null;
+    let newsData: { hasCriticalNews: boolean; criticalReasons: string[] } | null = null;
+
+    // Obtener datos de earnings
+    try {
+      const earnings = await earningsForTicker({
+        ticker,
+        expiration: new Date().toISOString().split("T")[0], // Hoy
+        frontSkew: null, // No disponible en este contexto
+        now: new Date(),
+      });
+
+      if (earnings && earnings !== "no_aplica") {
+        // Calcular días aproximados hasta earnings (solo si "dentro" o "dentro_confirmado")
+        let daysUntilEarnings: number | null = null;
+        if (earnings === "dentro" || earnings === "dentro_confirmado") {
+          // Estimación: si dentro, asumir ~10 días (promedio hasta próximo earnings)
+          daysUntilEarnings = 10; // Proxy conservador
+        }
+
+        earningsData = {
+          flag: earnings,
+          daysUntilEarnings,
+        };
+      }
+    } catch (earningsErr) {
+      // No fallback: null si earnings falla
+    }
+
+    // Obtener datos de noticias
+    try {
+      const newsReport = await buildNewsReport(ticker, null, new Date());
+      if (newsReport) {
+        // Clasificar noticias como críticas si contienen palabras clave
+        const criticalKeywords = ["bankruptcy", "sec", "fraud", "delisting", "resign"];
+        const allNews = [...(newsReport.macroNews || []), ...(newsReport.companyNews || [])];
+        const criticalMatches = allNews
+          .filter((n: any) =>
+            criticalKeywords.some((kw) =>
+              (n.title || "").toLowerCase().includes(kw) ||
+              (n.description || "").toLowerCase().includes(kw)
+            )
+          )
+          .map((n: any) => n.title || "critical_news");
+
+        if (criticalMatches.length > 0) {
+          newsData = {
+            hasCriticalNews: true,
+            criticalReasons: criticalMatches.slice(0, 3), // Top 3
+          };
+        } else {
+          newsData = {
+            hasCriticalNews: false,
+            criticalReasons: [],
+          };
+        }
+      }
+    } catch (newsErr) {
+      // No fallback: null si news falla
+    }
+
+    // Evaluar bloqueos
+    const evaluation = evaluateBlockingEvents(earningsData, newsData);
+
     blockingEvent = {
-      value: false,
-      source: "mock_events",
+      value: evaluation.value,
+      source: evaluation.source,
       ts: now,
     };
+
+    // Nota: si value es null, marcar como REVISAR MANUALMENTE en missingData
+    if (evaluation.value === null) {
+      blockingEvent = {
+        ...blockingEvent,
+        value: null,
+        source: `${evaluation.source} — REVISAR MANUALMENTE`,
+      };
+    }
   } catch (err) {
+    // No fallback: null si evaluación completa falla
+  }
+  if (!blockingEvent) {
     missingData.push("blockingEvent");
   }
 
