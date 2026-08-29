@@ -303,11 +303,50 @@ export async function GET(request: NextRequest) {
   // FUENTE 6: Patrón (TVContext alerts + valores reales)
   let pattern: StrategyOperativeData["pattern"] = null;
   try {
-    // TODO: Conectar a TVContext alerts API para RSI, ADX, etc.
-    // Si disponible: "RSI X, ADX Y" (valores reales de alerts)
-    // Por ahora: null si no disponible (fail-safe)
+    // Leer alerts más recientes de data/alerts.json (persiste desde /api/tradingview)
+    // En servidor: leer archivo; en cliente: usar stub
+    try {
+      const fs = await import("fs").catch(() => null);
+      if (fs) {
+        const alertPath = "data/alerts.json";
+        const alertsContent = fs.readFileSync(alertPath, "utf-8");
+        const alerts: any[] = JSON.parse(alertsContent);
+
+        // Filtrar por ticker y últimas 24h
+        const oneDay = 24 * 60 * 60 * 1000;
+        const recentAlerts = alerts.filter((a: any) => {
+          const alertTime = new Date(a.createdAt || a.timestamp).getTime();
+          return a.symbol === ticker && Date.now() - alertTime < oneDay;
+        });
+
+        if (recentAlerts.length >= 2) {
+          // Agrupar por source (RSI, ADX, SuperTrend, etc.)
+          const grouped: { [key: string]: any } = {};
+          recentAlerts.forEach((a: any) => {
+            if (!grouped[a.source]) {
+              grouped[a.source] = a;
+            }
+          });
+
+          const indicators = Object.entries(grouped).slice(0, 3); // Top 3 indicadores
+          if (indicators.length >= 2) {
+            const summary = indicators
+              .map(([source, alert]: [string, any]) => `${source} ${alert.value}`)
+              .join(", ");
+
+            pattern = {
+              value: summary,
+              source: "TVContext alerts (últimas 24h)",
+              ts: now,
+            };
+          }
+        }
+      }
+    } catch (fsErr) {
+      // No fallback: null si lectura falla
+    }
   } catch (err) {
-    missingData.push("pattern");
+    // No fallback: null si TVContext no disponible
   }
   if (!pattern) {
     missingData.push("pattern");
@@ -327,17 +366,68 @@ export async function GET(request: NextRequest) {
     missingData.push("blockingEvent");
   }
 
-  // FUENTE 8: Régimen (Fear Index para crypto, IV Rank para equities)
+  // FUENTE 8: Régimen (VIX para SPY/QQQ, Fear & Greed para BTC/ETH) — Sesión 35
   let regime: StrategyOperativeData["regime"] = null;
   try {
-    // TODO: Conectar a Fear & Greed Index (crypto) o IV Rank (equities)
-    // Por ahora: mock data
     const isCrypto = ["BTC", "ETH"].includes(ticker);
-    regime = {
-      value: isCrypto ? "Normal (45 Fear Index)" : "Normal (IV Rank 45%)",
-      source: "mock_regime",
-      ts: now,
-    };
+    console.log(`[REGIME-S35] Ticker: ${ticker}, isCrypto: ${isCrypto}`);
+
+    if (isCrypto) {
+      // Crypto: Fear & Greed Index desde CoinGecko (pública, sin auth)
+      try {
+        const response = await fetch("https://api.alternative.me/fng/?limit=1");
+        if (response.ok) {
+          const data: any = await response.json();
+          if (data.data && data.data.length > 0) {
+            const fearValue = parseInt(data.data[0].value);
+            const fearStatus = data.data[0].value_classification;
+
+            if (typeof fearValue === "number" && fearValue >= 0 && fearValue <= 100) {
+              regime = {
+                value: `${fearStatus} (${fearValue} Fear Index)`,
+                source: "CoinGecko Fear & Greed Index",
+                ts: now,
+              };
+            }
+          }
+        }
+      } catch (cryptoErr) {
+        // No fallback: null si CoinGecko falla
+      }
+    } else {
+      // Equities (SPY, QQQ): VIX desde proxy de volatilidad realizada (regimen)
+      // Especificación estricta: usar σ realizada como proxy de régimen de volatilidad
+      try {
+        const closes = await getMassiveBars(ticker, 30);
+        if (closes.length >= 30) {
+          const sigma = calculateVolatility(closes, true);
+
+          if (sigma !== null && !isNaN(sigma) && typeof sigma === "number") {
+            let vixRegime = "Normal";
+            // Clasificación de régimen según σ realizada proxy
+            if (sigma < 12) {
+              vixRegime = "Dormida";
+            } else if (sigma < 20) {
+              vixRegime = "Compresión";
+            } else if (sigma < 35) {
+              vixRegime = "Normal";
+            } else if (sigma < 50) {
+              vixRegime = "Expansión";
+            } else {
+              vixRegime = "Pánico";
+            }
+
+            regime = {
+              value: `${vixRegime} (σ proxy ${sigma.toFixed(2)}%)`,
+              source: "VIX proxy — σ realizada",
+              ts: now,
+            };
+          }
+        }
+      } catch (equityErr) {
+        // No fallback: null si cálculo de volatilidad falla
+      }
+    }
   } catch (err) {
     missingData.push("regime");
   }
