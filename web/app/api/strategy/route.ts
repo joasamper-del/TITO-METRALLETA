@@ -68,6 +68,45 @@ function calculateVolatility(closes: number[], annualize: boolean = true): numbe
   return sigma * 100; // Retornar como porcentaje
 }
 
+// Helper: Obtiene VIX real desde FRED (serie VIXCLS)
+async function getVIXFromFRED(): Promise<{ value: number | null; date: string | null; ts: string }> {
+  const now = new Date().toISOString();
+  try {
+    const fredApiKey = process.env.FRED_API_KEY;
+    if (!fredApiKey) {
+      return { value: null, date: null, ts: now };
+    }
+
+    // FRED VIXCLS — última observación disponible
+    // Endpoint: /fred/series/observations con series_id=VIXCLS
+    // Solicitar JSON (file_type=json), ordenar por fecha descendente, obtener últimas 1
+    const url = `https://api.stlouisfed.org/fred/series/observations?series_id=VIXCLS&api_key=${fredApiKey}&file_type=json&limit=1&sort_order=desc`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      return { value: null, date: null, ts: now };
+    }
+
+    const data: any = await response.json();
+    if (data.observations && data.observations.length > 0) {
+      const obs = data.observations[0];
+      const vixValue = obs.value ? parseFloat(obs.value) : null;
+
+      if (typeof vixValue === "number" && vixValue > 0 && vixValue < 200) {
+        return {
+          value: vixValue,
+          date: obs.date, // YYYY-MM-DD
+          ts: now,
+        };
+      }
+    }
+  } catch (err) {
+    // No fallback: null si FRED falla
+  }
+
+  return { value: null, date: null, ts: now };
+}
+
 export interface StrategyOperativeData {
   symbol: string;
   timestamp: string;
@@ -405,37 +444,34 @@ export async function GET(request: NextRequest) {
         // No fallback: null si CoinGecko falla
       }
     } else {
-      // Equities (SPY, QQQ): VIX desde proxy de volatilidad realizada (regimen)
-      // Especificación estricta: usar σ realizada como proxy de régimen de volatilidad
+      // Equities (SPY, QQQ): VIX real desde FRED (serie VIXCLS)
+      // Especificación estricta: obtener VIX real de datos frescos
       try {
-        const closes = await getMassiveBars(ticker, 30);
-        if (closes.length >= 30) {
-          const sigma = calculateVolatility(closes, true);
+        const vixData = await getVIXFromFRED();
 
-          if (sigma !== null && !isNaN(sigma) && typeof sigma === "number") {
-            let vixRegime = "Normal";
-            // Clasificación de régimen según σ realizada proxy
-            if (sigma < 12) {
-              vixRegime = "Dormida";
-            } else if (sigma < 20) {
-              vixRegime = "Compresión";
-            } else if (sigma < 35) {
-              vixRegime = "Normal";
-            } else if (sigma < 50) {
-              vixRegime = "Expansión";
-            } else {
-              vixRegime = "Pánico";
-            }
-
-            regime = {
-              value: `${vixRegime} (σ proxy ${sigma.toFixed(2)}%)`,
-              source: "VIX proxy — σ realizada",
-              ts: now,
-            };
+        if (vixData.value !== null && typeof vixData.value === "number") {
+          let vixRegime = "Normal";
+          // Clasificación de régimen según VIX real (estándar CBOE)
+          if (vixData.value < 12) {
+            vixRegime = "Dormida";
+          } else if (vixData.value < 20) {
+            vixRegime = "Compresión";
+          } else if (vixData.value < 35) {
+            vixRegime = "Normal";
+          } else if (vixData.value < 50) {
+            vixRegime = "Expansión";
+          } else {
+            vixRegime = "Pánico";
           }
+
+          regime = {
+            value: `${vixRegime} (VIX ${vixData.value.toFixed(2)})`,
+            source: `FRED VIXCLS — ${vixData.date || "último disponible"}`,
+            ts: now,
+          };
         }
       } catch (equityErr) {
-        // No fallback: null si cálculo de volatilidad falla
+        // No fallback: null si FRED falla o VIX no disponible
       }
     }
   } catch (err) {
