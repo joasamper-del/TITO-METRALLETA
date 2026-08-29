@@ -303,47 +303,57 @@ export async function GET(request: NextRequest) {
   // FUENTE 6: Patrón (TVContext alerts + valores reales)
   let pattern: StrategyOperativeData["pattern"] = null;
   try {
-    // Leer alerts más recientes de data/alerts.json (persiste desde /api/tradingview)
-    // En servidor: leer archivo; en cliente: usar stub
-    try {
-      const fs = await import("fs").catch(() => null);
-      if (fs) {
+    const fs = await import("fs").catch(() => null);
+    if (fs) {
+      try {
         const alertPath = "data/alerts.json";
         const alertsContent = fs.readFileSync(alertPath, "utf-8");
-        const alerts: any[] = JSON.parse(alertsContent);
+        const alertsData: any = JSON.parse(alertsContent);
+
+        // Estructura: { updatedAt, items: [...] }
+        const allAlerts = alertsData.items || [];
 
         // Filtrar por ticker y últimas 24h
         const oneDay = 24 * 60 * 60 * 1000;
-        const recentAlerts = alerts.filter((a: any) => {
-          const alertTime = new Date(a.createdAt || a.timestamp).getTime();
-          return a.symbol === ticker && Date.now() - alertTime < oneDay;
+        const now_ms = Date.now();
+
+        const recentAlerts = allAlerts.filter((a: any) => {
+          const alertTime = new Date(a.receivedAt).getTime();
+          return a.ticker === ticker && now_ms - alertTime < oneDay;
         });
 
-        if (recentAlerts.length >= 2) {
-          // Agrupar por source (RSI, ADX, SuperTrend, etc.)
-          const grouped: { [key: string]: any } = {};
-          recentAlerts.forEach((a: any) => {
-            if (!grouped[a.source]) {
-              grouped[a.source] = a;
+        // Extraer indicadores técnicos desde raw.source + raw.value
+        const indicatorMap: { [key: string]: any } = {};
+        recentAlerts.forEach((a: any) => {
+          const source = a.raw?.source;
+          const value = a.raw?.value;
+
+          // Solo procesar si raw.source y raw.value existen
+          if (source && typeof value === "number") {
+            // Tomar la alerta más reciente por indicador
+            if (!indicatorMap[source]) {
+              indicatorMap[source] = { value, receivedAt: a.receivedAt };
             }
-          });
-
-          const indicators = Object.entries(grouped).slice(0, 3); // Top 3 indicadores
-          if (indicators.length >= 2) {
-            const summary = indicators
-              .map(([source, alert]: [string, any]) => `${source} ${alert.value}`)
-              .join(", ");
-
-            pattern = {
-              value: summary,
-              source: "TVContext alerts (últimas 24h)",
-              ts: now,
-            };
           }
+        });
+
+        // Especificación estricta: >= 2 indicadores
+        const indicators = Object.entries(indicatorMap).slice(0, 5); // Top 5 máximo
+        if (indicators.length >= 2) {
+          const summary = indicators
+            .map(([source, data]: [string, any]) => `${source} ${data.value}`)
+            .join(", ");
+
+          pattern = {
+            value: summary,
+            source: "TVContext alerts (últimas 24h)",
+            ts: now,
+          };
         }
+        // Si < 2 indicadores: pattern sigue null (fail-safe)
+      } catch (fsErr) {
+        // No fallback: null si lectura falla
       }
-    } catch (fsErr) {
-      // No fallback: null si lectura falla
     }
   } catch (err) {
     // No fallback: null si TVContext no disponible
