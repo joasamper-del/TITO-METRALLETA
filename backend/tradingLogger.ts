@@ -50,6 +50,12 @@ export interface TradeRecord {
   // Tito Core
   titoReasons: string[];
   titoValidation: string;
+
+  // VIX Context (confirmación, NO señal principal)
+  vixValue?: number;
+  vixRegime?: "baja" | "normal" | "media" | "alta";
+  vixConfirmation?: "alcista" | "neutral" | "bajista";
+  vixAlignment?: "confirmada" | "neutral" | "contradice";
 }
 
 export interface TradingSummary {
