@@ -22,9 +22,9 @@
       "@core/*": ["src/core/*"],
       "@engines/*": ["src/engines/*"],
       "@types/*": ["src/types/*"],
-      "@tito-core/*": ["../web/lib/tito-core/*"]
+      "@tito-core/*": ["../Agente Tito Metralleta/web/lib/tito-core/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "*.ts"],
   "exclude": ["node_modules", "dist", "test", "**/*spec.ts", "../src"]
 }
