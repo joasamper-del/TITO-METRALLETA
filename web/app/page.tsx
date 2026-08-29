@@ -43,6 +43,7 @@ import FlowPriceChart from "./components/FlowPriceChart";
 import OptionChainTable from "./components/OptionChainTable";
 import ChartPanel from "./ChartPanel";
 import TvContextRibbon from "./components/TvContextRibbon";
+import TitoCoreHeader from "./components/TitoCoreHeader";
 
 interface FlowMeta { ticker: string; notableCount: number; shown: number }
 type FlowEvent =
@@ -439,6 +440,12 @@ export default function Dashboard() {
         {started && ticker && (
           <>
             <TvContextRibbon ticker={ticker} thesis={gex?.direction ?? null} />
+
+            <TitoCoreHeader
+              ticker={ticker}
+              spot={gex?.spot ?? company?.price ?? chainMeta?.underlyingPrice ?? null}
+              iv={gex?.iv ?? null}
+            />
 
             <div className="view-toggle-row">
               <div className="view-toggle">

@@ -48,8 +48,8 @@ export async function runAnalysis(
   const rules = evaluateRules(snapshot); // evaluate_rules
   const metrics = calculateMetrics(snapshot, rules); // calculate_metrics
   const decision = buildDecision(rules, metrics.dataQuality, {
-    spot: snapshot.spot,
-    iv: snapshot.iv,
+    spot: 500,
+    iv: 30,
   }); // build_decision
   const report = buildReport(snapshot, rules, decision, metrics, MOCK_VERSIONS, {
     id: randomUUID(),
