@@ -125,9 +125,30 @@ export async function GET(request: NextRequest) {
         // No fallback: null si Alpaca falla
       }
     } else {
-      // Equities: Usar Massive (cuando disponible)
-      // TODO: Conectar a Massive /v2/snapshot/locale/us/markets/stocks/tickers/{ticker}
-      // Por ahora: null si no está disponible (fail-safe)
+      // Equities: Massive /v2/snapshot (precio más reciente: último minuto o cierre)
+      try {
+        const url = `https://api.massive.com/v2/snapshot/locale/us/markets/stocks/tickers/${ticker}`;
+        const response = await fetch(url, {
+          headers: {
+            Authorization: `Bearer ${process.env.MASSIVE_API_KEY || ""}`,
+          },
+        });
+
+        if (response.ok) {
+          const data: any = await response.json();
+          // Estructura real de Massive: { ticker: { min: { c, t }, day: { c } } }
+          // SOLO precio intradía fresco (ticker.min.c), NO fallback a ticker.day.c
+          if (data.ticker?.min?.c && typeof data.ticker.min.c === "number" && data.ticker.min.c > 0) {
+            price = {
+              value: data.ticker.min.c,
+              source: "Massive /v2/snapshot",
+              ts: now,
+            };
+          }
+        }
+      } catch (err) {
+        // No fallback: null si Massive falla o no devuelve precio
+      }
     }
 
     if (!price) {
