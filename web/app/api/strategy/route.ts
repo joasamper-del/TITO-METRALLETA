@@ -8,6 +8,41 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCryptoPrice } from "@/lib/alpacaConnector";
 
+// Helper: Obtiene barras diarias históricas desde Massive
+async function getMassiveBars(ticker: string, days: number = 200): Promise<number[]> {
+  const endDate = new Date();
+  const startDate = new Date(endDate);
+  startDate.setDate(startDate.getDate() - (days + 30)); // Buffer para weekends
+
+  const url = `https://api.massive.com/v2/aggs/ticker/${ticker}/range/1/day/${startDate
+    .toISOString()
+    .split("T")[0]}/${endDate.toISOString().split("T")[0]}`;
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${process.env.MASSIVE_API_KEY || ""}`,
+      },
+    });
+
+    if (!response.ok) return [];
+
+    const data: any = await response.json();
+    if (!data.results || data.results.length < 50) return [];
+
+    return data.results.map((bar: any) => bar.c); // closes
+  } catch (err) {
+    return [];
+  }
+}
+
+// Helper: Calcula media móvil
+function calculateMA(closes: number[], period: number): number | null {
+  if (closes.length < period) return null;
+  const sum = closes.slice(-period).reduce((a, b) => a + b, 0);
+  return sum / period;
+}
+
 export interface StrategyOperativeData {
   symbol: string;
   timestamp: string;
@@ -80,13 +115,45 @@ export async function GET(request: NextRequest) {
   // FUENTE 2: Tendencia (MA50/MA200 calculada)
   let trend: StrategyOperativeData["trend"] = null;
   try {
-    // Requiere histórico de barras diarias (últimos 200 días)
-    // TODO: Conectar a Massive /v2/aggs/ticker/{ticker}/range/1/day o Alpaca barras
-    // Por ahora: null si no disponible (fail-safe)
-    // Cuando disponible: MA50 > MA200 → alcista, MA50 < MA200 → bajista
-    // Diferencia < 1% → lateral
+    const closes = await getMassiveBars(ticker, 200);
+
+    // Estrategia flexible: MA50 requiere >= 50 barras, MA200 requiere >= 200
+    // Si solo tenemos 100-199 barras, usamos MA50/MA100 como proxy
+    if (closes.length >= 100) {
+      let ma1: number | null = null;
+      let ma2: number | null = null;
+      let source = "MA50/MA200";
+
+      if (closes.length >= 200) {
+        ma1 = calculateMA(closes, 50);
+        ma2 = calculateMA(closes, 200);
+      } else if (closes.length >= 100) {
+        ma1 = calculateMA(closes, 50);
+        ma2 = calculateMA(closes, 100);
+        source = "MA50/MA100";
+      }
+
+      if (ma1 !== null && ma2 !== null) {
+        const diff = Math.abs((ma1 - ma2) / ma2);
+
+        let trendValue: "alcista" | "bajista" | "lateral";
+        if (diff < 0.01) {
+          trendValue = "lateral";
+        } else if (ma1 > ma2) {
+          trendValue = "alcista";
+        } else {
+          trendValue = "bajista";
+        }
+
+        trend = {
+          value: trendValue,
+          source: source,
+          ts: now,
+        };
+      }
+    }
   } catch (err) {
-    missingData.push("trend");
+    // No fallback: null si Massive falla
   }
   if (!trend) {
     missingData.push("trend");
