@@ -28,7 +28,9 @@ async function getMassiveBars(ticker: string, days: number = 200): Promise<numbe
     if (!response.ok) return [];
 
     const data: any = await response.json();
-    if (!data.results || data.results.length < 50) return [];
+    // Requerimiento flexible basado en días solicitados (con buffer pequeño para weekends)
+    const minBars = Math.max(2, days - 10);
+    if (!data.results || data.results.length < minBars) return [];
 
     return data.results.map((bar: any) => bar.c); // closes
   } catch (err) {
@@ -41,6 +43,29 @@ function calculateMA(closes: number[], period: number): number | null {
   if (closes.length < period) return null;
   const sum = closes.slice(-period).reduce((a, b) => a + b, 0);
   return sum / period;
+}
+
+// Helper: Calcula volatilidad realizada (σ) desde closes
+function calculateVolatility(closes: number[], annualize: boolean = true): number | null {
+  if (closes.length < 2) return null;
+
+  const returns: number[] = [];
+  for (let i = 1; i < closes.length; i++) {
+    const ret = Math.log(closes[i] / closes[i - 1]);
+    returns.push(ret);
+  }
+
+  if (returns.length === 0) return null;
+
+  const sumSquaredReturns = returns.reduce((sum, ret) => sum + ret * ret, 0);
+  const variance = sumSquaredReturns / returns.length;
+  let sigma = Math.sqrt(variance);
+
+  if (annualize) {
+    sigma = sigma * Math.sqrt(252); // Trading days per year
+  }
+
+  return sigma * 100; // Retornar como porcentaje
 }
 
 export interface StrategyOperativeData {
@@ -149,15 +174,27 @@ export async function GET(request: NextRequest) {
     missingData.push("trend");
   }
 
-  // FUENTE 3: Volatilidad (IV Rank o σ realizada)
+  // FUENTE 3: Volatilidad (σ realizada desde 30 barras)
   let volatility: StrategyOperativeData["volatility"] = null;
   try {
-    // Equities: Massive /implied_volatility si disponible, sino σ realizada
-    // Crypto: σ realizada desde últimas 30 barras diarias
-    // TODO: Conectar a Massive IV Rank o calcular σ desde barras
-    // Por ahora: null si no disponible (fail-safe)
+    const closes = await getMassiveBars(ticker, 30);
+
+    // Especificación estricta: >= 30 barras para σ realizada
+    // Si < 30 barras: null (no fallback)
+    if (closes.length >= 30) {
+      const recentCloses = closes.slice(-30);
+      const sigma = calculateVolatility(recentCloses, true);
+
+      if (sigma !== null && !isNaN(sigma)) {
+        volatility = {
+          value: sigma,
+          source: "σ realizada (30 barras)",
+          ts: now,
+        };
+      }
+    }
   } catch (err) {
-    missingData.push("volatility");
+    // No fallback: null si Massive falla o barras insuficientes
   }
   if (!volatility) {
     missingData.push("volatility");
