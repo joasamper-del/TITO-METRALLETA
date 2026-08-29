@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import type { DecisionDetails } from "@/lib/tito-core/types";
 import { useTitoDecision } from "@/lib/useTitoDecision";
+import { useOperativePipeline } from "@/lib/useOperativePipeline";
 import TitoDecisionPanel from "@/app/components/TitoDecisionPanel";
 
 export default function StrategyPage() {
@@ -20,8 +21,28 @@ export default function StrategyPage() {
   const [trend, setTrend] = useState<"alcista" | "bajista" | "lateral">("alcista");
   const [mode, setMode] = useState<"manual" | "operative">("manual");
 
-  // Hook de Tito Core
-  const { decision, loading, error } = useTitoDecision(ticker, spot, iv, trend, direction);
+  // Datos operativos reales del pipeline
+  const { data: operativeData, loading: opLoading, error: opError } = useOperativePipeline(
+    mode === "operative" ? ticker : null,
+    direction
+  );
+
+  // Modo operativo: usar datos del pipeline
+  const activeSpot = mode === "operative" && operativeData?.price?.value ? operativeData.price.value : spot;
+  const activeIv = mode === "operative" && operativeData?.volatility?.value ? operativeData.volatility.value : iv;
+  const activeTrend =
+    mode === "operative" && operativeData?.trend?.value ? operativeData.trend.value : trend;
+
+  // Hook de Tito Core (usa parámetros activos según modo)
+  const { decision, loading: coreLoading, error: coreError } = useTitoDecision(
+    ticker,
+    activeSpot,
+    activeIv,
+    activeTrend,
+    direction
+  );
+
+  const loading = coreLoading || (mode === "operative" && opLoading);
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -166,6 +187,124 @@ export default function StrategyPage() {
           </div>
         )}
 
+        {/* Datos Operativos Reales (Modo Operativo) */}
+        {mode === "operative" && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 p-6 mb-6">
+            <h2 className="text-lg font-semibold text-blue-900 mb-4">📊 Datos del Pipeline (Operativo)</h2>
+
+            {opError && (
+              <div className="bg-red-100 border border-red-300 rounded p-3 mb-4">
+                <p className="text-sm text-red-700">⚠️ {opError}</p>
+              </div>
+            )}
+
+            {operativeData && !opLoading && (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {/* Precio */}
+                {operativeData.price && (
+                  <div className="bg-white rounded p-3 border border-blue-100">
+                    <div className="text-xs text-gray-500">Precio</div>
+                    <div className="font-semibold text-lg">${operativeData.price.value?.toFixed(2)}</div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {operativeData.price.source} • {new Date(operativeData.price.ts).toLocaleTimeString()}
+                    </div>
+                  </div>
+                )}
+
+                {/* Tendencia */}
+                {operativeData.trend && (
+                  <div className="bg-white rounded p-3 border border-blue-100">
+                    <div className="text-xs text-gray-500">Tendencia</div>
+                    <div className="font-semibold text-lg">
+                      {operativeData.trend.value === "alcista" && "📈 Alcista"}
+                      {operativeData.trend.value === "bajista" && "📉 Bajista"}
+                      {operativeData.trend.value === "lateral" && "➡️ Lateral"}
+                    </div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {operativeData.trend.source} • {new Date(operativeData.trend.ts).toLocaleTimeString()}
+                    </div>
+                  </div>
+                )}
+
+                {/* Volatilidad */}
+                {operativeData.volatility && (
+                  <div className="bg-white rounded p-3 border border-blue-100">
+                    <div className="text-xs text-gray-500">Volatilidad</div>
+                    <div className="font-semibold text-lg">{operativeData.volatility.value?.toFixed(1)}%</div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {operativeData.volatility.source} • {new Date(operativeData.volatility.ts).toLocaleTimeString()}
+                    </div>
+                  </div>
+                )}
+
+                {/* Volumen */}
+                {operativeData.volume && (
+                  <div className="bg-white rounded p-3 border border-blue-100">
+                    <div className="text-xs text-gray-500">Volumen</div>
+                    <div className="font-semibold text-lg">
+                      {operativeData.volume.value && operativeData.volume.value > 1000000
+                        ? `${(operativeData.volume.value / 1000000).toFixed(1)}M`
+                        : `${(operativeData.volume.value || 0) / 1000}K`}
+                    </div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {operativeData.volume.source} • {new Date(operativeData.volume.ts).toLocaleTimeString()}
+                    </div>
+                  </div>
+                )}
+
+                {/* Liquidez */}
+                {operativeData.liquidity && (
+                  <div className="bg-white rounded p-3 border border-blue-100">
+                    <div className="text-xs text-gray-500">Liquidez (Spread)</div>
+                    <div className="font-semibold text-lg">{operativeData.liquidity.value}</div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {operativeData.liquidity.source} • {new Date(operativeData.liquidity.ts).toLocaleTimeString()}
+                    </div>
+                  </div>
+                )}
+
+                {/* Patrón */}
+                {operativeData.pattern && (
+                  <div className="bg-white rounded p-3 border border-blue-100">
+                    <div className="text-xs text-gray-500">Patrón</div>
+                    <div className="font-semibold text-sm">{operativeData.pattern.value}</div>
+                    <div className="text-xs text-gray-400 mt-1">
+                      {operativeData.pattern.source} • {new Date(operativeData.pattern.ts).toLocaleTimeString()}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {opLoading && <p className="text-sm text-blue-600">⏳ Cargando datos del pipeline...</p>}
+
+            {/* Indicador de calidad */}
+            <div className="mt-4 pt-4 border-t border-blue-200">
+              <div className="text-xs">
+                <span className="font-semibold">Calidad de datos: </span>
+                <span
+                  className={
+                    operativeData?.dataQuality === "alta"
+                      ? "text-green-600 font-semibold"
+                      : operativeData?.dataQuality === "media"
+                        ? "text-yellow-600 font-semibold"
+                        : "text-red-600 font-semibold"
+                  }
+                >
+                  {operativeData?.dataQuality === "alta" && "✅ Alta"}
+                  {operativeData?.dataQuality === "media" && "⚠️ Media"}
+                  {operativeData?.dataQuality === "baja" && "❌ Baja"}
+                </span>
+              </div>
+              {operativeData?.failSafeReason && (
+                <div className="text-xs text-red-600 mt-2 bg-red-50 p-2 rounded">
+                  🚫 {operativeData.failSafeReason}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Decision Panel */}
         <div className="mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">
@@ -175,7 +314,7 @@ export default function StrategyPage() {
             decision={decision}
             ticker={ticker}
             loading={loading}
-            error={error}
+            error={coreError || (mode === "operative" ? opError : null)}
           />
         </div>
 
@@ -183,7 +322,9 @@ export default function StrategyPage() {
         <div className="grid grid-cols-2 gap-6 mb-6">
           {/* Parámetros actuales */}
           <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <h3 className="text-sm font-semibold text-gray-900 mb-2">Entrada Actual</h3>
+            <h3 className="text-sm font-semibold text-gray-900 mb-2">
+              Entrada {mode === "operative" ? "(Pipeline)" : "(Manual)"}
+            </h3>
             <dl className="space-y-1 text-sm">
               <div className="flex justify-between">
                 <dt className="text-gray-600">Símbolo:</dt>
@@ -195,15 +336,30 @@ export default function StrategyPage() {
               </div>
               <div className="flex justify-between">
                 <dt className="text-gray-600">Spot:</dt>
-                <dd className="font-medium">${spot.toFixed(2)}</dd>
+                <dd className="font-medium">
+                  ${activeSpot.toFixed(2)}
+                  {mode === "operative" && operativeData?.price && (
+                    <span className="text-xs text-blue-600 ml-1">(Pipeline)</span>
+                  )}
+                </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-gray-600">IV:</dt>
-                <dd className="font-medium">{iv.toFixed(1)}%</dd>
+                <dd className="font-medium">
+                  {activeIv.toFixed(1)}%
+                  {mode === "operative" && operativeData?.volatility && (
+                    <span className="text-xs text-blue-600 ml-1">(Pipeline)</span>
+                  )}
+                </dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-gray-600">Tendencia:</dt>
-                <dd className="font-medium">{trend}</dd>
+                <dd className="font-medium">
+                  {activeTrend}
+                  {mode === "operative" && operativeData?.trend && (
+                    <span className="text-xs text-blue-600 ml-1">(Pipeline)</span>
+                  )}
+                </dd>
               </div>
             </dl>
           </div>
@@ -214,10 +370,10 @@ export default function StrategyPage() {
             {loading && (
               <p className="text-sm text-gray-600">⏳ Cargando decisión...</p>
             )}
-            {error && (
-              <p className="text-sm text-red-600">❌ Error: {error}</p>
+            {coreError && (
+              <p className="text-sm text-red-600">❌ Error: {coreError}</p>
             )}
-            {decision && !loading && !error && (
+            {decision && !loading && !coreError && (
               <dl className="space-y-1 text-sm">
                 <div className="flex justify-between">
                   <dt className="text-gray-600">Decisión:</dt>
@@ -244,13 +400,14 @@ export default function StrategyPage() {
             {JSON.stringify(
               {
                 mode,
-                input: { ticker, spot, iv, direction, trend },
+                input: { ticker, spot: activeSpot, iv: activeIv, direction, trend: activeTrend },
                 decision: decision ? {
                   status: decision.status,
                   confidence: decision.confidence,
                 } : null,
                 loading,
-                error,
+                coreError,
+                operativeError: mode === "operative" ? opError : null,
               },
               null,
               2
