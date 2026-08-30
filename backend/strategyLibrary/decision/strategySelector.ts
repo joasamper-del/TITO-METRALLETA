@@ -37,6 +37,18 @@ export class StrategySelector {
   }
 
   selectStrategy(conditions: MarketConditions): SelectionResult {
+    // Step 0: Verify regime is recognized
+    const validRegimes = ["BULLISH_STRONG", "BULLISH_WEAK", "BEARISH_STRONG", "BEARISH_WEAK", "LATERAL", "HIGH_VOLATILITY", "EARNINGS_EVENT"];
+    if (!validRegimes.includes(conditions.regime)) {
+      return {
+        status: "DO_NOT_OPERATE",
+        confidence: 0,
+        compatibilityScore: 0,
+        explanation: `Unknown market regime: ${conditions.regime}. Cannot determine appropriate strategy.`,
+        reasons: [`Regime "${conditions.regime}" is not recognized. Valid regimes: ${validRegimes.join(", ")}`],
+      };
+    }
+
     // Step 1: Get all strategies matched to this regime
     const regimeMatches = this.matcher.matchStrategiesToRegime(conditions.regime);
 
