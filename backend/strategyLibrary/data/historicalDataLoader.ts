@@ -6,6 +6,13 @@
 import { LiveDataService } from "./LiveDataService";
 import { HistoricalBar, DataValidationResult } from "./types";
 
+export interface MarketDataSet {
+  spy: HistoricalBar[];
+  qqq: HistoricalBar[];
+  btc: HistoricalBar[];
+  vix: HistoricalBar[]; // Context variable: regime/volatility indicator
+}
+
 export class HistoricalDataLoader {
   constructor(private dataService: LiveDataService) {}
 
@@ -32,6 +39,40 @@ export class HistoricalDataLoader {
 
   async loadCustomPeriod(symbol: string, startDate: Date, endDate: Date): Promise<HistoricalBar[]> {
     return this.dataService.getHistoricalData(symbol, startDate, endDate);
+  }
+
+  async loadFullDataSet(year: number = 2024): Promise<MarketDataSet> {
+    const startDate = new Date(year, 0, 1);
+    const endDate = new Date();
+
+    const [spy, qqq, btc, vix] = await Promise.all([
+      this.dataService.getHistoricalData("SPY", startDate, endDate),
+      this.dataService.getHistoricalData("QQQ", startDate, endDate),
+      this.dataService.getHistoricalData("BTC", startDate, endDate),
+      this.dataService.getHistoricalData("VIX", startDate, endDate),
+    ]);
+
+    return { spy, qqq, btc, vix };
+  }
+
+  validateDataSet(data: MarketDataSet): {
+    spy: DataValidationResult;
+    qqq: DataValidationResult;
+    btc: DataValidationResult;
+    vix: DataValidationResult;
+    allValid: boolean;
+  } {
+    return {
+      spy: this.validateData(data.spy),
+      qqq: this.validateData(data.qqq),
+      btc: this.validateData(data.btc),
+      vix: this.validateData(data.vix),
+      allValid:
+        this.validateData(data.spy).isValid &&
+        this.validateData(data.qqq).isValid &&
+        this.validateData(data.btc).isValid &&
+        this.validateData(data.vix).isValid,
+    };
   }
 
   validateData(bars: HistoricalBar[]): DataValidationResult {

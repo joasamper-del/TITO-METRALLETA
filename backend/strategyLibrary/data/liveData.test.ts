@@ -236,4 +236,54 @@ describe("Historical Data Loader", () => {
 
     expect(data.length).toBeGreaterThan(0);
   });
+
+  it("should load full market data set (SPY, QQQ, BTC, VIX)", async () => {
+    const polygon = new PolygonDataProvider({ name: "polygon", rateLimit: 5, timeout: 5000 });
+    const service = new LiveDataService([polygon]);
+    const loader = new HistoricalDataLoader(service);
+
+    const data = await loader.loadFullDataSet(2024);
+
+    expect(data.spy).toBeDefined();
+    expect(data.qqq).toBeDefined();
+    expect(data.btc).toBeDefined();
+    expect(data.vix).toBeDefined();
+    expect(data.spy.length).toBeGreaterThan(0);
+    expect(data.qqq.length).toBeGreaterThan(0);
+    expect(data.btc.length).toBeGreaterThan(0);
+    expect(data.vix.length).toBeGreaterThan(0);
+  });
+
+  it("should validate full data set", async () => {
+    const polygon = new PolygonDataProvider({ name: "polygon", rateLimit: 5, timeout: 5000 });
+    const service = new LiveDataService([polygon]);
+    const loader = new HistoricalDataLoader(service);
+
+    const data = await loader.loadFullDataSet(2024);
+    const validation = loader.validateDataSet(data);
+
+    expect(validation.spy).toBeDefined();
+    expect(validation.qqq).toBeDefined();
+    expect(validation.btc).toBeDefined();
+    expect(validation.vix).toBeDefined();
+    expect(validation.allValid).toBeDefined();
+  });
+
+  it("should report VIX as context variable for regime detection", async () => {
+    const polygon = new PolygonDataProvider({ name: "polygon", rateLimit: 5, timeout: 5000 });
+    const service = new LiveDataService([polygon]);
+    const loader = new HistoricalDataLoader(service);
+
+    const data = await loader.loadFullDataSet(2024);
+
+    // VIX is used as context, not as tradeable instrument
+    expect(data.vix).toBeDefined();
+    expect(data.vix.length).toBeGreaterThan(0);
+
+    // Each VIX bar should have OHLCV data
+    data.vix.forEach((bar) => {
+      expect(bar.close).toBeGreaterThan(0);
+      expect(bar.volume).toBeGreaterThanOrEqual(0);
+    });
+  });
 });
