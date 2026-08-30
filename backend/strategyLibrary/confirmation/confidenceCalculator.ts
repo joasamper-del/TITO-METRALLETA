@@ -9,8 +9,9 @@ import { SourceVerdictRaw, AggregatedConfidence, SourceBreakdown } from "./types
 export class ConfidenceCalculator {
   /**
    * Calculate weighted average confidence from multiple verdicts
-   * Each source has a weight (0-1), vote is 0-100
-   * Result: weighted average 0-100
+   * Considers: vote (0-100) + data quality (0-100) + verdict (CONFIRM/NEUTRAL/CONTRADICT)
+   * Each source has weight (0-1), final vote adjusted by data quality
+   * Result: weighted average 0-100 with quality-adjusted weighting
    */
   static calculateWeightedConfidence(verdicts: SourceVerdictRaw[]): AggregatedConfidence {
     if (verdicts.length === 0) {
@@ -23,17 +24,36 @@ export class ConfidenceCalculator {
       };
     }
 
-    // Calculate normalized weights (in case they don't sum to 1)
-    const totalWeight = verdicts.reduce((sum, v) => sum + v.weight, 0);
-    const normalizedVerdicts = verdicts.map((v) => ({
+    // Quality-adjusted weighting: poor data sources count less
+    // e.g., if source A has 80% data quality and weight 0.20, effective weight = 0.20 * 0.80 = 0.16
+    const qualityAdjustedVerdicts = verdicts.map((v) => ({
       ...v,
-      normalizedWeight: v.weight / totalWeight,
+      qualityFactor: v.dataQualityScore / 100, // 0-1 scale
+      adjustedWeight: v.weight * (v.dataQualityScore / 100), // Weight reduced if quality poor
     }));
 
-    // Calculate weighted score
+    // Calculate normalized weights
+    const totalAdjustedWeight = qualityAdjustedVerdicts.reduce((sum, v) => sum + v.adjustedWeight, 0);
+    if (totalAdjustedWeight === 0) {
+      // All sources have failed data quality
+      return {
+        finalScore: 50,
+        votes: verdicts,
+        scoreBreakdown: [],
+        timestamp: new Date(),
+        recommendation: "NEUTRAL",
+      };
+    }
+
+    const normalizedVerdicts = qualityAdjustedVerdicts.map((v) => ({
+      ...v,
+      normalizedWeight: v.adjustedWeight / totalAdjustedWeight,
+    }));
+
+    // Calculate quality-adjusted weighted score
     const weightedScore = normalizedVerdicts.reduce((sum, v) => sum + v.vote * v.normalizedWeight, 0);
 
-    // Build breakdown
+    // Build breakdown (showing original vote + quality impact)
     const scoreBreakdown: SourceBreakdown[] = normalizedVerdicts.map((v) => ({
       sourceName: v.sourceName,
       weight: v.normalizedWeight,

@@ -41,24 +41,28 @@ export class RedPillSource extends ConfirmationSource {
     return 75; // Assume macro backdrop is benign by default
   }
 
-  async getReasoning(context: ConfirmationContext, vote: ConfidenceVote): Promise<string> {
-    return `Red Pill: Macro events check pending (placeholder: ${vote}/100)`;
+  async scoreToVerdict(vote: ConfidenceVote): Promise<"CONFIRM" | "NEUTRAL" | "CONTRADICT"> {
+    if (vote >= 80) return "CONFIRM"; // Clear macro backdrop
+    if (vote <= 45) return "CONTRADICT"; // Major event risk
+    return "NEUTRAL";
+  }
+
+  async getReasoning(context: ConfirmationContext, vote: ConfidenceVote, verdict: "CONFIRM" | "NEUTRAL" | "CONTRADICT"): Promise<string> {
+    const backdrop = vote >= 80 ? "Clear macro backdrop" : vote >= 60 ? "Minor headwinds" : "Major event risk";
+    return `Red Pill (Macro/News): ${backdrop} → ${verdict}`;
+  }
+
+  async assessDataQuality(context: ConfirmationContext): Promise<{ quality: "EXCELLENT" | "GOOD" | "FAIR" | "POOR" | "FAILED"; score: number }> {
+    // Earnings + news data not yet integrated
+    return { quality: "POOR", score: 25 };
+  }
+
+  async getDataPoints(context: ConfirmationContext): Promise<string[]> {
+    return ["Earnings calendar: NOT YET INTEGRATED", "News flow: NOT YET INTEGRATED", "Macro events: NOT YET INTEGRATED"];
   }
 
   async healthCheck(): Promise<boolean> {
     // TODO: Check if earnings calendar and news API available
     return true;
-  }
-
-  override async getReasoning(context: ConfirmationContext, vote: ConfidenceVote): Promise<string> {
-    const lines: string[] = ["Red Pill (Macro/News):"];
-    if (vote >= 80) {
-      lines.push("  ✅ Clear macro backdrop, no major events");
-    } else if (vote >= 60) {
-      lines.push("  ⚠️ Minor macro headwinds, proceed with caution");
-    } else {
-      lines.push("  ❌ Major event risk, consider deferring");
-    }
-    return lines.join("\n");
   }
 }

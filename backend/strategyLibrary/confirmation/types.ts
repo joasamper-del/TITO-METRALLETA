@@ -4,14 +4,21 @@
  */
 
 export type ConfidenceVote = number; // 0-100 scale
+export type DataQualityRating = "EXCELLENT" | "GOOD" | "FAIR" | "POOR" | "FAILED";
+export type SourceVerdict = "CONFIRM" | "NEUTRAL" | "CONTRADICT"; // Qualitative verdict
 
 export interface SourceVerdictRaw {
   sourceId: string;
   sourceName: string;
-  vote: ConfidenceVote; // 0-100
+  verdict: SourceVerdict; // CONFIRM (bullish), NEUTRAL (no signal), CONTRADICT (bearish)
+  vote: ConfidenceVote; // 0-100 quantitative score
   weight: number; // 0-1, e.g., 0.15 for 15% weight
-  reasoning: string; // Why this vote
+  reasoning: string; // Why this verdict + vote
+  dataQuality: DataQualityRating; // Confidence in the data itself
+  dataQualityScore: number; // 0-100, how reliable is the source data
+  dataPoints: string[]; // What data was used (for debugging)
   timestamp: Date;
+  isHealthy: boolean; // Can this source currently provide data?
 }
 
 export interface AggregatedConfidence {

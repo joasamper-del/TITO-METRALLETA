@@ -38,8 +38,23 @@ export class TradingViewSource extends ConfirmationSource {
     return 50;
   }
 
-  async getReasoning(context: ConfirmationContext, vote: ConfidenceVote): Promise<string> {
-    return `TradingView: Alert data not yet integrated (placeholder: ${vote}/100)`;
+  async scoreToVerdict(vote: ConfidenceVote): Promise<"CONFIRM" | "NEUTRAL" | "CONTRADICT"> {
+    if (vote >= 65) return "CONFIRM"; // Bullish signals
+    if (vote <= 40) return "CONTRADICT"; // Bearish signals
+    return "NEUTRAL";
+  }
+
+  async getReasoning(context: ConfirmationContext, vote: ConfidenceVote, verdict: "CONFIRM" | "NEUTRAL" | "CONTRADICT"): Promise<string> {
+    return `TradingView: RSI/ADX/SuperTrend signals pending (placeholder: ${verdict} at ${vote}/100)`;
+  }
+
+  async assessDataQuality(context: ConfirmationContext): Promise<{ quality: "EXCELLENT" | "GOOD" | "FAIR" | "POOR" | "FAILED"; score: number }> {
+    // TradingView integration not yet complete - mark as POOR quality
+    return { quality: "POOR", score: 20 }; // Reduced weight until integrated
+  }
+
+  async getDataPoints(context: ConfirmationContext): Promise<string[]> {
+    return ["TVContext service: NOT YET INTEGRATED"];
   }
 
   async healthCheck(): Promise<boolean> {

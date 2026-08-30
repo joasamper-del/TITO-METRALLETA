@@ -47,10 +47,28 @@ export class VIXSource extends ConfirmationSource {
     }
   }
 
-  async getReasoning(context: ConfirmationContext, vote: ConfidenceVote): Promise<string> {
+  async scoreToVerdict(vote: ConfidenceVote): Promise<"CONFIRM" | "NEUTRAL" | "CONTRADICT"> {
+    if (vote >= 60) return "CONFIRM"; // High VIX mean reversion or low VIX trend
+    if (vote <= 45) return "CONTRADICT"; // Extreme VIX caution
+    return "NEUTRAL";
+  }
+
+  async getReasoning(context: ConfirmationContext, vote: ConfidenceVote, verdict: "CONFIRM" | "NEUTRAL" | "CONTRADICT"): Promise<string> {
     const regime =
-      context.vix < 12 ? "Low volatility" : context.vix < 20 ? "Normal" : context.vix < 30 ? "Elevated" : "Extreme";
-    return `VIX: ${context.vix.toFixed(1)} (${regime}) → confidence ${vote}/100`;
+      context.vix < 12 ? "Low volatility (breakout favorable)" :
+      context.vix < 20 ? "Normal range" :
+      context.vix < 30 ? "Elevated (mean reversion possible)" :
+      "Extreme (caution advised)";
+    return `VIX: ${context.vix.toFixed(1)} → ${regime} → ${verdict}`;
+  }
+
+  async assessDataQuality(context: ConfirmationContext): Promise<{ quality: "EXCELLENT" | "GOOD" | "FAIR" | "POOR" | "FAILED"; score: number }> {
+    // VIX is published daily by CBOE, always reliable
+    return { quality: "EXCELLENT", score: 95 };
+  }
+
+  async getDataPoints(context: ConfirmationContext): Promise<string[]> {
+    return [`VIX = ${context.vix.toFixed(2)}`];
   }
 
   async healthCheck(): Promise<boolean> {

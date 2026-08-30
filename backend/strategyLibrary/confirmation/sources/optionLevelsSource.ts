@@ -37,8 +37,23 @@ export class OptionLevelsSource extends ConfirmationSource {
     return 50;
   }
 
-  async getReasoning(context: ConfirmationContext, vote: ConfidenceVote): Promise<string> {
-    return `Option Levels: Awaiting Greeks integration (placeholder: ${vote}/100)`;
+  async scoreToVerdict(vote: ConfidenceVote): Promise<"CONFIRM" | "NEUTRAL" | "CONTRADICT"> {
+    if (vote >= 65) return "CONFIRM"; // Price at key levels with IV alignment
+    if (vote <= 40) return "CONTRADICT"; // Price in dead zone or IV misaligned
+    return "NEUTRAL";
+  }
+
+  async getReasoning(context: ConfirmationContext, vote: ConfidenceVote, verdict: "CONFIRM" | "NEUTRAL" | "CONTRADICT"): Promise<string> {
+    return `Option Levels: Greeks and IV rank data pending (placeholder: ${verdict} at ${vote}/100)`;
+  }
+
+  async assessDataQuality(context: ConfirmationContext): Promise<{ quality: "EXCELLENT" | "GOOD" | "FAIR" | "POOR" | "FAILED"; score: number }> {
+    // Options data not yet integrated - mark as POOR
+    return { quality: "POOR", score: 15 };
+  }
+
+  async getDataPoints(context: ConfirmationContext): Promise<string[]> {
+    return ["Option Greeks: NOT YET INTEGRATED", "IV Rank: NOT YET INTEGRATED"];
   }
 
   async healthCheck(): Promise<boolean> {

@@ -40,8 +40,23 @@ export class MarketSniperSource extends ConfirmationSource {
     return 50;
   }
 
-  async getReasoning(context: ConfirmationContext, vote: ConfidenceVote): Promise<string> {
-    return `Market Sniper: Microstructure analysis pending (placeholder: ${vote}/100)`;
+  async scoreToVerdict(vote: ConfidenceVote): Promise<"CONFIRM" | "NEUTRAL" | "CONTRADICT"> {
+    if (vote >= 70) return "CONFIRM"; // Clear institutional pressure
+    if (vote <= 35) return "CONTRADICT"; // Spoofing or weak liquidity
+    return "NEUTRAL";
+  }
+
+  async getReasoning(context: ConfirmationContext, vote: ConfidenceVote, verdict: "CONFIRM" | "NEUTRAL" | "CONTRADICT"): Promise<string> {
+    return `Market Sniper: Bid/ask and order flow analysis pending (placeholder: ${verdict} at ${vote}/100)`;
+  }
+
+  async assessDataQuality(context: ConfirmationContext): Promise<{ quality: "EXCELLENT" | "GOOD" | "FAIR" | "POOR" | "FAILED"; score: number }> {
+    // Microstructure data not yet integrated
+    return { quality: "POOR", score: 10 };
+  }
+
+  async getDataPoints(context: ConfirmationContext): Promise<string[]> {
+    return ["Order flow: NOT YET INTEGRATED", "Microstructure: NOT YET INTEGRATED"];
   }
 
   async healthCheck(): Promise<boolean> {
