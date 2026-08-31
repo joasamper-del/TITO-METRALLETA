@@ -108,7 +108,7 @@ export class AlpacaAdapterManual {
         return { success: false, error: "Entry order did not fill" };
       }
 
-      const actualEntryPrice = filledEntry.filled_avg_price || request.entryPrice;
+      const actualEntryPrice = parseFloat(filledEntry.filled_avg_price) || request.entryPrice;
       console.log(`✅ Entry filled @ $${actualEntryPrice.toFixed(2)}`);
 
       // Step 3: Place TP limit order

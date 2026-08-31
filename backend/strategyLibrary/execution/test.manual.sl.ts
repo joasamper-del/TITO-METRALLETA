@@ -40,10 +40,11 @@ async function testManualSL() {
   // Place test order
   console.log("TEST 3: Place Test Order with Manual SL Monitoring");
   console.log("─".repeat(60));
+  console.log("NOTE: Alpaca requires minimum $10 USD per order\n");
 
   const result = await adapter.placeOCOOrder({
     symbol: "ETHUSD",
-    quantity: 0.0001, // Tiny position for testing
+    quantity: 0.005, // ~$12 USD (minimum $10 per Alpaca)
     side: "buy",
     entryPrice: 2455, // Approximate current price
     stopLoss: 2455 * 0.95, // 5% stop
