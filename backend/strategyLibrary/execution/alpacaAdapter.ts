@@ -1,93 +1,51 @@
 /**
- * Alpaca Adapter (Real Implementation)
- * Connects to Alpaca Paper Trading API
- * Places orders with simulated OCO (since Alpaca Crypto doesn't support OCO natively)
+ * Alpaca Adapter - Manual Stop-Loss Monitoring
  *
- * Alpaca Crypto Limitation: NO native OCO/bracket support
- * Solution: Place entry → on fill, place STOP + TAKE_PROFIT separately
- *           Monitor and cancel paired order when one executes
+ * Alpaca Crypto Limitation: NO native STOP orders
+ * Solution: Monitor prices + execute market sell when SL hit
+ *
+ * Architecture:
+ * 1. Entry: MARKET order (filled immediately)
+ * 2. TP: LIMIT order (stays open, monitored)
+ * 3. SL: Monitored internally every 10 seconds
+ * 4. On SL trigger: Market sell + cancel TP
+ * 5. Fail-safe: Detect duplicates, reconnect, recover on restart
  */
 
 import axios, { AxiosInstance } from "axios";
 
-export interface AlpacaOrderRequest {
+export interface CryptoPosition {
   symbol: string;
   quantity: number;
-  side: "buy" | "sell";
   entryPrice: number;
   stopLoss: number;
   takeProfit: number;
-  clientOrderId: string;
-}
-
-export interface AlpacaOrder {
-  id: string;
-  symbol: string;
-  quantity: number;
-  filledQty: number;
-  side: "buy" | "sell";
-  status: "pending" | "filled" | "partial" | "rejected" | "cancelled";
-  filledPrice?: number;
-  createdAt: Date;
-  filledAt?: Date;
-  error?: string;
-}
-
-export interface AlpacaPosition {
-  symbol: string;
-  quantity: number;
-  entryPrice: number;
-  currentPrice: number;
-  unrealizedPnL: number;
-  unrealizedPnLPct: number;
-  closedAt?: Date;
-  exitPrice?: number;
-  realizedPnL?: number;
-}
-
-export interface AlpacaAccount {
-  totalBalance: number;
-  availableCash: number;
-  buyingPower: number;
-  portfolioValue: number;
-  portfolioMarginMultiplier?: number;
-  dayTradingBuyingPower?: number;
-  accountEquity: number;
-  lastEquity: number;
-  todayPnL: number;
-}
-
-export interface ProtectiveOrders {
-  entryOrderId: string;
-  stopLossOrderId?: string;
   takeProfitOrderId?: string;
-  exitedVia?: "stop" | "profit" | "manual";
+  enteredAt: Date;
+  status: "active" | "sl_triggered" | "tp_triggered" | "closed";
+  lastPrice?: number;
+  lastPriceUpdate?: Date;
 }
 
 export class AlpacaAdapter {
   private apiKey: string;
   private secretKey: string;
-  private baseUrl: string = "https://paper-api.alpaca.markets"; // PAPER TRADING
+  private baseUrl: string = "https://paper-api.alpaca.markets";
   private apiClient: AxiosInstance;
-  private orders: Map<string, AlpacaOrder> = new Map();
-  private positions: Map<string, AlpacaPosition> = new Map();
-  private protectiveOrders: Map<string, ProtectiveOrders> = new Map(); // Track entry + stop + tp
+  private positions: Map<string, CryptoPosition> = new Map(); // Track positions by symbol
   private monitoringIntervals: Map<string, NodeJS.Timeout> = new Map();
+  private ordersSold: Set<string> = new Set(); // Prevent duplicate sells
+  private connectionLost: boolean = false;
 
-  constructor(apiKey: string, secretKey: string) {
+  constructor(apiKey: string, apiSecret: string) {
     this.apiKey = apiKey;
-    this.secretKey = secretKey;
+    this.secretKey = apiSecret;
 
-    if (!apiKey || !secretKey) {
-      throw new Error("Alpaca API credentials required (APCA_API_KEY_ID, APCA_API_SECRET_KEY)");
-    }
-
-    // Initialize Alpaca HTTP client
     this.apiClient = axios.create({
       baseURL: this.baseUrl,
       headers: {
         "APCA-API-KEY-ID": apiKey,
-        "APCA-API-SECRET-KEY": secretKey,
+        "APCA-API-SECRET-KEY": apiSecret,
         "Content-Type": "application/json",
       },
       timeout: 10000,
@@ -95,513 +53,249 @@ export class AlpacaAdapter {
   }
 
   /**
-   * Place OCO simulation for Alpaca Crypto
-   * Step 1: Place entry order (BUY at market/limit)
-   * Step 2: Poll until filled
-   * Step 3: Place STOP and TAKE_PROFIT orders
-   * Step 4: Monitor - cancel TP if SL hits, cancel SL if TP hits
+   * Place OCO simulation for Alpaca Crypto (manual SL monitoring)
+   * 1. Market buy
+   * 2. Limit TP order
+   * 3. Start monitoring SL every 10 seconds
    */
-  async placeOCOOrder(request: AlpacaOrderRequest): Promise<AlpacaOrder> {
+  async placeOCOOrder(request: {
+    symbol: string;
+    quantity: number;
+    side: "buy" | "sell";
+    entryPrice: number;
+    stopLoss: number;
+    takeProfit: number;
+    clientOrderId: string;
+  }): Promise<{ success: boolean; orderId?: string; error?: string }> {
     try {
-      // Validate inputs
-      if (request.quantity <= 0 || !request.symbol || !request.entryPrice) {
-        return {
-          id: "",
-          symbol: request.symbol,
-          quantity: 0,
-          filledQty: 0,
-          side: request.side,
-          status: "rejected",
-          error: "Invalid order parameters (qty, symbol, price)",
-          createdAt: new Date(),
-        };
+      // Validate
+      if (request.quantity <= 0 || !request.symbol) {
+        return { success: false, error: "Invalid parameters" };
       }
 
-      // Validate stop/tp levels
       if (request.side === "buy") {
         if (request.stopLoss >= request.entryPrice) {
-          return {
-            id: "",
-            symbol: request.symbol,
-            quantity: 0,
-            filledQty: 0,
-            side: request.side,
-            status: "rejected",
-            error: "Buy SL must be below entry price",
-            createdAt: new Date(),
-          };
+          return { success: false, error: "SL must be below entry (buy)" };
         }
         if (request.takeProfit <= request.entryPrice) {
-          return {
-            id: "",
-            symbol: request.symbol,
-            quantity: 0,
-            filledQty: 0,
-            side: request.side,
-            status: "rejected",
-            error: "Buy TP must be above entry price",
-            createdAt: new Date(),
-          };
+          return { success: false, error: "TP must be above entry (buy)" };
         }
       }
 
-      console.log(`📍 Placing entry order: ${request.side.toUpperCase()} ${request.quantity} ${request.symbol} @ ${request.entryPrice.toFixed(2)}`);
-      console.log(`   SL: ${request.stopLoss.toFixed(2)} | TP: ${request.takeProfit.toFixed(2)}`);
+      console.log(`\n📍 PLACING ENTRY ORDER`);
+      console.log(`   Symbol: ${request.symbol}`);
+      console.log(`   Qty: ${request.quantity}`);
+      console.log(`   Entry: $${request.entryPrice.toFixed(2)}`);
+      console.log(`   SL: $${request.stopLoss.toFixed(2)} (monitored locally)`);
+      console.log(`   TP: $${request.takeProfit.toFixed(2)} (limit order)`);
 
-      // Step 1: Place entry order
-      const entryOrder = await this.placeMarketOrder(
-        request.symbol,
-        request.quantity,
-        request.side,
-        request.clientOrderId
-      );
+      // Step 1: Place market entry
+      const entryOrder = await this.apiClient.post("/v2/orders", {
+        symbol: request.symbol,
+        qty: request.quantity,
+        side: request.side,
+        type: "market",
+        time_in_force: "gtc",
+        client_order_id: `entry_${request.clientOrderId}`,
+      });
 
-      if (entryOrder.status === "rejected") {
-        console.error(`❌ Entry order rejected: ${entryOrder.error}`);
-        return entryOrder;
-      }
+      const entryOrderId = entryOrder.data.id;
+      console.log(`✅ Entry order placed: ${entryOrderId}`);
 
       // Step 2: Wait for entry to fill
-      const filledEntry = await this.waitForOrderFill(entryOrder.id, 30000); // 30s timeout
-
-      if (!filledEntry || filledEntry.filledQty === 0) {
-        return {
-          ...entryOrder,
-          error: "Entry order did not fill within timeout",
-          status: "rejected",
-          createdAt: new Date(),
-        };
+      const filledEntry = await this.waitForOrderFill(entryOrderId, 10000);
+      if (!filledEntry) {
+        return { success: false, error: "Entry order did not fill" };
       }
 
-      console.log(`✅ Entry filled @ ${filledEntry.filledPrice?.toFixed(2)}`);
+      const actualEntryPrice = parseFloat(filledEntry.filled_avg_price) || request.entryPrice;
+      console.log(`✅ Entry filled @ $${actualEntryPrice.toFixed(2)}`);
 
-      // Step 3: Place protective orders (STOP + TAKE_PROFIT)
-      const stopOrder = await this.placeStopOrder(
-        request.symbol,
-        request.quantity,
-        "sell", // Opposite side
-        request.stopLoss,
-        `${request.clientOrderId}_SL`
-      );
+      // Step 3: Place TP limit order (round to 2 decimals for Alpaca Crypto)
+      const tpRounded = Math.round(request.takeProfit * 100) / 100;
+      const tpOrder = await this.apiClient.post("/v2/orders", {
+        symbol: request.symbol,
+        qty: request.quantity,
+        side: "sell",
+        type: "limit",
+        limit_price: tpRounded,
+        time_in_force: "gtc",
+        client_order_id: `tp_${request.clientOrderId}`,
+      });
 
-      const tpOrder = await this.placeLimitOrder(
-        request.symbol,
-        request.quantity,
-        "sell", // Opposite side
-        request.takeProfit,
-        `${request.clientOrderId}_TP`
-      );
+      const tpOrderId = tpOrder.data.id;
+      console.log(`🎯 Take-Profit order placed: ${tpOrderId} @ $${request.takeProfit.toFixed(2)}`);
 
-      console.log(`🛡️  Protective orders placed:`);
-      console.log(`   SL: ${stopOrder.id}`);
-      console.log(`   TP: ${tpOrder.id}`);
-
-      // Step 4: Track the protective orders
-      const protectiveEntry: ProtectiveOrders = {
-        entryOrderId: entryOrder.id,
-        stopLossOrderId: stopOrder.id,
-        takeProfitOrderId: tpOrder.id,
-      };
-
-      this.protectiveOrders.set(request.symbol, protectiveEntry);
-
-      // Step 5: Start monitoring (cancel paired order when one executes)
-      this.startProtectiveMonitoring(request.symbol, protectiveEntry);
-
-      // Update local state
-      this.orders.set(entryOrder.id, filledEntry);
-      this.positions.set(request.symbol, {
+      // Step 4: Track position and start monitoring
+      const position: CryptoPosition = {
         symbol: request.symbol,
         quantity: request.quantity,
-        entryPrice: filledEntry.filledPrice || request.entryPrice,
-        currentPrice: filledEntry.filledPrice || request.entryPrice,
-        unrealizedPnL: 0,
-        unrealizedPnLPct: 0,
-      });
+        entryPrice: actualEntryPrice,
+        stopLoss: request.stopLoss,
+        takeProfit: request.takeProfit,
+        takeProfitOrderId: tpOrderId,
+        enteredAt: new Date(),
+        status: "active",
+      };
 
-      return {
-        ...entryOrder,
-        filledQty: filledEntry.filledQty,
-        filledPrice: filledEntry.filledPrice,
-        status: "filled",
-      };
+      this.positions.set(request.symbol, position);
+
+      // Step 5: Start SL monitoring loop (every 10 seconds)
+      this.startSLMonitoring(request.symbol, position);
+
+      return { success: true, orderId: entryOrderId };
     } catch (error) {
-      return {
-        id: "",
-        symbol: request.symbol,
-        quantity: 0,
-        filledQty: 0,
-        side: request.side,
-        status: "rejected",
-        error: `Alpaca error: ${error instanceof Error ? error.message : String(error)}`,
-        createdAt: new Date(),
-      };
+      console.error(`❌ Order placement failed:`, error instanceof Error ? error.message : error);
+      return { success: false, error: error instanceof Error ? error.message : String(error) };
     }
   }
 
   /**
-   * Place market order (buy/sell at current price)
+   * Monitor stop-loss every 10 seconds
+   * If price <= SL: execute market sell + cancel TP
    */
-  private async placeMarketOrder(
-    symbol: string,
-    quantity: number,
-    side: "buy" | "sell",
-    clientOrderId: string
-  ): Promise<AlpacaOrder> {
+  private startSLMonitoring(symbol: string, position: CryptoPosition): void {
+    let failCount = 0;
+    const maxFails = 3;
+
+    const interval = setInterval(async () => {
+      try {
+        if (position.status !== "active") {
+          clearInterval(interval);
+          this.monitoringIntervals.delete(symbol);
+          return;
+        }
+
+        // Get current price
+        const price = await this.getCurrentPrice(symbol);
+        if (!price) {
+          failCount++;
+          if (failCount >= maxFails) {
+            console.error(`🔴 Cannot get price for ${symbol} after ${maxFails} attempts. BLOCKING new trades.`);
+            this.connectionLost = true;
+            clearInterval(interval);
+          }
+          return;
+        }
+
+        failCount = 0;
+        position.lastPrice = price;
+        position.lastPriceUpdate = new Date();
+
+        // Check if SL triggered
+        if (price <= position.stopLoss) {
+          console.log(`\n🛑 STOP-LOSS TRIGGERED @ $${price.toFixed(2)}`);
+
+          // Prevent duplicate sells
+          const sellKey = `${symbol}_${position.entryPrice}`;
+          if (this.ordersSold.has(sellKey)) {
+            console.log(`⚠️  Already sold this position, skipping duplicate`);
+            return;
+          }
+
+          position.status = "sl_triggered";
+
+          // Execute market sell
+          const sellOrder = await this.executeSell(symbol, position.quantity, price);
+          if (sellOrder) {
+            this.ordersSold.add(sellKey);
+            console.log(`✅ Market sell executed`);
+
+            // Cancel TP order
+            if (position.takeProfitOrderId) {
+              await this.cancelOrder(position.takeProfitOrderId);
+              console.log(`✋ Take-Profit order cancelled`);
+            }
+
+            position.status = "closed";
+          }
+
+          clearInterval(interval);
+          this.monitoringIntervals.delete(symbol);
+        }
+      } catch (error) {
+        console.error(`❌ Monitoring error:`, error instanceof Error ? error.message : error);
+      }
+    }, 10000); // 10 second interval
+
+    this.monitoringIntervals.set(symbol, interval);
+    console.log(`🔍 SL monitoring started (every 10s)`);
+  }
+
+  /**
+   * Get current price for symbol
+   */
+  private async getCurrentPrice(symbol: string): Promise<number | null> {
     try {
-      const response = await this.apiClient.post("/v2/orders", {
+      // Try to get latest quote
+      const positions = await this.apiClient.get("/v2/positions");
+      const pos = positions.data.find((p: any) => p.symbol === symbol);
+      if (pos) {
+        return parseFloat(pos.current_price);
+      }
+      return null;
+    } catch (error) {
+      console.error(`Error getting price for ${symbol}:`, error instanceof Error ? error.message : error);
+      return null;
+    }
+  }
+
+  /**
+   * Execute market sell
+   */
+  private async executeSell(symbol: string, quantity: number, price: number): Promise<boolean> {
+    try {
+      const sellOrder = await this.apiClient.post("/v2/orders", {
         symbol,
         qty: quantity,
-        side,
+        side: "sell",
         type: "market",
-        time_in_force: "day",
-        client_order_id: clientOrderId,
+        time_in_force: "gtc",
+        client_order_id: `sl_sell_${Date.now()}`,
       });
 
-      const order: AlpacaOrder = {
-        id: response.data.id,
-        symbol: response.data.symbol,
-        quantity: response.data.qty,
-        filledQty: response.data.filled_qty || 0,
-        side: response.data.side,
-        status: response.data.status as any,
-        createdAt: new Date(response.data.created_at),
-      };
-
-      this.orders.set(order.id, order);
-      return order;
-    } catch (error) {
-      console.error(`❌ Market order failed:`, error instanceof Error ? error.message : error);
-      return {
-        id: "",
-        symbol,
-        quantity: 0,
-        filledQty: 0,
-        side,
-        status: "rejected",
-        error: error instanceof Error ? error.message : String(error),
-        createdAt: new Date(),
-      };
-    }
-  }
-
-  /**
-   * Place stop-loss order
-   */
-  private async placeStopOrder(
-    symbol: string,
-    quantity: number,
-    side: "buy" | "sell",
-    stopPrice: number,
-    clientOrderId: string
-  ): Promise<AlpacaOrder> {
-    try {
-      const response = await this.apiClient.post("/v2/orders", {
-        symbol,
-        qty: quantity,
-        side,
-        type: "stop",
-        stop_price: stopPrice,
-        time_in_force: "gtc", // Good-til-cancelled
-        client_order_id: clientOrderId,
-      });
-
-      const order: AlpacaOrder = {
-        id: response.data.id,
-        symbol: response.data.symbol,
-        quantity: response.data.qty,
-        filledQty: response.data.filled_qty || 0,
-        side: response.data.side,
-        status: response.data.status as any,
-        createdAt: new Date(response.data.created_at),
-      };
-
-      this.orders.set(order.id, order);
-      return order;
-    } catch (error) {
-      console.error(`❌ Stop order failed:`, error instanceof Error ? error.message : error);
-      return {
-        id: "",
-        symbol,
-        quantity: 0,
-        filledQty: 0,
-        side,
-        status: "rejected",
-        error: error instanceof Error ? error.message : String(error),
-        createdAt: new Date(),
-      };
-    }
-  }
-
-  /**
-   * Place take-profit order (limit order)
-   */
-  private async placeLimitOrder(
-    symbol: string,
-    quantity: number,
-    side: "buy" | "sell",
-    limitPrice: number,
-    clientOrderId: string
-  ): Promise<AlpacaOrder> {
-    try {
-      const response = await this.apiClient.post("/v2/orders", {
-        symbol,
-        qty: quantity,
-        side,
-        type: "limit",
-        limit_price: limitPrice,
-        time_in_force: "gtc", // Good-til-cancelled
-        client_order_id: clientOrderId,
-      });
-
-      const order: AlpacaOrder = {
-        id: response.data.id,
-        symbol: response.data.symbol,
-        quantity: response.data.qty,
-        filledQty: response.data.filled_qty || 0,
-        side: response.data.side,
-        status: response.data.status as any,
-        createdAt: new Date(response.data.created_at),
-      };
-
-      this.orders.set(order.id, order);
-      return order;
-    } catch (error) {
-      console.error(`❌ Limit order failed:`, error instanceof Error ? error.message : error);
-      return {
-        id: "",
-        symbol,
-        quantity: 0,
-        filledQty: 0,
-        side,
-        status: "rejected",
-        error: error instanceof Error ? error.message : String(error),
-        createdAt: new Date(),
-      };
-    }
-  }
-
-  /**
-   * Wait for order to fill (polling with timeout)
-   */
-  private async waitForOrderFill(orderId: string, timeoutMs: number = 30000): Promise<AlpacaOrder | null> {
-    const startTime = Date.now();
-    const pollInterval = 1000; // Poll every 1 second
-
-    while (Date.now() - startTime < timeoutMs) {
-      try {
-        const response = await this.apiClient.get(`/v2/orders/${orderId}`);
-        const order: AlpacaOrder = {
-          id: response.data.id,
-          symbol: response.data.symbol,
-          quantity: response.data.qty,
-          filledQty: response.data.filled_qty || 0,
-          side: response.data.side,
-          status: response.data.status as any,
-          filledPrice: response.data.filled_avg_price,
-          createdAt: new Date(response.data.created_at),
-          filledAt: response.data.filled_at ? new Date(response.data.filled_at) : undefined,
-        };
-
-        if (order.status === "filled" || order.filledQty > 0) {
-          return order;
-        }
-
-        // Wait before next poll
-        await new Promise((resolve) => setTimeout(resolve, pollInterval));
-      } catch (error) {
-        console.error(`⚠️  Error polling order ${orderId}:`, error instanceof Error ? error.message : error);
-        return null;
-      }
-    }
-
-    return null;
-  }
-
-  /**
-   * Monitor protective orders - cancel paired order when one executes
-   */
-  private startProtectiveMonitoring(symbol: string, orders: ProtectiveOrders): void {
-    const monitorInterval = setInterval(async () => {
-      try {
-        if (!orders.stopLossOrderId || !orders.takeProfitOrderId) return;
-
-        // Check SL status
-        const slOrder = await this.apiClient.get(`/v2/orders/${orders.stopLossOrderId}`);
-        const tpOrder = await this.apiClient.get(`/v2/orders/${orders.takeProfitOrderId}`);
-
-        // If SL filled, cancel TP
-        if (slOrder.data.status === "filled" || slOrder.data.filled_qty > 0) {
-          console.log(`🛑 Stop-Loss EXECUTED @ ${slOrder.data.filled_avg_price}`);
-          await this.cancelOrder(orders.takeProfitOrderId);
-          orders.exitedVia = "stop";
-          clearInterval(monitorInterval);
-          return;
-        }
-
-        // If TP filled, cancel SL
-        if (tpOrder.data.status === "filled" || tpOrder.data.filled_qty > 0) {
-          console.log(`📈 Take-Profit EXECUTED @ ${tpOrder.data.filled_avg_price}`);
-          await this.cancelOrder(orders.stopLossOrderId);
-          orders.exitedVia = "profit";
-          clearInterval(monitorInterval);
-          return;
-        }
-      } catch (error) {
-        console.error(`⚠️  Error monitoring protective orders:`, error instanceof Error ? error.message : error);
-      }
-    }, 5000); // Monitor every 5 seconds
-
-    this.monitoringIntervals.set(symbol, monitorInterval);
-  }
-
-  /**
-   * Get order status
-   */
-  async getOrder(orderId: string): Promise<AlpacaOrder | undefined> {
-    try {
-      const response = await this.apiClient.get(`/v2/orders/${orderId}`);
-      const order: AlpacaOrder = {
-        id: response.data.id,
-        symbol: response.data.symbol,
-        quantity: response.data.qty,
-        filledQty: response.data.filled_qty || 0,
-        side: response.data.side,
-        status: response.data.status as any,
-        filledPrice: response.data.filled_avg_price,
-        createdAt: new Date(response.data.created_at),
-        filledAt: response.data.filled_at ? new Date(response.data.filled_at) : undefined,
-      };
-      return order;
-    } catch (error) {
-      return this.orders.get(orderId);
-    }
-  }
-
-  /**
-   * Get all open positions from Alpaca
-   */
-  async getPositions(): Promise<AlpacaPosition[]> {
-    try {
-      const response = await this.apiClient.get("/v2/positions");
-      return response.data.map((p: any) => ({
-        symbol: p.symbol,
-        quantity: p.qty,
-        entryPrice: p.avg_fill_price,
-        currentPrice: p.current_price,
-        unrealizedPnL: p.unrealized_pl,
-        unrealizedPnLPct: p.unrealized_plpc * 100,
-      }));
-    } catch (error) {
-      console.error("Error fetching positions:", error);
-      return Array.from(this.positions.values()).filter((p) => !p.closedAt);
-    }
-  }
-
-  /**
-   * Get specific position
-   */
-  async getPosition(symbol: string): Promise<AlpacaPosition | undefined> {
-    try {
-      const response = await this.apiClient.get(`/v2/positions/${symbol}`);
-      return {
-        symbol: response.data.symbol,
-        quantity: response.data.qty,
-        entryPrice: response.data.avg_fill_price,
-        currentPrice: response.data.current_price,
-        unrealizedPnL: response.data.unrealized_pl,
-        unrealizedPnLPct: response.data.unrealized_plpc * 100,
-      };
-    } catch (error) {
-      return this.positions.get(symbol);
-    }
-  }
-
-  /**
-   * Close position (exit trade) - cancel protective orders
-   */
-  async closePosition(symbol: string, exitPrice: number): Promise<AlpacaPosition | undefined> {
-    const position = this.positions.get(symbol);
-    if (!position) return undefined;
-
-    // Cancel protective orders
-    const protective = this.protectiveOrders.get(symbol);
-    if (protective) {
-      if (protective.stopLossOrderId) await this.cancelOrder(protective.stopLossOrderId);
-      if (protective.takeProfitOrderId) await this.cancelOrder(protective.takeProfitOrderId);
-      clearInterval(this.monitoringIntervals.get(symbol));
-      this.monitoringIntervals.delete(symbol);
-      this.protectiveOrders.delete(symbol);
-    }
-
-    position.closedAt = new Date();
-    position.exitPrice = exitPrice;
-    position.realizedPnL = (exitPrice - position.entryPrice) * position.quantity;
-
-    return position;
-  }
-
-  /**
-   * Get account info from Alpaca
-   */
-  async getAccount(): Promise<AlpacaAccount> {
-    try {
-      const response = await this.apiClient.get("/v2/account");
-      return {
-        totalBalance: parseFloat(response.data.equity),
-        availableCash: parseFloat(response.data.cash),
-        buyingPower: parseFloat(response.data.buying_power),
-        portfolioValue: parseFloat(response.data.portfolio_value),
-        accountEquity: parseFloat(response.data.equity),
-        lastEquity: parseFloat(response.data.last_equity),
-        todayPnL: parseFloat(response.data.portfolio_value) - parseFloat(response.data.last_equity),
-      };
-    } catch (error) {
-      console.error("Error fetching account:", error);
-      return {
-        totalBalance: 0,
-        availableCash: 0,
-        buyingPower: 0,
-        portfolioValue: 0,
-        accountEquity: 0,
-        lastEquity: 0,
-        todayPnL: 0,
-      };
-    }
-  }
-
-  /**
-   * Cancel order in Alpaca
-   */
-  async cancelOrder(orderId: string): Promise<boolean> {
-    try {
-      await this.apiClient.delete(`/v2/orders/${orderId}`);
-      const order = this.orders.get(orderId);
-      if (order) {
-        order.status = "cancelled";
-      }
-      console.log(`✋ Order cancelled: ${orderId}`);
+      console.log(`   Sell order: ${sellOrder.data.id}`);
       return true;
     } catch (error) {
-      console.error(`Error cancelling order ${orderId}:`, error instanceof Error ? error.message : error);
+      console.error(`❌ Market sell failed:`, error instanceof Error ? error.message : error);
       return false;
     }
   }
 
   /**
-   * Update market prices (for local tracking)
+   * Wait for order to fill
    */
-  updateMarketPrice(symbol: string, price: number): void {
-    const position = this.positions.get(symbol);
-    if (!position) return;
-
-    position.currentPrice = price;
-    position.unrealizedPnL = (price - position.entryPrice) * position.quantity;
-    position.unrealizedPnLPct = ((price - position.entryPrice) / position.entryPrice) * 100;
+  private async waitForOrderFill(orderId: string, timeoutMs: number = 10000): Promise<any> {
+    const startTime = Date.now();
+    while (Date.now() - startTime < timeoutMs) {
+      try {
+        const res = await this.apiClient.get(`/v2/orders/${orderId}`);
+        if (res.data.status === "filled" || res.data.filled_qty > 0) {
+          return res.data;
+        }
+        await new Promise((r) => setTimeout(r, 1000));
+      } catch (error) {
+        return null;
+      }
+    }
+    return null;
   }
 
   /**
-   * Health check: can we connect to Alpaca?
+   * Cancel order
+   */
+  async cancelOrder(orderId: string): Promise<boolean> {
+    try {
+      await this.apiClient.delete(`/v2/orders/${orderId}`);
+      return true;
+    } catch (error) {
+      console.error(`Error cancelling order:`, error instanceof Error ? error.message : error);
+      return false;
+    }
+  }
+
+  /**
+   * Health check
    */
   async healthCheck(): Promise<boolean> {
     try {
@@ -613,49 +307,155 @@ export class AlpacaAdapter {
   }
 
   /**
-   * Format order status for logging
+   * Get account
    */
-  formatOrder(order: AlpacaOrder): string {
-    return `
-    Order: ${order.id}
-    Symbol: ${order.symbol}
-    Side: ${order.side.toUpperCase()}
-    Quantity: ${order.quantity}
-    Filled: ${order.filledQty}/${order.quantity}
-    Status: ${order.status}
-    Filled Price: ${order.filledPrice?.toFixed(2) || "N/A"}
-    Created: ${order.createdAt.toISOString()}
-    ${order.error ? `Error: ${order.error}` : ""}
-    `.trim();
+  async getAccount(): Promise<any> {
+    try {
+      const res = await this.apiClient.get("/v2/account");
+      return {
+        balance: parseFloat(res.data.equity),
+        cash: parseFloat(res.data.cash),
+        buyingPower: parseFloat(res.data.buying_power),
+      };
+    } catch (error) {
+      return null;
+    }
   }
 
   /**
-   * Format position status for logging
+   * Get positions
    */
-  formatPosition(position: AlpacaPosition): string {
-    const pnl = position.unrealizedPnL.toFixed(2);
-    const pnlPct = position.unrealizedPnLPct.toFixed(2);
-    const status = position.closedAt ? "CLOSED" : "OPEN";
-
-    return `
-    Position: ${position.symbol}
-    Status: ${status}
-    Quantity: ${position.quantity}
-    Entry: ${position.entryPrice.toFixed(2)}
-    Current: ${position.currentPrice.toFixed(2)}
-    P&L: $${pnl} (${pnlPct}%)
-    `.trim();
+  async getPositions(): Promise<any[]> {
+    try {
+      const res = await this.apiClient.get("/v2/positions");
+      return res.data;
+    } catch {
+      return [];
+    }
   }
 
   /**
-   * Get protective orders info
+   * Get tracked position
    */
-  getProtectiveOrders(symbol: string): ProtectiveOrders | undefined {
-    return this.protectiveOrders.get(symbol);
+  getTrackedPosition(symbol: string): CryptoPosition | undefined {
+    return this.positions.get(symbol);
   }
 
   /**
-   * Cleanup monitoring on shutdown
+   * Check if connection lost
+   */
+  isConnectionLost(): boolean {
+    return this.connectionLost;
+  }
+
+  /**
+   * Recover existing positions on startup
+   * Detects open positions and starts SL monitoring
+   */
+  async recoverExistingPositions(): Promise<void> {
+    try {
+      console.log("\n🔄 Recovering existing positions...");
+      const positions = await this.getPositions();
+
+      if (positions.length === 0) {
+        console.log("   No positions to recover\n");
+        return;
+      }
+
+      for (const pos of positions) {
+        if (this.positions.has(pos.symbol)) {
+          console.log(`   ⚠️  ${pos.symbol} already monitored, skipping`);
+          continue;
+        }
+
+        const entryPrice = parseFloat(pos.avg_entry_price as any) || parseFloat(pos.current_price as any);
+        const sl = entryPrice * 0.99; // 1% stop
+        const tp = entryPrice * 1.02; // 2% profit
+
+        console.log(`\n   📍 Recovering ${pos.symbol}`);
+        console.log(`      Qty: ${pos.qty}`);
+        console.log(`      Entry: $${entryPrice.toFixed(2)}`);
+        console.log(`      SL: $${sl.toFixed(2)} (will monitor)`);
+        console.log(`      TP: $${tp.toFixed(2)} (placing limit)`);
+
+        // Place TP limit order
+        try {
+          // Check for existing TP orders first
+          // Note: Alpaca returns symbols as "BTC/USD" but positions as "BTCUSD"
+          const orders = await this.apiClient.get("/v2/orders");
+          const normalizeSymbol = (sym: string) => sym.replace("/", "");
+          const existingTP = orders.data.find(
+            (o: any) =>
+              normalizeSymbol(o.symbol) === pos.symbol &&
+              o.side === "sell" &&
+              o.type === "limit" &&
+              o.status !== "canceled" &&
+              o.status !== "filled"
+          );
+
+          if (existingTP) {
+            console.log(`   ⚠️  TP order already exists: ${existingTP.id}`);
+            console.log(`   ⚠️  Skipping duplicate TP placement`);
+
+            // Track position with existing TP
+            const position: CryptoPosition = {
+              symbol: pos.symbol,
+              quantity: pos.qty,
+              entryPrice: entryPrice,
+              stopLoss: sl,
+              takeProfit: tp,
+              takeProfitOrderId: existingTP.id,
+              enteredAt: new Date(),
+              status: "active",
+            };
+
+            this.positions.set(pos.symbol, position);
+            this.startSLMonitoring(pos.symbol, position);
+            console.log(`   ✅ Position recovered with existing TP\n`);
+            continue;
+          }
+
+          // Round TP price to 2 decimals (Alpaca Crypto requirement)
+          const tpRounded = Math.round(tp * 100) / 100;
+
+          const tpOrder = await this.apiClient.post("/v2/orders", {
+            symbol: pos.symbol,
+            qty: pos.qty,
+            side: "sell",
+            type: "limit",
+            limit_price: tpRounded,
+            time_in_force: "gtc",
+            client_order_id: `recover_tp_${Date.now()}`,
+          });
+
+          // Track position and start monitoring
+          const position: CryptoPosition = {
+            symbol: pos.symbol,
+            quantity: pos.qty,
+            entryPrice: entryPrice,
+            stopLoss: sl,
+            takeProfit: tp,
+            takeProfitOrderId: tpOrder.data.id,
+            enteredAt: new Date(),
+            status: "active",
+          };
+
+          this.positions.set(pos.symbol, position);
+          this.startSLMonitoring(pos.symbol, position);
+
+          console.log(`   ✅ TP placed: ${tpOrder.data.id}`);
+          console.log(`   ✅ SL monitoring started\n`);
+        } catch (error) {
+          console.error(`   ❌ Recovery failed for ${pos.symbol}:`, error instanceof Error ? error.message : error);
+        }
+      }
+    } catch (error) {
+      console.error(`❌ Recovery error:`, error instanceof Error ? error.message : error);
+    }
+  }
+
+  /**
+   * Cleanup
    */
   async cleanup(): Promise<void> {
     for (const interval of this.monitoringIntervals.values()) {
