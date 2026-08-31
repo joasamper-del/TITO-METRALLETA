@@ -72,7 +72,7 @@ export class AlpacaAdapter {
   private orders: Map<string, AlpacaOrder> = new Map();
   private positions: Map<string, AlpacaPosition> = new Map();
   private protectiveOrders: Map<string, ProtectiveOrders> = new Map(); // Track entry + stop + tp
-  private monitoringIntervals: Map<string, NodeJS.Timer> = new Map();
+  private monitoringIntervals: Map<string, NodeJS.Timeout> = new Map();
 
   constructor(apiKey: string, secretKey: string) {
     this.apiKey = apiKey;
@@ -113,6 +113,7 @@ export class AlpacaAdapter {
           side: request.side,
           status: "rejected",
           error: "Invalid order parameters (qty, symbol, price)",
+          createdAt: new Date(),
         };
       }
 
@@ -127,6 +128,7 @@ export class AlpacaAdapter {
             side: request.side,
             status: "rejected",
             error: "Buy SL must be below entry price",
+            createdAt: new Date(),
           };
         }
         if (request.takeProfit <= request.entryPrice) {
@@ -138,6 +140,7 @@ export class AlpacaAdapter {
             side: request.side,
             status: "rejected",
             error: "Buy TP must be above entry price",
+            createdAt: new Date(),
           };
         }
       }
@@ -154,6 +157,7 @@ export class AlpacaAdapter {
       );
 
       if (entryOrder.status === "rejected") {
+        console.error(`❌ Entry order rejected: ${entryOrder.error}`);
         return entryOrder;
       }
 
@@ -165,6 +169,7 @@ export class AlpacaAdapter {
           ...entryOrder,
           error: "Entry order did not fill within timeout",
           status: "rejected",
+          createdAt: new Date(),
         };
       }
 
@@ -229,6 +234,7 @@ export class AlpacaAdapter {
         side: request.side,
         status: "rejected",
         error: `Alpaca error: ${error instanceof Error ? error.message : String(error)}`,
+        createdAt: new Date(),
       };
     }
   }
@@ -274,6 +280,7 @@ export class AlpacaAdapter {
         side,
         status: "rejected",
         error: error instanceof Error ? error.message : String(error),
+        createdAt: new Date(),
       };
     }
   }
@@ -321,6 +328,7 @@ export class AlpacaAdapter {
         side,
         status: "rejected",
         error: error instanceof Error ? error.message : String(error),
+        createdAt: new Date(),
       };
     }
   }
@@ -368,6 +376,7 @@ export class AlpacaAdapter {
         side,
         status: "rejected",
         error: error instanceof Error ? error.message : String(error),
+        createdAt: new Date(),
       };
     }
   }

@@ -50,9 +50,9 @@ async function testRealAlpacaOCO() {
   const positions = await adapter.getPositions();
   console.log(`Current positions: ${positions.length}\n`);
 
-  // Place order - using 45000 as mock entry for demo
+  // Place order - Try BTCUSD for Alpaca Crypto
   const testOrder = await adapter.placeOCOOrder({
-    symbol: "BTC/USD",
+    symbol: "BTCUSD",  // Alpaca Crypto uses "BTCUSD" format
     quantity: 0.001,
     side: "buy",
     entryPrice: 45000,
@@ -72,7 +72,7 @@ async function testRealAlpacaOCO() {
 
     // Test 4: Check protective orders
     console.log("TEST 4: Verify Protective Orders");
-    const protective = adapter.getProtectiveOrders("BTC/USD");
+    const protective = adapter.getProtectiveOrders("BTCUSD");
 
     if (protective) {
       console.log(`  Entry Order: ${protective.entryOrderId}`);
