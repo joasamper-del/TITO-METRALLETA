@@ -477,6 +477,21 @@ export class AlpacaAdapter {
           };
 
           this.positions.set(pos.symbol, position);
+
+          // Log as inherited position if logger available
+          if (this.logger) {
+            this.logger.logTrade({
+              timestamp: new Date().toISOString(),
+              type: "ENTRY",
+              symbol: pos.symbol,
+              quantity: parseFloat(pos.qty),
+              entryPrice: entryPrice,
+              stopLoss: sl,
+              takeProfit: tp,
+              message: `📍 RECOVERED: ${pos.symbol} (Inherited position) | Entry: $${entryPrice.toFixed(2)} | SL: $${sl.toFixed(2)} | TP: $${tp.toFixed(2)}`,
+            });
+          }
+
           this.startSLMonitoring(pos.symbol, position);
 
           console.log(`   ✅ TP placed: ${tpOrder.data.id}`);
