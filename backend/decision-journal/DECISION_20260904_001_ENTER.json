@@ -1,0 +1,38 @@
+{
+  "decisionId": "DECISION_20260904_001_ENTER",
+  "timestamp": "2026-09-04T05:06:01.294Z",
+  "ticker": "SPY",
+  "decisionType": "ENTER",
+  "underlyingPrice": 565.32,
+  "trend": "BULLISH",
+  "rsi": 72,
+  "adx": 35,
+  "atr": 2.15,
+  "volume": 850000,
+  "vix": 14.5,
+  "strikeConsidered": 568,
+  "expirationDate": "2026-09-04T16:00:00Z",
+  "bid": 1.45,
+  "ask": 1.55,
+  "spread": 0.1,
+  "spreadPercent": 6.9,
+  "contractVolume": 2850,
+  "openInterest": 1240,
+  "delta": 0.65,
+  "theta": -0.08,
+  "gamma": 0.012,
+  "vega": 0.18,
+  "premium": 1.5,
+  "confidenceLevel": 85,
+  "reasonsFor": [
+    "Strong uptrend confirmed by ADX > 25",
+    "RSI 72 shows momentum",
+    "Premium attractive for 0DTE",
+    "Tight bid/ask spread"
+  ],
+  "reasonsAgainst": [
+    "High RSI might mean overbought",
+    "Time value decay accelerating"
+  ],
+  "missingConditions": []
+}

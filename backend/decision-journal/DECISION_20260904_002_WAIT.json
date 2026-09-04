@@ -1,0 +1,41 @@
+{
+  "decisionId": "DECISION_20260904_002_WAIT",
+  "timestamp": "2026-09-04T05:06:01.296Z",
+  "ticker": "QQQ",
+  "decisionType": "WAIT",
+  "underlyingPrice": 425.67,
+  "trend": "NEUTRAL",
+  "rsi": 55,
+  "adx": 18,
+  "atr": 1.85,
+  "volume": 620000,
+  "vix": 16.2,
+  "strikeConsidered": 427,
+  "expirationDate": "2026-09-04T16:00:00Z",
+  "bid": 0.95,
+  "ask": 1.05,
+  "spread": 0.1,
+  "spreadPercent": 10.5,
+  "contractVolume": 1850,
+  "openInterest": 940,
+  "delta": 0.52,
+  "theta": -0.06,
+  "gamma": 0.011,
+  "vega": 0.16,
+  "premium": 1,
+  "confidenceLevel": 58,
+  "reasonsFor": [
+    "Neutral trend with potential",
+    "Reasonable premium",
+    "Liquidity acceptable"
+  ],
+  "reasonsAgainst": [
+    "ADX too low (need > 20 for confirmation)",
+    "No clear directional bias",
+    "Wider spread than SPY"
+  ],
+  "missingConditions": [
+    "ADX confirmation",
+    "Clear trend direction"
+  ]
+}
