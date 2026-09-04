@@ -142,6 +142,19 @@ export class AlpacaAdapter {
 
       this.positions.set(request.symbol, position);
 
+      // Log entry to logger if available
+      if (this.logger) {
+        this.logger.recordEntry(request.symbol, "CRYPTO", {
+          entryPrice: actualEntryPrice,
+          quantity: request.quantity,
+          entryReason: "Market entry signal detected",
+          confidence: 50,
+          stopLoss: request.stopLoss,
+          takeProfit: request.takeProfit,
+          riskPercentage: 1,
+        });
+      }
+
       // Step 5: Start SL monitoring loop (every 10 seconds)
       this.startSLMonitoring(request.symbol, position);
 
@@ -202,6 +215,27 @@ export class AlpacaAdapter {
           if (sellOrder) {
             this.ordersSold.add(sellKey);
             console.log(`✅ Market sell executed`);
+
+            // Log exit to logger if available
+            if (this.logger) {
+              // Find the trade ID from position metadata (will need to be set during entry)
+              // For now, log with basic info
+              const pnl = (price - position.entryPrice) * position.quantity;
+              const pnlPercent = ((price - position.entryPrice) / position.entryPrice) * 100;
+              this.logger.logTrade({
+                timestamp: new Date().toISOString(),
+                type: "SL_TRIGGERED",
+                symbol,
+                quantity: position.quantity,
+                entryPrice: position.entryPrice,
+                currentPrice: price,
+                stopLoss: position.stopLoss,
+                takeProfit: position.takeProfit,
+                profitLoss: pnl,
+                profitLossPercent: pnlPercent,
+                message: `🛑 STOP-LOSS: ${symbol} @ $${price.toFixed(2)} | P&L: ${pnl >= 0 ? "+" : ""}$${pnl.toFixed(2)} (${pnlPercent >= 0 ? "+" : ""}${pnlPercent.toFixed(2)}%)`,
+              });
+            }
 
             // Cancel TP order
             if (position.takeProfitOrderId) {

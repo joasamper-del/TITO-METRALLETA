@@ -135,6 +135,24 @@ export class EnhancedOperationLogger {
     console.log(`   ${pnlIcon} P&L: ${pnlSign}$${(trade.pnl || 0).toFixed(2)} (${pnlSign}${(trade.pnlPercentage || 0).toFixed(2)}%)`);
   }
 
+  logTrade(trade: any) {
+    // Generic trade log for automated logging
+    const timestamp = new Date().toLocaleTimeString();
+    console.log(`[${timestamp}] ${trade.message}`);
+
+    // Write to file if it contains trade details
+    if (trade.symbol && trade.type) {
+      try {
+        const data = JSON.parse(JSON.stringify(JSON.parse(require("fs").readFileSync(this.logFile, "utf8"))));
+        if (!data.trades) data.trades = [];
+        data.trades.push(trade);
+        require("fs").writeFileSync(this.logFile, JSON.stringify(data, null, 2));
+      } catch (err) {
+        // Silent fail for automated logging
+      }
+    }
+  }
+
   addAnalysis(tradeId: string, analysis: {
     whatWentWell: string;
     whatWentWrong: string;
