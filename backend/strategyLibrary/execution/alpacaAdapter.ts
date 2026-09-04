@@ -13,6 +13,7 @@
  */
 
 import axios, { AxiosInstance } from "axios";
+import { EnhancedOperationLogger } from "./enhanced.operation.logger";
 
 export interface CryptoPosition {
   symbol: string;
@@ -36,6 +37,7 @@ export class AlpacaAdapter {
   private monitoringIntervals: Map<string, NodeJS.Timeout> = new Map();
   private ordersSold: Set<string> = new Set(); // Prevent duplicate sells
   private connectionLost: boolean = false;
+  public logger?: EnhancedOperationLogger; // Optional logger for trade recording
 
   constructor(apiKey: string, apiSecret: string) {
     this.apiKey = apiKey;
@@ -452,6 +454,13 @@ export class AlpacaAdapter {
     } catch (error) {
       console.error(`❌ Recovery error:`, error instanceof Error ? error.message : error);
     }
+  }
+
+  /**
+   * Set logger for trade recording
+   */
+  setLogger(logger: EnhancedOperationLogger): void {
+    this.logger = logger;
   }
 
   /**

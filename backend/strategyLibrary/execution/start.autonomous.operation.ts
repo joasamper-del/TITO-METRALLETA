@@ -13,6 +13,7 @@
 import * as dotenv from "dotenv";
 import * as path from "path";
 import { AlpacaAdapter } from "./alpacaAdapter";
+import { EnhancedOperationLogger } from "./enhanced.operation.logger";
 
 // Load .env.local
 dotenv.config({ path: path.resolve(__dirname, "../../.env.local") });
@@ -59,6 +60,12 @@ async function startAutonomousOperation() {
   console.log(`   Started: ${operationStatus.startTime.toISOString()}\n`);
 
   const adapter = new AlpacaAdapter(apiKey, apiSecret);
+
+  // Initialize logger for trade recording
+  const logger = new EnhancedOperationLogger("tito-autonomous-paper");
+  adapter.setLogger(logger);
+
+  console.log(`📊 Trade logging enabled: ${logger.getLogFile()}\n`);
 
   // Verification Phase 1: Health Check
   console.log("VERIFICATION 1: Connectivity");
