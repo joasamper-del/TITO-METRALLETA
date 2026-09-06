@@ -25,6 +25,6 @@
       "@tito-core/*": ["../Agente Tito Metralleta/web/lib/tito-core/*"]
     }
   },
-  "include": ["src/**/*", "*.ts"],
-  "exclude": ["node_modules", "dist", "test", "**/*spec.ts", "../src"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "test", "scripts", "**/*spec.ts", "../src"]
 }

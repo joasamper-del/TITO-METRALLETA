@@ -1,0 +1,15 @@
+{
+  "cycle": 1,
+  "timestamp": "2026-09-06T15:46:05.081Z",
+  "positions": [
+    {
+      "symbol": "ETHUSD",
+      "price": 2480.64,
+      "entry": 2458.117891037,
+      "qty": 0.209475,
+      "pnl": 0,
+      "pnlPercent": "0.00",
+      "timestamp": "2026-09-06T15:46:05.082Z"
+    }
+  ]
+}

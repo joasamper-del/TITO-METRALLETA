@@ -1,0 +1,57 @@
+{
+  "timestamp": "2026-09-06T15:42:46.263Z",
+  "status": "AUDIT_COMPLETE",
+  "summary": {
+    "openPositions": 1,
+    "newOpportunitiesFound": 1,
+    "readyForTrading": false
+  },
+  "signals": [
+    {
+      "timestamp": "2026-09-06T15:42:46.260Z",
+      "symbol": "ETHUSD",
+      "currentPrice": 2480.64,
+      "priceFreshness": "REAL (desde Alpaca positions)",
+      "dataAvailable": {
+        "alpacaPrice": true,
+        "alpacaVolume": false,
+        "alpacaTrend": false,
+        "rsi": false,
+        "atr": false
+      },
+      "signal": "ESPERAR",
+      "confidence": 4.581169407114683,
+      "reason": "Posición abierta: ✅ GANANCIA 0.92% — ESPERANDO oportunidad o cierre de posición existente",
+      "riskLevel": "MEDIO"
+    },
+    {
+      "timestamp": "2026-09-06T15:42:46.261Z",
+      "symbol": "BTCUSD",
+      "currentPrice": 0,
+      "priceFreshness": "NO DISPONIBLE",
+      "dataAvailable": {
+        "alpacaPrice": false,
+        "alpacaVolume": false,
+        "alpacaTrend": false,
+        "rsi": false,
+        "atr": false
+      },
+      "signal": "RECHAZAR",
+      "confidence": 0,
+      "reason": "No hay datos de precio para nuevas posiciones. Se necesita integración con TradingView o Massive para precios confiables.",
+      "riskLevel": "ALTO"
+    }
+  ],
+  "notes": [
+    "⚠️ DATOS FALTANTES CRÍTICOS:",
+    "  • Volumen intraday (Alpaca no expone en API pública)",
+    "  • Tendencia MA50/MA200 (necesita histórico)",
+    "  • RSI (TradingView no integrado)",
+    "  • ATR (TradingView no integrado)",
+    "",
+    "💡 SOLUCIÓN PARA S60:",
+    "  1. Si hay posición abierta ganando: considera ENTRAR (tomar ganancias)",
+    "  2. Si no hay posiciones: RECHAZAR (falta de datos técnicos)",
+    "  3. Próximas sesiones: integrar TVContext + Massive para datos completos"
+  ]
+}

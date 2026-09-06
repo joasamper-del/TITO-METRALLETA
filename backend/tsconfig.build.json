@@ -4,19 +4,8 @@
     "node_modules",
     "dist",
     "test",
+    "scripts",
     "**/*spec.ts",
-    "../src",
-    "backtestRunner.ts",
-    "check-eth-orders.ts",
-    "generateDeliverables.ts",
-    "monitoreo-continuo-15min.ts",
-    "punto-4-propuestas.ts",
-    "punto-5-ejecucion.ts",
-    "punto-5b-operacion2.ts",
-    "s57-audit-query.ts",
-    "start-session-53.ts",
-    "test-alpaca-connection.ts",
-    "test_data_generator.ts",
-    "vitest.config.ts"
+    "../src"
   ]
 }
