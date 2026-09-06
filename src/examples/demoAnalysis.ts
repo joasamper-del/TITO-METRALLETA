@@ -93,9 +93,9 @@ export async function runDemoAnalysis() {
   console.log(`📌 RSI: ${favorableAnalysis.marketData.rsi}`);
   console.log(`\n📋 Evaluación de Reglas:`);
 
-  favorableAnalysis.ruleEvaluations.forEach((eval) => {
-    const status = eval.passed ? '✅' : '❌';
-    console.log(`  ${status} ${eval.ruleName}: ${eval.points} puntos`);
+  favorableAnalysis.ruleEvaluations.forEach((evaluation) => {
+    const status = evaluation.passed ? '✅' : '❌';
+    console.log(`  ${status} ${evaluation.ruleName}: ${evaluation.points} puntos`);
   });
 
   console.log(
@@ -151,9 +151,9 @@ export async function runDemoAnalysis() {
   console.log(`📌 RSI: ${unfavorableAnalysis.marketData.rsi}`);
   console.log(`\n📋 Evaluación de Reglas:`);
 
-  unfavorableAnalysis.ruleEvaluations.forEach((eval) => {
-    const status = eval.passed ? '✅' : '❌';
-    console.log(`  ${status} ${eval.ruleName}: ${eval.points} puntos`);
+  unfavorableAnalysis.ruleEvaluations.forEach((evaluation) => {
+    const status = evaluation.passed ? '✅' : '❌';
+    console.log(`  ${status} ${evaluation.ruleName}: ${evaluation.points} puntos`);
   });
 
   console.log(
