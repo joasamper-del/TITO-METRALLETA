@@ -31,6 +31,7 @@ export interface DecisionAuditUpdate {
   profitLossPercent?: number;
   lessons?: Record<string, any>;
   notes?: string;
+  blockedReason?: string; // Additional blocking reason for updates
 }
 
 @Injectable()
