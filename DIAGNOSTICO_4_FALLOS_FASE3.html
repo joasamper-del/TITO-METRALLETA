@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico Detallado - 4 Fallos Restantes</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+            line-height: 1.6;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            padding: 20px;
+        }
+
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f5f5f5;
+            --text-primary: #1a1a1a;
+            --text-secondary: #666;
+            --border: #e0e0e0;
+            --red: #ef4444;
+            --yellow: #f59e0b;
+            --blue: #3b82f6;
+            --gray: #9ca3af;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-primary: #1a1a1a;
+                --bg-secondary: #2d2d2d;
+                --text-primary: #f5f5f5;
+                --text-secondary: #999;
+                --border: #444;
+            }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        h1 { font-size: 2em; margin-bottom: 10px; }
+        .subtitle { color: var(--text-secondary); font-size: 1em; }
+
+        .fallo {
+            background: var(--bg-secondary);
+            border-left: 5px solid var(--red);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .fallo h2 {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            color: var(--red);
+        }
+
+        .field {
+            margin: 15px 0;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .field-label {
+            font-weight: bold;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        .field-value {
+            background: var(--bg-primary);
+            padding: 12px;
+            border-radius: 4px;
+            border-left: 3px solid var(--blue);
+            font-size: 0.9em;
+            color: var(--text-secondary);
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        code {
+            background: var(--bg-primary);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.85em;
+        }
+
+        .risk-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .risk-high {
+            background: #fecaca;
+            color: #991b1b;
+        }
+
+        .risk-low {
+            background: #bfdbfe;
+            color: #1e40af;
+        }
+
+        .tito-impact-yes {
+            background: #feca5c;
+            color: #78350f;
+        }
+
+        .tito-impact-no {
+            background: #86efac;
+            color: #15803d;
+        }
+
+        .summary {
+            background: var(--bg-primary);
+            border: 2px solid var(--border);
+            padding: 20px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+
+        .summary h3 {
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            font-size: 0.9em;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg-secondary);
+            font-weight: bold;
+        }
+
+        tr:hover {
+            background: var(--bg-secondary);
+        }
+
+        .action-needed {
+            background: #fef3c7;
+            border-left: 4px solid var(--yellow);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .note {
+            background: #dbeafe;
+            border-left: 4px solid var(--blue);
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+            font-size: 0.95em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔬 Diagnóstico Detallado - 4 Fallos Restantes</h1>
+            <p class="subtitle">Después de Fase 1 (Cleanup) y Fase 2 (Jest→Vitest)</p>
+            <p class="subtitle">Fecha: 6 de Septiembre 2026 | Estado: SIN MODIFICACIONES</p>
+        </header>
+
+        <!-- FALLO 1 -->
+        <div class="fallo">
+            <h2>❌ FALLO 1: alpacaAdapter.real.test.ts</h2>
+
+            <div class="field">
+                <div class="field-label">📍 Archivo Afectado</div>
+                <div class="field-value">backend/strategyLibrary/execution/alpacaAdapter.real.test.ts</div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">🔴 Error Exacto</div>
+                <div class="field-value">FAIL  strategyLibrary/execution/alpacaAdapter.real.test.ts
+Error: No test suite found in file</div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">🎯 Causa Raíz</div>
+                <div class="field-value">El archivo ES UN SCRIPT EJECUTABLE, NO UN TEST SUITE
+
+Línea 7: "RUN BEFORE USING: npx ts-node alpacaAdapter.real.test.ts"
+Línea 11: async function testRealAlpacaOCO() { ... }
+Línea 107: process.exit(1);
+
+El archivo tiene:
+- Función async única que se ejecuta directamente
+- NO tiene describe() ni it() de vitest
+- NO tiene estructura de test suite
+- Intenta hacer process.exit() (incompatible con test runners)
+
+Vitest espera estructura de tests pero encuentra código ejecutable.</div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">⚠️ ¿Toca Lógica de Tito?</div>
+                <div class="field-value"><span class="risk-badge tito-impact-no">NO</span>
+
+Este archivo:
+- Está en estrategyLibrary/execution (código de soporte)
+- Es para pruebas manuales de Alpaca (no test automatizado)
+- NO está integrado en flujo de ejecución de Tito
+- NO afecta lógica de decisión, estrategias ni orden de trading</div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">💡 Soluciones Posibles</div>
+                <div class="field-value"><strong>OPCIÓN A (Recomendada):</strong>
+Mover a carpeta /backend/scripts/ junto con otros scripts
+- Ya movimos 51 archivos ahí en Fase 1
+- Este debería estar ahí también (es script de prueba manual)
+- Cambio: 0 líneas de código, solo reorganización
+
+<strong>OPCIÓN B:</strong>
+Convertir a test suite proper:
+- Agregar describe('Alpaca Real Test', () => { ... })
+- Cambiar process.exit() a expect() assertions
+- Cambio: ~10 líneas de código, solo estructura test
+
+<strong>OPCIÓN C:</strong>
+Dejar como está (ignorar en tests):
+- Agregar a exclude en vitest.config.ts
+- Cambio: 1 línea de config</div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">📊 Riesgo de Corregir</div>
+                <div class="field-value"><span class="risk-badge risk-low">BAJO</span>
+
+- No hay lógica que cambiar
+- Solo reorganización o renominación
+- Cero impacto en Tito Metralleta</div>
+            </div>
+        </div>
+
+        <!-- FALLO 2 -->
+        <div class="fallo">
+            <h2>❌ FALLO 2: S57_VALIDATION_TESTS.spec.ts - TEST 2</h2>
+
+            <div class="field">
+                <div class="field-label">📍 Archivo Afectado</div>
+                <div class="field-value">backend/scripts/S57_VALIDATION_TESTS.spec.ts:70</div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">🔴 Error Exacto</div>
+                <div class="field-value">TypeError: engine.setAuditTrailDecisionId is not a function</div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">🎯 Causa Raíz</div>
+                <div class="field-value">El test llama a un método que NO EXISTE en ExecutionEngine
+
+Línea 70 del test: engine.setAuditTrailDecisionId('ORDER_123_FIXED_ID');
+Realidad: ExecutionEngine NO tiene este método
+
+El test fue escrito para una especificación de S57 que puede no estar completamente implementada.
+O el método fue removido/renombrado sin actualizar el test.</div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">⚠️ ¿Toca Lógica de Tito?</div>
+                <div class="field-value"><span class="risk-badge tito-impact-yes">PROBABLEMENTE</span>
+
+El test intenta validar:
+- Audit Trail Decision ID (S57 feature)
+- Idempotency de órdenes (evitar duplicados)
+- ExecutionEngine (código de producción de Tito)
+
+¿Impacto real?
+- Si agregamos setAuditTrailDecisionId(): Cambio en ExecutionEngine
+- Si solo arreglamos el test: Solo cambio de test, cero impacto lógica</div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">💡 Soluciones Posibles</div>
+                <div class="field-value"><strong>OPCIÓN A (Solo Test):</strong>
+Remover la línea 70 o comentarla:
+- El test no realmente depende del método para validar
+- Cambio: 1 línea comentada, zero impacto lógica
+
+<strong>OPCIÓN B (Implementar Método):</strong>
+Agregar setAuditTrailDecisionId() a ExecutionEngine:
+- Requiere leer specificación de S57
+- Posible cambio en ExecutionEngine (código de producción)
+- Cambio: ~5-10 líneas, potencial impacto en Tito
+
+<strong>OPCIÓN C (Remover Test Incompleto):</strong>
+Si TEST 2 es especulativo (S57 aún en validación):
+- Mover todo S57_VALIDATION_TESTS.spec.ts a /backend/scripts-archive/
+- No es un test de producción, es validación de fase S57</div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">📊 Riesgo de Corregir</div>
+                <div class="field-value"><span class="risk-badge risk-high">ALTO si implementamos método</span>
+<span class="risk-badge risk-low">BAJO si solo ajustamos test</span>
+
+- ALTO: Agregar método nuevo a ExecutionEngine
+- BAJO: Comentar o remover línea del test</div>
+            </div>
+        </div>
+
+        <!-- FALLO 3 -->
+        <div class="fallo">
+            <h2>❌ FALLO 3: S57_VALIDATION_TESTS.spec.ts - TEST 3</h2>
+
+            <div class="field">
+                <div class="field-label">📍 Archivo Afectado</div>
+                <div class="field-value">backend/scripts/S57_VALIDATION_TESTS.spec.ts:TEST 3 (Learning Engine)</div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">🔴 Error Exacto</div>
+                <div class="field-value">AssertionError: expected 'REVIEW_MLI_THRESHOLDS' to be 'REVIEW_COMPONENT_WEIGHTS'
+
+Expected: "REVIEW_COMPONENT_WEIGHTS"
+Received: "REVIEW_MLI_THRESHOLDS"</div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">🎯 Causa Raíz</div>
+                <div class="field-value">El test espera que Learning Engine devuelva 'REVIEW_COMPONENT_WEIGHTS'
+Pero el código REAL devuelve 'REVIEW_MLI_THRESHOLDS'
+
+Esto indica una DESALINEACIÓN entre:
+1. Lo que el test ESPERA (especificación antigua de S57)
+2. Lo que el código HACE (implementación actual)
+
+Posible razón: Especificación de S57 cambió entre cuando escribieron test y cuando implementaron.</div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">⚠️ ¿Toca Lógica de Tito?</div>
+                <div class="field-value"><span class="risk-badge tito-impact-yes">SÍ</span>
+
+El test valida:
+- S57 Learning Engine (parte de Audit Trail de S57-S59)
+- MLI (Market Leadership Index) - usado en decisiones de Tito
+- READ-ONLY constraint (que Learning Engine NO modifique reglas)
+
+¿Qué es REVIEW_MLI_THRESHOLDS vs REVIEW_COMPONENT_WEIGHTS?
+- REVIEW_MLI_THRESHOLDS: Estado que dice "revisar umbrales de MLI"
+- REVIEW_COMPONENT_WEIGHTS: Estado que dice "revisar pesos de componentes"
+
+Son dos recomendaciones distintas, señal de cambio de lógica</div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">💡 Soluciones Posibles</div>
+                <div class="field-value"><strong>OPCIÓN A (Cambiar Expectativa del Test):</strong>
+Línea ~70 del test: Cambiar 'REVIEW_COMPONENT_WEIGHTS' → 'REVIEW_MLI_THRESHOLDS'
+- Acepta la implementación actual
+- Cambio: 1 línea de test, zero impacto lógica Tito
+- PERO: Perdemos validación de lo que DEBERÍA ser
+
+<strong>OPCIÓN B (Cambiar Implementación):</strong>
+En StrategyLearningEngine o similar, cambiar return value a 'REVIEW_COMPONENT_WEIGHTS'
+- Cambia comportamiento real de Learning Engine
+- Cambio: ~5 líneas en código de producción
+- RIESGO: Podría afectar cómo Learning Engine reporta recomendaciones
+
+<strong>OPCIÓN C (Investigar Especificación S57):</strong>
+Revisar S57_REAL_INTEGRATION_PLAN.md:
+- ¿Cuál es la especificación CORRECTA?
+- ¿Es REVIEW_MLI_THRESHOLDS o REVIEW_COMPONENT_WEIGHTS?
+- Alinear test Y código con especificación verdadera</div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">📊 Riesgo de Corregir</div>
+                <div class="field-value"><span class="risk-badge risk-high">ALTO</span>
+
+No sabemos cuál es la "verdad":
+- Si cambiamos test: Validación débil, podría pasar falso positivo
+- Si cambiamos código: Cambios de comportamiento no validados</div>
+            </div>
+        </div>
+
+        <!-- FALLO 4 -->
+        <div class="fallo">
+            <h2>❌ FALLO 4: safetyGuardrails.test.ts - Weekly Loss Test</h2>
+
+            <div class="field">
+                <div class="field-label">📍 Archivo Afectado</div>
+                <div class="field-value">backend/strategyLibrary/execution/safetyGuardrails.test.ts:46-58</div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">🔴 Error Exacto</div>
+                <div class="field-value">AssertionError: expected 'Daily loss limit exceeded: -5.00% <= -2%'
+                to contain 'Weekly loss'
+
+Expected: "Weekly loss"
+Received: "Daily loss limit exceeded: -5.00% <= -2%"</div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">🎯 Causa Raíz</div>
+                <div class="field-value">El test intenta validar la lógica de CIRCUIT BREAKER SEMANAL
+Pero el código de CircuitBreaker PRIRORIZA el límite DIARIO
+
+Línea 46-58 del test:
+- Registra 5 pérdidas de -1% = -5% total (límite semanal)
+- Espera que sea frenado por límite semanal ("Weekly loss")
+- PERO el código llega al límite diario PRIMERO (-5% es >= -2% límite diario)
+- Así que breka por "Daily loss" antes de chequear semanal
+
+La lógica del código es: Revisar DAILY primero, luego WEEKLY
+El test espera: Ambos se evalúen, algo reporta "Weekly"</div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">⚠️ ¿Toca Lógica de Tito?</div>
+                <div class="field-value"><span class="risk-badge tito-impact-yes">SÍ - CRÍTICO</span>
+
+SafetyGuardrails es GUARDAESPALDAS DE RIESGO:
+- Circuit Breaker frena trading si se alcanzan límites
+- Dailey loss limit: -2% (stop trading si perdemos 2% en un día)
+- Weekly loss limit: -5% (stop trading si perdemos 5% en una semana)
+- Esto está INTEGRADO en ExecutionEngine de Tito
+
+¿Qué significa el error?
+- El código NUNCA llega a evaluar "Weekly loss" porque "Daily loss" lo frena primero
+- La lógica de circuit breaker puede estar INCOMPLETA o INCORRECTA
+- Afecta DIRECTAMENTE la seguridad de trading de Tito</div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">💡 Soluciones Posibles</div>
+                <div class="field-value"><strong>OPCIÓN A (Ajustar Test):</strong>
+Línea 58: Cambiar expect("Weekly loss") → expect("Daily loss")
+- Acepta la prioridad actual (daily antes de weekly)
+- Cambio: 1 línea de test
+- PROBLEMA: No valida si WEEKLY check existe
+
+<strong>OPCIÓN B (Cambiar Lógica de CircuitBreaker):</strong>
+En CircuitBreaker.recordTrade():
+- Evaluar AMBOS (daily y weekly) ANTES de tripar
+- Reportar el que fue violado PRIMERO o MÁS GRAVE
+- Cambio: ~10-20 líneas de lógica crítica
+- RIESGO: ALTÍSIMO - SafetyGuardrails es crítico para Tito
+
+<strong>OPCIÓN C (Cambiar Límites para Test):</strong>
+Cambiar límites en test para que weekly se alcance antes que daily
+- Dailyimit: -1%, weeklyLimit: -0.5%
+- Así semanal se alcanza primero, test pasa
+- Cambio: 2 líneas de test setup
+- PERO: No valida realmente la lógica de weekly</d>
+            </div>
+
+            <div class="field">
+                <div class="field-label">📊 Riesgo de Corregir</div>
+                <div class="field-value"><span class="risk-badge risk-high">CRÍTICO</span>
+
+Este es un SAFETY COMPONENT:
+- Modificaciones requieren entender la intención de diseño
+- ¿Debería priorizar daily sobre weekly? ¿O son independientes?
+- Error aquí PODRÍA permitir trading excepto cuando no debería
+- AFECTA DINERO REAL en trading autónomo de Tito</div>
+            </div>
+        </div>
+
+        <!-- FALLO 5: FEEDBACK INTEGRATION -->
+        <div class="fallo">
+            <h2>❌ FALLO 5: feedback.integration.spec.ts</h2>
+
+            <div class="field">
+                <div class="field-label">📍 Archivo Afectado</div>
+                <div class="field-value">backend/src/modules/audit-trail/feedback.integration.spec.ts (6 tests, todos fallan)</div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">🔴 Error Exacto</div>
+                <div class="field-value">Error: Nest can't resolve dependencies of the LessonRepository (?)
+Please make sure that the argument DataSource at index [0] is available in the TypeOrmModule context</div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">🎯 Causa Raíz</div>
+                <div class="field-value">Problema de inyección de dependencias NestJS:
+
+El test intenta inyectar LessonRepository
+PERO LessonRepository depende de DataSource (conexión a BD)
+El TestingModule NO proporciona DataSource correctamente
+
+Línea ~43 del test: Test.createTestingModule({ imports: [AuditTrailModule] })
+- Intenta cargar AuditTrailModule completo
+- AuditTrailModule importa TypeOrmModule
+- TypeOrmModule espera DataSource global
+- En test, no hay BD configurada = falla
+
+Es un problema de CONFIGURACIÓN DE TEST, no de lógica</d>
+            </div>
+
+            <div class="field">
+                <div class="field-label">⚠️ ¿Toca Lógica de Tito?</div>
+                <div class="field-value"><span class="risk-badge tito-impact-yes">SÍ - PERO NO DIRECTAMENTE</span>
+
+El test valida S59 Feedback Loop:
+- Learning Loop (Tito pregunta, Jay responde)
+- Hypothesis creación y validación
+- Evidence acumulación
+- Promotion a Lessons
+
+¿Es crítico para Tito operativo?
+- NO: Este es un feature de APRENDIZAJE POST-TRADE
+- Tito funciona sin él (testing papers, no en aprendizaje automático)
+- SÍ es importante para S59 pero no para operación de Tito hoy
+
+¿Toca lógica de decisión o ejecución?
+- NO: Solo logging y recomendaciones
+- No afecta órdenes, reglas, estrategias</d>
+            </div>
+
+            <div class="field">
+                <div class="field-label">💡 Soluciones Posibles</div>
+                <div class="field-value"><strong>OPCIÓN A (Mockear DataSource):</strong>
+En beforeEach, crear mock de DataSource:
+const mockDataSource = { ... };
+TestingModule.overrideProvider(DataSource).useValue(mockDataSource)
+- Cambio: ~15 líneas de test setup
+- Impacto: Cero en lógica, solo en test infrastructure
+
+<strong>OPCIÓN B (Usar In-Memory Database):</strong>
+Configurar TypeOrmModule con sqlite (en-memory) para tests
+- Cambio: ~5 líneas de test config
+- Impacto: Tests corren con BD real (mejor validación)
+
+<strong>OPCIÓN C (Deshabilitar Test de Integración):</strong>
+Este es un integration test (integra NestJS + TypeORM + DB)
+Si queremos unit tests, mockear todo:
+- Cambio: Reescribir test con mocks
+- Impacto: Menos validación, pero tests pasan
+
+<strong>OPCIÓN D (Ignorar por Ahora):</strong>
+S59 Feedback Loop es feature POST-TRADING, no crítico para Fase C
+- No es bloqueante para operación de Tito
+- Puede quedar como "known issue" para S59 completamente</d>
+            </div>
+
+            <div class="field">
+                <div class="field-label">📊 Riesgo de Corregir</div>
+                <div class="field-value"><span class="risk-badge risk-low">BAJO (Infra)</span>
+<span class="risk-badge risk-high">MEDIO (Si implementamos BD real)</span>
+
+- BAJO: Mockear DataSource (solo test)
+- MEDIO: Usar SQLite in-memory (requiere BD en tests)
+- BAJO: Ignorar (no es bloqueante)</d>
+            </div>
+        </div>
+
+        <!-- RESUMEN EJECUTIVO -->
+        <div class="summary">
+            <h3>📊 MATRIZ DE DECISIÓN</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fallo</th>
+                        <th>Tipo</th>
+                        <th>Toca Tito</th>
+                        <th>Riesgo</th>
+                        <th>Esfuerzo</th>
+                        <th>Recomendación</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>#1</strong> alpacaAdapter</td>
+                        <td>Archivo mal clasificado</td>
+                        <td>NO</td>
+                        <td>BAJO</td>
+                        <td>Mínimo (mover archivo)</td>
+                        <td>✅ ARREGLAR (Opción A o C)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>#2</strong> S57 TEST 2</td>
+                        <td>Método inexistente</td>
+                        <td>PROBABLEMENTE</td>
+                        <td>BAJO-MEDIO</td>
+                        <td>Bajo (comentar línea)</td>
+                        <td>⏸️ REVISAR especificación S57 primero</td>
+                    </tr>
+                    <tr>
+                        <td><strong>#3</strong> S57 TEST 3</td>
+                        <td>Desalineación test-código</td>
+                        <td>SÍ (Learning Engine)</td>
+                        <td>ALTO</td>
+                        <td>Medio (lógica unclear)</td>
+                        <td>⏸️ INVESTIGAR cuál es la verdad (test vs código)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>#4</strong> Safety Weekly Loss</td>
+                        <td>Lógica de guardaespaldas</td>
+                        <td>SÍ (CRÍTICO)</td>
+                        <td>CRÍTICO</td>
+                        <td>Alto (toca seguridad)</td>
+                        <td>⏸️ ENTENDER intención de daily vs weekly</td>
+                    </tr>
+                    <tr>
+                        <td><strong>#5</strong> Feedback Integration</td>
+                        <td>Config test NestJS</td>
+                        <td>SÍ (pero no operacional)</td>
+                        <td>BAJO</td>
+                        <td>Medio (setup test)</td>
+                        <td>⏸️ OPCIONALMENTE arreglar (no bloqueante para Fase C)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ACCIÓN REQUERIDA -->
+        <div class="action-needed">
+            <strong>⚠️ DECISIONES REQUERIDAS ANTES DE FASE 3</strong>
+            <ul style="margin-left: 20px; margin-top: 10px;">
+                <li><strong>#1 alpacaAdapter:</strong> ¿Mover a /scripts/ (Opción A) o ignorar vía config (Opción C)?</li>
+                <li><strong>#2 S57 TEST 2:</strong> ¿Hay especificación de S57 que valide si setAuditTrailDecisionId() debería existir?</li>
+                <li><strong>#3 S57 TEST 3:</strong> ¿Es correcto 'REVIEW_MLI_THRESHOLDS' o debe ser 'REVIEW_COMPONENT_WEIGHTS'?</li>
+                <li><strong>#4 Safety Weekly:</strong> ¿Circuit Breaker debe priorizar DAILY sobre WEEKLY o evaluar ambos?</li>
+                <li><strong>#5 Feedback Integration:</strong> ¿Es crítico para Fase C o puede quedar pendiente de S59?</li>
+            </ul>
+        </div>
+
+        <div class="note">
+            <strong>📌 Notas Importantes</strong>
+            <ul style="margin-left: 20px; margin-top: 10px;">
+                <li>CERO cambios realizados. Este es análisis únicamente.</li>
+                <li>Fallos #3 y #4 afectan lógica de TITO (desición + seguridad).</li>
+                <li>Fallos #2 y #5 son sobre S57-S59 (features de aprendizaje).</li>
+                <li>Fallo #1 es puramente clasificación de archivo.</li>
+                <li>NO proceder a Fase 3 sin claridad en al menos #3 y #4.</li>
+            </ul>
+        </div>
+
+        <footer style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--text-secondary); font-size: 0.9em;">
+            <p>Diagnóstico: 6 de Septiembre 2026 | Fase 1 ✅ + Fase 2 ✅ + Diagnóstico Fase 3 (EN CURSO)</p>
+        </footer>
+    </div>
+</body>
+</html>
