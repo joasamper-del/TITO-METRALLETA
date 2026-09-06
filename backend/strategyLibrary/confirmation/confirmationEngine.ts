@@ -8,14 +8,23 @@
 import { ConfirmationSource } from "./confirmationSource";
 import { ConfirmationContext, ConfirmationResult, ConfirmationSourceConfig, SourceHealth, ConfirmationEngineStats } from "./types";
 import { ConfidenceCalculator } from "./confidenceCalculator";
+import { AuditTrailIntegration, AuditContext } from "../execution/auditTrailIntegration"; // S57
 
 export class ConfirmationEngine {
   private sources: Map<string, ConfirmationSource> = new Map();
   private confidenceThreshold: number = 65; // 65% confidence required
   private lastResults: ConfirmationResult[] = [];
+  private auditTrail?: AuditTrailIntegration; // S57: Optional audit trail
+  private auditTrailDecisionId?: string; // S57: Track audit trail ID
+  private mliState?: any; // S57: MLI state from calculator
 
-  constructor(sources: ConfirmationSource[] = [], confidenceThreshold: number = 65) {
+  constructor(
+    sources: ConfirmationSource[] = [],
+    confidenceThreshold: number = 65,
+    auditTrail?: AuditTrailIntegration // S57: Optional injection
+  ) {
     this.confidenceThreshold = confidenceThreshold;
+    this.auditTrail = auditTrail; // S57
     sources.forEach((source) => {
       this.registerSource(source);
     });
@@ -49,6 +58,20 @@ export class ConfirmationEngine {
    */
   getSource(sourceId: string): ConfirmationSource | undefined {
     return this.sources.get(sourceId);
+  }
+
+  /**
+   * S57: Set MLI state from calculator
+   */
+  setMLIState(state: any): void {
+    this.mliState = state;
+  }
+
+  /**
+   * S57: Get audit trail decision ID
+   */
+  getAuditTrailDecisionId(): string | undefined {
+    return this.auditTrailDecisionId;
   }
 
   /**
@@ -104,6 +127,45 @@ export class ConfirmationEngine {
     };
 
     this.lastResults.push(result);
+
+    // S57: Record ENTRAR decision if confirmation passes (async, non-blocking)
+    if (isConfirmed && this.auditTrail) {
+      try {
+        const auditContext: AuditContext = {
+          timestamp: new Date(),
+          symbol: context.symbol || 'UNKNOWN',
+          strategy: context.regime || 'CONFIRMATION',
+          marketData: {
+            price: context.price || 0,
+            vix: context.vix || 0,
+            volume: 0,
+          },
+          dataAvailability: {
+            price: 'REAL',
+            vix: 'REAL',
+            volume: 'MISSING',
+          },
+        };
+
+        // ASYNC: Fire and forget (don't wait for response)
+        this.auditTrailDecisionId = await this.auditTrail.recordEnterDecision(
+          auditContext,
+          confidence.finalScore,
+          this.mliState?.score || 0,
+          this.mliState?.breakdown || {},
+          context.price || 0,
+          context.price ? context.price * 1.02 : 0, // TP estimate
+          context.price ? context.price * 0.99 : 0   // SL estimate
+        ).catch(err => {
+          console.error('[S57] ENTRAR decision logging failed (non-blocking):', err.message);
+          return undefined;
+        });
+      } catch (err) {
+        console.error('[S57] Confirmation audit error:', err.message);
+        // CONTINUE - never throw
+      }
+    }
+
     return result;
   }
 

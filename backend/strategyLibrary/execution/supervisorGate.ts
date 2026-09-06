@@ -2,7 +2,11 @@
  * Supervisor Gate v4
  * 5 mandatory safety checks before ANY trade execution
  * ALL gates must pass, or trade is blocked
+ *
+ * S57: Also handles position closing and exit recording
  */
+
+import { AuditTrailIntegration, AuditContext } from "./auditTrailIntegration"; // S57
 
 export interface SupervisorGateResult {
   gateName: string;
@@ -47,6 +51,18 @@ export interface ProposedTrade {
 }
 
 export class SupervisorGate {
+  private auditTrail?: AuditTrailIntegration; // S57
+  private auditTrailEntryId?: string; // S57: Track entry ID for outcome updates
+
+  constructor(auditTrail?: AuditTrailIntegration) { // S57
+    this.auditTrail = auditTrail;
+  }
+
+  // S57: Setter for audit trail entry ID
+  setAuditTrailEntryId(id: string | undefined): void {
+    this.auditTrailEntryId = id;
+  }
+
   // Gate 1: Max Daily Loss (-2% account)
   checkDailyLossGate(accountData: AccountData): SupervisorGateResult {
     const maxDailyLoss = accountData.totalBalance * -0.02; // -2%
@@ -169,6 +185,54 @@ export class SupervisorGate {
       recommendation: allPassed ? "APPROVE" : "REJECT",
       failureReasons,
     };
+  }
+
+  /**
+   * S57: Close position and record exit decision
+   */
+  async closePosition(
+    orderId: string,
+    symbol: string,
+    entryPrice: number,
+    exitPrice: number,
+    exitReason: 'TP_HIT' | 'SL_HIT' | 'MANUAL' | 'TIMEOUT'
+  ): Promise<{ pnl: number; pnlPercent: number }> {
+    const pnl = (exitPrice - entryPrice) * (entryPrice > 0 ? 1 : -1); // Simplified
+    const pnlPercent = entryPrice > 0 ? ((exitPrice - entryPrice) / entryPrice) * 100 : 0;
+
+    // S57: Record exit decision (async, non-blocking)
+    if (this.auditTrail) {
+      try {
+        const exitContext: AuditContext = {
+          timestamp: new Date(),
+          symbol: symbol,
+          strategy: 'exit-management',
+          marketData: {
+            price: exitPrice,
+          },
+          dataAvailability: {
+            price: 'REAL',
+          },
+        };
+
+        const exitDecisionId = await this.auditTrail.recordExitDecision(
+          exitContext,
+          exitReason,
+          pnl,
+          pnlPercent
+        ).catch(err => {
+          console.error('[S57] Exit decision logging failed:', err.message);
+          return undefined;
+        });
+
+        // S57: Record exit is linked to entry via auditTrailEntryId in recordExitDecision
+        // The audit trail DB should link via timestamp + symbol + strategy for traceability
+      } catch (err) {
+        console.error('[S57] Supervisor audit error:', err.message);
+      }
+    }
+
+    return { pnl, pnlPercent };
   }
 
   /**

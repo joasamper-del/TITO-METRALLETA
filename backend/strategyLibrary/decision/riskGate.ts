@@ -4,6 +4,8 @@
  * A single gate failure = DO NOT OPERATE
  */
 
+import { AuditTrailIntegration, AuditContext } from '../execution/auditTrailIntegration';
+
 export interface GateCheckResult {
   gateName: string;
   passed: boolean;
@@ -21,6 +23,12 @@ export interface RiskGateResult {
 }
 
 export class RiskGate {
+  private auditTrail?: AuditTrailIntegration;
+
+  constructor(auditTrail?: AuditTrailIntegration) {
+    this.auditTrail = auditTrail;
+  }
+
   // Gate 1: Win Rate >45% minimum
   checkWinRateGate(winRate: number): GateCheckResult {
     const passed = winRate >= 45;
@@ -155,5 +163,50 @@ export class RiskGate {
     const failures = result.reasons.length > 0 ? `\nFailures:\n${result.reasons.map((r) => `  - ${r}`).join("\n")}` : "";
 
     return `${header}\n${summary}${failures}`;
+  }
+
+  // [S57] Record gate failure decisions to audit trail (async, non-blocking)
+  async recordGateDecision(
+    symbol: string,
+    strategy: string,
+    vix: number,
+    volume: number,
+    result: RiskGateResult
+  ): Promise<void> {
+    if (!this.auditTrail || result.allPassed) return;
+
+    try {
+      const context: AuditContext = {
+        timestamp: new Date(),
+        symbol,
+        strategy,
+        marketData: {
+          vix,
+          volume,
+        },
+        dataAvailability: {
+          vix: 'REAL',
+          volume: 'REAL',
+        },
+      };
+
+      const severityGates = result.reasons.filter(r =>
+        r.includes('Drawdown') || r.includes('Overfitting') || r.includes('Earnings')
+      );
+
+      const isHighSeverity = severityGates.length >= 1;
+
+      if (isHighSeverity) {
+        this.auditTrail.recordAvoidDecision(context, 0, result.reasons).catch(err => {
+          console.error('[S57] Risk gate NO_ENTRAR logging failed:', err.message);
+        });
+      } else {
+        this.auditTrail.recordWaitDecision(context, 30, result.reasons.join(' | ')).catch(err => {
+          console.error('[S57] Risk gate ESPERAR logging failed:', err.message);
+        });
+      }
+    } catch (err) {
+      console.error('[S57] Gate audit error:', err.message);
+    }
   }
 }

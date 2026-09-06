@@ -23,6 +23,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as dotenv from 'dotenv';
+import { AuditTrailIntegration } from './auditTrailIntegration'; // S57
 
 dotenv.config({ path: path.join(__dirname, '../../.env.local') });
 
@@ -85,9 +86,11 @@ export class StrategyLearningEngine {
   private testingSessions: StrategyTest[] = [];
   private approvedStrategies: StrategyProposal[] = [];
   private learningPath: string;
+  private auditTrail?: AuditTrailIntegration; // S57
 
-  constructor() {
+  constructor(auditTrail?: AuditTrailIntegration) { // S57
     this.learningPath = path.join(__dirname, '../../logs/strategy-learning');
+    this.auditTrail = auditTrail; // S57
     this.ensureDirectory();
   }
 
@@ -377,6 +380,112 @@ Document learnings for future attempts.
 
     this.saveTestSession(strategyId, testSession);
     return approved;
+  }
+
+  /**
+   * S57: Analyze trade outcome and record lessons (READ-ONLY)
+   * Insights are logged but NEVER automatically applied
+   * All modifications require human review
+   */
+  async analyzeOutcome(tradeResult: {
+    entryAuditId?: string;
+    entryPrice: number;
+    exitPrice: number;
+    exitReason: string;
+    predictedDirection?: string;
+    actualDirection?: string;
+    mliScore?: number;
+    mliWasCorrect?: boolean;
+    componentAccuracy?: Record<string, boolean>;
+  }): Promise<{
+    outcome: 'PROFITABLE' | 'LOSS' | 'PARTIAL';
+    pnl: number;
+    pnlPercent: number;
+    correctComponents: string[];
+    incorrectComponents: string[];
+    mliWasCorrect: boolean;
+    componentAccuracy: Record<string, number>;
+    recommendation: string;
+    nextAction: string;
+  }> {
+    const pnl = tradeResult.exitPrice - tradeResult.entryPrice;
+    const pnlPercent = ((tradeResult.exitPrice - tradeResult.entryPrice) / tradeResult.entryPrice) * 100;
+    const outcome = pnl > 0 ? 'PROFITABLE' : pnl < 0 ? 'LOSS' : 'PARTIAL';
+
+    // Analyze component accuracy
+    const correctComponents: string[] = [];
+    const incorrectComponents: string[] = [];
+    const componentAccuracy: Record<string, number> = {};
+
+    if (tradeResult.componentAccuracy) {
+      Object.entries(tradeResult.componentAccuracy).forEach(([component, wasCorrect]) => {
+        if (wasCorrect) {
+          correctComponents.push(component);
+          componentAccuracy[component] = 100;
+        } else {
+          incorrectComponents.push(component);
+          componentAccuracy[component] = 0;
+        }
+      });
+    }
+
+    // Generate recommendation (for human review only)
+    let recommendation = 'Continue monitoring performance.';
+    let nextAction = 'NO_CHANGE';
+
+    if (outcome === 'PROFITABLE' && tradeResult.mliWasCorrect) {
+      recommendation = 'MLI performed well. Monitor for consistency.';
+    } else if (outcome === 'LOSS' && !tradeResult.mliWasCorrect) {
+      recommendation = 'MLI prediction was incorrect. Consider reviewing thresholds (requires human approval).';
+      nextAction = 'REVIEW_MLI_THRESHOLDS'; // Logged only, not applied
+    } else if (incorrectComponents.length > 2) {
+      recommendation = 'Multiple components failed. Review component weights (requires human approval).';
+      nextAction = 'REVIEW_COMPONENT_WEIGHTS'; // Logged only, not applied
+    }
+
+    // S57: Record outcome to audit trail (async, READ-ONLY)
+    if (this.auditTrail && tradeResult.entryAuditId) {
+      try {
+        await this.auditTrail.recordTradeOutcome(
+          tradeResult.entryAuditId,
+          outcome,
+          pnl,
+          pnlPercent,
+          {
+            correct_components: correctComponents,
+            incorrect_components: incorrectComponents,
+            mli_prediction_accuracy: tradeResult.mliWasCorrect ? 'CORRECT' : 'INCORRECT',
+            component_scores: componentAccuracy,
+            recommendation: recommendation,
+            next_action: nextAction,
+          }
+        ).catch(err => {
+          console.error('[S57] Outcome logging failed (read-only):', err.message);
+        });
+
+        // CRITICAL: Learning engine analysis is READ-ONLY
+        // ❌ These insights are logged but NEVER automatically applied:
+        // - MLI weights remain unchanged
+        // - Stop Loss logic unchanged
+        // - Risk gate thresholds unchanged
+        // - All modifications require human review (future S59)
+        console.log('[S57] Analysis complete (read-only). Results require manual review.');
+      } catch (err) {
+        console.error('[S57] Learning engine audit error:', err.message);
+      }
+    }
+
+    return {
+      outcome,
+      pnl,
+      pnlPercent,
+      correctComponents,
+      incorrectComponents,
+      mliWasCorrect: tradeResult.mliWasCorrect || false,
+      componentAccuracy,
+      recommendation,
+      nextAction,
+    };
   }
 
   /**

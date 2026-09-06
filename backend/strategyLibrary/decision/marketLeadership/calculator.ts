@@ -32,6 +32,7 @@ export class MarketLeadershipCalculator {
   private volatilityComponent = new VolatilityComponent();
   private volumeComponent = new VolumeComponent();
   private flowComponent = new FlowComponent();
+  private currentMLIState?: any; // S57: Store MLI state for pipeline use
 
   calculate(data: MarketData): MarketLeadershipResult {
     const allComponents: ComponentScore[] = [];
@@ -151,7 +152,7 @@ export class MarketLeadershipCalculator {
       warnings.push(`Confidence reduced by ${confidenceReduction}%`);
     }
 
-    return {
+    const result = {
       timestamp: data.timestamp,
       marketLeadershipIndex,
       marketRegime,
@@ -170,6 +171,31 @@ export class MarketLeadershipCalculator {
       warnings,
       auditTrail,
     };
+
+    // S57: Store MLI state for ConfirmationEngine to access
+    if (result.scoreBreakdown !== null) {
+      this.currentMLIState = {
+        score: marketLeadershipIndex,
+        breakdown: {
+          spyTrend: adjustedComponents.find(c => c.name === 'SPY Trend'),
+          qqqTrend: adjustedComponents.find(c => c.name === 'QQQ Trend'),
+          leadership: adjustedComponents.find(c => c.name === 'Leadership'),
+          volatility: adjustedComponents.find(c => c.name === 'Volatility'),
+          volume: adjustedComponents.find(c => c.name === 'Volume'),
+          flow: adjustedComponents.find(c => c.name === 'Flow'),
+        },
+        action: action,
+        confidence: Math.round(confidence),
+        direction: direction,
+      };
+    }
+
+    return result;
+  }
+
+  // S57: Getter for MLI state (used by ConfirmationEngine)
+  getMLIState() {
+    return this.currentMLIState;
   }
 
   private buildRegimeDescription(direction: MarketDirection, score: number): string {

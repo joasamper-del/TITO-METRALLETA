@@ -5,6 +5,7 @@
 
 import { StrategyMatcher, RegimeMatch, StrategyProfile } from "./strategyMatcher";
 import { RiskGate, RiskGateResult } from "./riskGate";
+import { AuditTrailIntegration, AuditContext } from "../execution/auditTrailIntegration";
 
 export interface MarketConditions {
   regime: string; // BULLISH_STRONG, BEARISH_WEAK, etc.
@@ -30,23 +31,27 @@ export interface SelectionResult {
 export class StrategySelector {
   private matcher: StrategyMatcher;
   private riskGate: RiskGate;
+  private auditTrail?: AuditTrailIntegration;
 
-  constructor() {
+  constructor(auditTrail?: AuditTrailIntegration) {
     this.matcher = new StrategyMatcher();
-    this.riskGate = new RiskGate();
+    this.riskGate = new RiskGate(auditTrail);
+    this.auditTrail = auditTrail;
   }
 
-  selectStrategy(conditions: MarketConditions): SelectionResult {
+  async selectStrategy(conditions: MarketConditions): Promise<SelectionResult> {
     // Step 0: Verify regime is recognized
     const validRegimes = ["BULLISH_STRONG", "BULLISH_WEAK", "BEARISH_STRONG", "BEARISH_WEAK", "LATERAL", "HIGH_VOLATILITY", "EARNINGS_EVENT"];
     if (!validRegimes.includes(conditions.regime)) {
-      return {
+      const result: SelectionResult = {
         status: "DO_NOT_OPERATE",
         confidence: 0,
         compatibilityScore: 0,
         explanation: `Unknown market regime: ${conditions.regime}. Cannot determine appropriate strategy.`,
         reasons: [`Regime "${conditions.regime}" is not recognized. Valid regimes: ${validRegimes.join(", ")}`],
       };
+      await this.recordDecisionAsync(conditions, result);
+      return result;
     }
 
     // Step 1: Get all strategies matched to this regime
@@ -57,13 +62,15 @@ export class StrategySelector {
     const validMatches = regimeMatches.filter((m) => unblockedStrategies.includes(m.strategy) && !m.blockedReason);
 
     if (validMatches.length === 0) {
-      return {
+      const result: SelectionResult = {
         status: "DO_NOT_OPERATE",
         confidence: 0,
         compatibilityScore: 0,
         explanation: `No valid strategies for regime ${conditions.regime}. All candidates blocked or incompatible.`,
         reasons: ["No unblocked strategies match current regime"],
       };
+      await this.recordDecisionAsync(conditions, result);
+      return result;
     }
 
     // Step 3: For each candidate, check risk gates
@@ -87,6 +94,14 @@ export class StrategySelector {
 
       // If gates fail, skip this strategy
       if (!gateResult.allPassed) {
+        // [S57] Record gate failure
+        await this.riskGate.recordGateDecision(
+          conditions.symbol,
+          match.strategy,
+          conditions.vix,
+          conditions.volume,
+          gateResult
+        );
         continue;
       }
 
@@ -116,6 +131,7 @@ export class StrategySelector {
     }
 
     if (bestValidStrategy) {
+      await this.recordDecisionAsync(conditions, bestValidStrategy);
       return bestValidStrategy;
     }
 
@@ -136,11 +152,24 @@ export class StrategySelector {
           conditions.earningsWithin24h
         );
 
+        // [S57] Record each strategy's gate failure
+        if (!gateResult.allPassed) {
+          this.riskGate.recordGateDecision(
+            conditions.symbol,
+            match.strategy,
+            conditions.vix,
+            conditions.volume,
+            gateResult
+          ).catch(err => {
+            console.error('[S57] Failed to record gate failure:', err.message);
+          });
+        }
+
         return { strategy: match.strategy, failures: gateResult.reasons };
       })
       .filter((x) => x !== null);
 
-    return {
+    const result: SelectionResult = {
       status: "DO_NOT_OPERATE",
       confidence: 0,
       compatibilityScore: 0,
@@ -153,6 +182,36 @@ export class StrategySelector {
         ...failedStrategies.flatMap((f) => (f ? [`  ${f.strategy}: ${f.failures.join("; ")}`] : [])),
       ],
     };
+    await this.recordDecisionAsync(conditions, result);
+    return result;
+  }
+
+  private async recordDecisionAsync(conditions: MarketConditions, result: SelectionResult): Promise<void> {
+    if (!this.auditTrail) return;
+
+    try {
+      const context: AuditContext = {
+        timestamp: new Date(),
+        symbol: conditions.symbol,
+        strategy: result.selectedStrategy || 'UNKNOWN',
+        marketData: {
+          price: conditions.price,
+          vix: conditions.vix,
+          volume: conditions.volume,
+        },
+        dataAvailability: {
+          price: 'REAL',
+          vix: 'REAL',
+          volume: 'REAL',
+        },
+      };
+
+      this.auditTrail.recordSelectionDecision(context, result).catch(err => {
+        console.error('[S57] Selection decision logging failed (non-blocking):', err.message);
+      });
+    } catch (err) {
+      console.error('[S57] Selection audit error:', err.message);
+    }
   }
 
   getBlockedStrategies(): string[] {

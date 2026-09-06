@@ -9,6 +9,7 @@ import { ConfirmationResult } from "../confirmation/types";
 import { DecisionHistoryLogger } from "../confirmation/decisionHistory";
 import { SupervisorGate, SupervisorDecision, AccountData, MarketData } from "./supervisorGate";
 import { AlpacaAdapter, AlpacaOrder, AlpacaPosition } from "./alpacaAdapter";
+import { AuditTrailIntegration } from "./auditTrailIntegration"; // S57
 
 export interface ExecutionContext {
   selectionResult: SelectionResult;
@@ -37,11 +38,19 @@ export class ExecutionEngine {
   private alpaca: AlpacaAdapter;
   private logger: DecisionHistoryLogger;
   private openPositions: Map<string, AlpacaPosition> = new Map();
+  private auditTrail?: AuditTrailIntegration; // S57: Optional audit trail
+  private auditTrailDecisionId?: string; // S57: Track decision ID from ConfirmationEngine
 
-  constructor(alpacaApiKey: string, alpacaSecretKey: string, sessionId?: string) {
+  constructor(alpacaApiKey: string, alpacaSecretKey: string, sessionId?: string, auditTrail?: AuditTrailIntegration) {
     this.supervisor = new SupervisorGate();
     this.alpaca = new AlpacaAdapter(alpacaApiKey, alpacaSecretKey);
     this.logger = new DecisionHistoryLogger(sessionId);
+    this.auditTrail = auditTrail; // S57
+  }
+
+  // S57: Set audit trail decision ID from ConfirmationEngine
+  setAuditTrailDecisionId(id: string | undefined): void {
+    this.auditTrailDecisionId = id;
   }
 
   /**
@@ -203,6 +212,20 @@ export class ExecutionEngine {
         supervisorDecision,
       };
 
+      // S57: Record execution failure (async, non-blocking)
+      if (this.auditTrail && this.auditTrailDecisionId) {
+        try {
+          this.auditTrail.recordExecutionFailure(
+            this.auditTrailDecisionId,
+            order.error || "Alpaca rejected order"
+          ).catch(err => {
+            console.error('[S57] Execution failure logging failed:', err.message);
+          });
+        } catch (err) {
+          console.error('[S57] Execution audit error:', err.message);
+        }
+      }
+
       this.logger.logDecision({
         symbol: context.marketData.symbol,
         regime: context.confirmationResult.context.regime,
@@ -247,6 +270,32 @@ export class ExecutionEngine {
       },
       supervisorDecision,
     };
+
+    // S57: Record execution success (async, non-blocking)
+    if (this.auditTrail && this.auditTrailDecisionId) {
+      try {
+        this.auditTrail.recordExecutionSuccess(
+          this.auditTrailDecisionId,
+          {
+            status: "TRADE_PLACED",
+            orderId: order.id,
+            position: {
+              symbol: context.marketData.symbol,
+              quantity: positionSize,
+              entryPrice: context.marketData.price,
+              stopLoss: this.calculateStopLoss(context),
+              takeProfit: this.calculateTakeProfit(context),
+              placedAt: new Date(),
+            },
+            supervisorDecision: {},
+          }
+        ).catch(err => {
+          console.error('[S57] Execution success logging failed:', err.message);
+        });
+      } catch (err) {
+        console.error('[S57] Execution audit error:', err.message);
+      }
+    }
 
     this.logger.logDecision({
       symbol: context.marketData.symbol,
