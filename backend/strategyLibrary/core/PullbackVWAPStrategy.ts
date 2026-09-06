@@ -15,7 +15,7 @@ interface RiskParameters {
 
 export class PullbackVWAPStrategy extends BaseStrategy {
   name: StrategyName = StrategyName.PULLBACK_VWAP;
-  minSignalScore: number = 65;
+  minSignalScore: number = 65; // Active rule (conservative pending empirical validation)
   maxSimultaneousTrades: number = 3;
   defaultPositionSizePct: number = 100;
   defaultRiskPct: number = 1.5;
