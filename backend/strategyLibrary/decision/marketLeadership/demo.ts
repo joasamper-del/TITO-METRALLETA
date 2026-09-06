@@ -126,6 +126,39 @@ async function runDemo() {
   printResult("Scenario 4: Limited Data", limitedData, result4);
 
   console.log("\n" + "═".repeat(70) + "\n");
+
+  // Scenario 5: BTC-specific (crypto markets)
+  console.log("📊 SCENARIO 5: CRYPTO (BTC/ETH specific)");
+  console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+
+  const btcData: MarketData = {
+    timestamp: new Date("2026-09-05T10:15:00Z"),
+    // BTC as SPY proxy for crypto (major trend indicator)
+    spyPrice: 42850, // BTC price
+    spyMA50: 41200,
+    spyMA200: 39500,
+    // ETH as QQQ proxy (altcoin leadership)
+    qqqPrice: 2245,
+    qqqMA50: 2150,
+    qqqMA200: 2050,
+    // VIX analog: Fear Index for crypto (higher = more fear)
+    vix: 22.5,
+    vixMA20: 24.0,
+    // Volume in crypto
+    currentVolume: 28.5e9, // $28.5B daily crypto volume
+    averageVolume: 22e9,
+    spreadBPS: 2.5, // Crypto spreads typically wider
+    // Flow: BTC dominance rising = institutional interest
+    gexValue: 28, // Lower than equities
+    callWallExists: false,
+    putWallExists: true,
+    putCallRatio: 0.8, // Different from equities
+  };
+
+  const result5 = calculator.calculate(btcData);
+  printResult("Scenario 5: Crypto (BTC/ETH)", btcData, result5);
+
+  console.log("\n" + "═".repeat(70) + "\n");
   console.log("✅ PHASE A DEMONSTRATION COMPLETE\n");
   console.log("📋 SUMMARY:");
   console.log("  • Index calculates: 0-100 score (quantitative)");
