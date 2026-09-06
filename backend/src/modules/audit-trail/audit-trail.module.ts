@@ -6,11 +6,13 @@
 
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { DecisionAuditTrail, DecisionFeedback, FeedbackValidationRecord } from '../database/entities';
+import { DecisionAuditTrail, DecisionFeedback, FeedbackValidationRecord, Lesson } from '../database/entities';
 import { AuditTrailService } from './audit-trail.service';
 import { AuditTrailController } from './audit-trail.controller';
 import { FeedbackService } from './feedback.service';
 import { FeedbackController } from './feedback.controller';
+import { LessonsService } from './lessons.service';
+import { LessonsController } from './lessons.controller';
 
 @Module({
   imports: [
@@ -18,10 +20,11 @@ import { FeedbackController } from './feedback.controller';
       DecisionAuditTrail,
       DecisionFeedback,
       FeedbackValidationRecord,
+      Lesson,
     ]),
   ],
-  providers: [AuditTrailService, FeedbackService],
-  controllers: [AuditTrailController, FeedbackController],
-  exports: [AuditTrailService, FeedbackService],
+  providers: [AuditTrailService, FeedbackService, LessonsService],
+  controllers: [AuditTrailController, FeedbackController, LessonsController],
+  exports: [AuditTrailService, FeedbackService, LessonsService],
 })
 export class AuditTrailModule {}
