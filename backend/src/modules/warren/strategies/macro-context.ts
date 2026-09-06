@@ -72,9 +72,13 @@ export class MacroContextService {
 
     const macroContext = this.determineMacroContext(
       fedRateSignal,
+      indicators.fedRate,
       inflationSignal,
+      indicators.cpi,
       volatilitySignal,
+      indicators.vix,
       valuationSignal,
+      indicators.spPE,
     );
 
     const { aggressivenessAdjustment, marginAdjustment } = this.calculateAdjustments(macroContext, indicators);
@@ -173,31 +177,85 @@ export class MacroContextService {
 
   /**
    * Determine overall macro context (bullish/neutral/bearish)
-   * This is a COMPOSITE, not a replacement for fundamentals
+   * REFINED: Now considers SEVERITY of extremes, not just presence/absence
+   * - Fed 0% (crisis) ≠ Fed 5% (restrictive)
+   * - VIX 55 (panic) ≠ VIX 25 (stress)
+   * - P/E 35 (bubble) ≠ P/E 22 (expensive)
+   * CRITICAL: Macro is MODIFIER ONLY, never replacement
    */
   private determineMacroContext(
     fedRate: 'rising' | 'stable' | 'falling',
+    fedRateValue: number,
     inflation: 'high' | 'moderate' | 'low',
+    inflationValue: number,
     volatility: 'high' | 'moderate' | 'low',
+    volatilityValue: number,
     valuation: 'cheap' | 'fair' | 'expensive',
+    valuationValue: number,
   ): 'bullish' | 'neutral' | 'bearish' {
     let bullishScore = 0;
     let bearishScore = 0;
 
-    // Fed rates: falling = bullish, rising = bearish
-    if (fedRate === 'falling') bullishScore += 2;
-    if (fedRate === 'rising') bearishScore += 2;
+    // 1. FED RATE: Proportional scoring based on severity
+    if (fedRateValue <= 1) {
+      // Emergency rates (0-1%): strong bearish signal (crisis)
+      bearishScore += 4;
+    } else if (fedRate === 'falling') {
+      bullishScore += 2;
+    } else if (fedRate === 'rising') {
+      bearishScore += 2;
+    }
 
-    // Inflation: moderate = neutral (good goldilocks), high/low = bearish
-    if (inflation === 'high' || inflation === 'low') bearishScore += 2;
+    // 2. INFLATION: Proportional scoring based on severity
+    if (inflationValue > 5) {
+      // Severe inflation (>5%): strong bearish
+      bearishScore += 3;
+    } else if (inflationValue < 1) {
+      // Deflation (<1%): moderate bearish
+      bearishScore += 2;
+    } else if (inflation === 'high') {
+      bearishScore += 2;
+    } else if (inflation === 'moderate') {
+      // Goldilocks zone 2-4%: neutral, no penalty
+      bearishScore += 0;
+    }
 
-    // Volatility: low = bullish, high = bearish
-    if (volatility === 'low') bullishScore += 1;
-    if (volatility === 'high') bearishScore += 2;
+    // 3. VOLATILITY: Proportional scoring based on severity
+    if (volatilityValue > 40) {
+      // Extreme panic (VIX >40): strong bearish
+      bearishScore += 4;
+    } else if (volatility === 'high') {
+      bearishScore += 2;
+    } else if (volatility === 'low') {
+      bullishScore += 1;
+    }
 
-    // Valuation: cheap = bullish, expensive = bearish
-    if (valuation === 'cheap') bullishScore += 2;
-    if (valuation === 'expensive') bearishScore += 2;
+    // 4. VALUATION: Proportional scoring based on severity
+    if (valuationValue > 30) {
+      // Severe bubble (P/E >30): very strong bearish
+      // Must dominate over normal bullish signals (Fed falling + VIX low)
+      bearishScore += 4;
+    } else if (valuation === 'expensive') {
+      bearishScore += 2;
+    } else if (valuation === 'cheap') {
+      bullishScore += 2;
+    }
+
+    // 5. COMBINATION CHECK: Multiple extreme signals reinforce bearish bias
+    const extremeSignals = [
+      fedRateValue <= 1,
+      inflationValue > 5 || inflationValue < 1,
+      volatilityValue > 40,
+      valuationValue > 30,
+    ].filter(x => x).length;
+
+    // If 2+ extremes align bearish, increase confidence in bearish
+    if (extremeSignals >= 2 && bearishScore > bullishScore) {
+      bearishScore += 2; // Boost for multiple extreme signals
+    }
+
+    // DEBUG: Log scores for testing
+    // console.log(`[MACRO DEBUG] fed=${fedRateValue} (${fedRate}), cpi=${inflationValue} (${inflation}), vix=${volatilityValue} (${volatility}), pe=${valuationValue} (${valuation}) => bullish=${bullishScore}, bearish=${bearishScore}`);
 
     if (bullishScore > bearishScore) {
       return 'bullish';
@@ -273,7 +331,7 @@ export class MacroContextService {
       warnings.push(`Fed Rate data is ${Math.floor(fedFreshness)} hours old (stale). Last update: ${indicators.fedRateTimestamp.toISOString()}`);
     }
 
-    if (cpiFreshness > 720) {
+    if (cpiFreshness >= 720) {
       // CPI is monthly, so 30 days old is expected
       warnings.push(`CPI data is ${Math.floor(cpiFreshness)} hours old (monthly release). Last update: ${indicators.cpiTimestamp.toISOString()}`);
     }
