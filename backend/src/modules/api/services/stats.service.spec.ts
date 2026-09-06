@@ -10,11 +10,11 @@ describe('StatsService', () => {
   let tradeResultRepository: Repository<TradeResult>;
 
   const mockOpportunityRepository = {
-    find: jest.fn(),
+    find: vi.fn(),
   };
 
   const mockTradeResultRepository = {
-    find: jest.fn(),
+    find: vi.fn(),
   };
 
   beforeEach(async () => {

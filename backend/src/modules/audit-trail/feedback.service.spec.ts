@@ -13,20 +13,20 @@ describe('FeedbackService', () => {
 
   beforeEach(async () => {
     mockFeedbackRepo = {
-      create: jest.fn(),
-      save: jest.fn(),
-      findOne: jest.fn(),
-      find: jest.fn(),
+      create: vi.fn(),
+      save: vi.fn(),
+      findOne: vi.fn(),
+      find: vi.fn(),
     };
 
     mockValidationRepo = {
-      create: jest.fn(),
-      save: jest.fn(),
-      find: jest.fn(),
+      create: vi.fn(),
+      save: vi.fn(),
+      find: vi.fn(),
     };
 
     mockAuditTrailRepo = {
-      findOne: jest.fn(),
+      findOne: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({

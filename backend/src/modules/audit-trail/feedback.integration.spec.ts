@@ -25,19 +25,19 @@ describe('S59 - Feedback Learning Loop Integration', () => {
 
   beforeEach(async () => {
     mockFeedbackRepo = {
-      create: jest.fn(),
-      save: jest.fn(),
-      findOne: jest.fn(),
-      find: jest.fn(),
+      create: vi.fn(),
+      save: vi.fn(),
+      findOne: vi.fn(),
+      find: vi.fn(),
     };
 
     mockValidationRepo = {
-      create: jest.fn(),
-      save: jest.fn(),
+      create: vi.fn(),
+      save: vi.fn(),
     };
 
     mockAuditTrailRepo = {
-      findOne: jest.fn(),
+      findOne: vi.fn(),
     };
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
