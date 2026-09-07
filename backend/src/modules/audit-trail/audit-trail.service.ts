@@ -92,27 +92,40 @@ export class AuditTrailService {
     const records = await qb.getMany();
 
     // Map to response format
-    return records.map((record) => ({
-      id: record.id,
-      timestamp: record.timestamp,
-      symbol: record.symbol,
-      decision: record.decision,
-      confidence: record.confidence,
-      mliScore: record.mliScore,
-      mliBreakdown: record.mliBreakdown || {},
-      riskGatesApplied: this.normalizeRiskGates(record.riskGatesApplied),
-      marketData: {
-        price: record.marketData?.price || 0,
-        vix: record.marketData?.vix || 0,
-        volume: record.marketData?.volume || 0,
-      },
-      executionId: record.executionId,
-      outcome: record.outcome,
-      profitLoss: record.profitLoss,
-      profitLossPercent: record.profitLossPercent,
-      lessons: record.lessons,
-      questionsForJay: this.extractQuestionsForJay(record),
-    }));
+    return records.map((record) => {
+      // Calculate PnL if not set but we have current price and entry price
+      let pnl = record.profitLoss;
+      let pnlPercent = record.profitLossPercent;
+
+      if ((pnl === null || pnl === 0) && record.marketData?.price && record.proposedEntry) {
+        const currentPrice = record.marketData.price;
+        const entryPrice = record.proposedEntry;
+        pnl = currentPrice - entryPrice;
+        pnlPercent = ((currentPrice - entryPrice) / entryPrice) * 100;
+      }
+
+      return {
+        id: record.id,
+        timestamp: record.timestamp,
+        symbol: record.symbol,
+        decision: record.decision,
+        confidence: record.confidence,
+        mliScore: record.mliScore,
+        mliBreakdown: record.mliBreakdown || {},
+        riskGatesApplied: this.normalizeRiskGates(record.riskGatesApplied),
+        marketData: {
+          price: record.marketData?.price || 0,
+          vix: record.marketData?.vix || 0,
+          volume: record.marketData?.volume || 0,
+        },
+        executionId: record.executionId,
+        outcome: record.outcome,
+        profitLoss: pnl,
+        profitLossPercent: pnlPercent,
+        lessons: record.lessons,
+        questionsForJay: this.extractQuestionsForJay(record),
+      };
+    });
   }
 
   /**

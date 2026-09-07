@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { AlpacaQuote, AlpacaBar } from './alpaca.types';
+import { AlpacaQuote, AlpacaBar, AlpacaOrder } from './alpaca.types';
 
 /**
  * Cliente HTTP para Alpaca Paper Trading
@@ -85,6 +85,34 @@ export class AlpacaClient {
     } catch (error) {
       console.error(`⚠️ Error obteniendo histórico para ${symbol} de Market Data API:`, error);
       return null;
+    }
+  }
+
+  /**
+   * Obtiene órdenes cerradas (filled/canceled/expired)
+   * Usa Trading API para recuperar histórico de órdenes
+   */
+  async getClosedOrders(symbol: string, since?: Date): Promise<AlpacaOrder[]> {
+    try {
+      const params: any = {
+        status: 'closed',
+        symbols: symbol,
+        limit: 100,
+      };
+
+      if (since) {
+        params.after = since.toISOString();
+      }
+
+      const response = await this.client.get('/v2/orders', { params });
+
+      if (response.data && Array.isArray(response.data)) {
+        return response.data as AlpacaOrder[];
+      }
+      return [];
+    } catch (error) {
+      console.error(`⚠️ Error obteniendo órdenes cerradas para ${symbol} de Alpaca:`, error);
+      return [];
     }
   }
 
