@@ -5,3 +5,4 @@ export * from './feedback.entity';
 export * from './feedback-validation.entity';
 export * from './lesson.entity';
 export * from './position-snapshot.entity';
+export * from './decision-change-log.entity';
