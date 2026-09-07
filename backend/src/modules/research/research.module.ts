@@ -17,6 +17,9 @@ import { CalendarProvider } from './providers/calendar.provider';
 import { SECEdgarProvider } from './providers/sec-edgar.provider';
 import { YahooProvider } from './providers/yahoo.provider';
 
+// Guardian & Operations (S60-S61 Implementation)
+import { OperationsTaskList } from './guardians/operations-task-list';
+
 @Module({
   imports: [HttpModule],
   providers: [
@@ -32,6 +35,9 @@ import { YahooProvider } from './providers/yahoo.provider';
     // Fundamental Providers
     YahooProvider,
     SECEdgarProvider,
+
+    // Guardian & Operations
+    OperationsTaskList,
   ],
   controllers: [ResearchController],
   exports: [WebResearchService], // Export for other modules

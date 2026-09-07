@@ -18,6 +18,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { SystemGuardian, ProviderHealthStatus, SystemIncident } from './system-guardian';
 import { SystemIntelligence, IncidentPattern, SafeAutocorrectionAction } from './system-intelligence';
 import { OperationsDirector, ExecutiveSummary, OperationIssue, AppliedFix, PendingAction } from './operations-director';
+import { OperationsTaskList, TaskList } from './operations-task-list';
 
 @Injectable()
 export class SystemGuardianDirector {
@@ -26,7 +27,8 @@ export class SystemGuardianDirector {
   constructor(
     private readonly guardian: SystemGuardian,
     private readonly intelligence: SystemIntelligence,
-    private readonly director: OperationsDirector
+    private readonly director: OperationsDirector,
+    private readonly taskList: OperationsTaskList
   ) {
     this.logger.log('Guardian Director initialized - Ready to operate');
   }
@@ -222,6 +224,43 @@ export class SystemGuardianDirector {
       trend: report.systemHealthTrend,
       insights: report.learningInsights,
     };
+  }
+
+  /**
+   * GENERATE TODAY'S TASK LIST
+   *
+   * Operator doesn't need to think - just follow the list
+   */
+  async generateTodaysTasks(): Promise<TaskList> {
+    const health = await this.guardian.getHealthReport();
+    const patterns = this.intelligence.detectIncidentPatterns(health.incidents || []);
+
+    const metrics = {
+      systemUptime: health.overallUptime || 98,
+      averageLatency: this.calculateAverageLatency(health.providers || []),
+      dataFreshness: this.calculateDataFreshness(health.providers || []),
+      newsLatency: 0, // Will be calculated from provider times
+      calendarOutdated: false,
+      fundamentalsStale: false,
+    };
+
+    const confidence = (metrics.systemUptime + metrics.dataFreshness) / 2;
+
+    return this.taskList.generateTaskList(
+      health.incidents || [],
+      patterns,
+      metrics,
+      confidence
+    );
+  }
+
+  /**
+   * FORMAT TASK LIST FOR DISPLAY
+   *
+   * One-page actionable list
+   */
+  formatTaskList(tasks: TaskList): string {
+    return this.taskList.formatForDisplay(tasks);
   }
 
   /**
