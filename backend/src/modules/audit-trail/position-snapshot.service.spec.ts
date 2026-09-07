@@ -496,4 +496,225 @@ describe('PositionSnapshotService - Task 1 Indicadores Técnicos', () => {
       `);
     });
   });
+
+  describe('Task 3: Prueba funcional completa - Pipeline ETH', () => {
+    it('ENTRADA: DecisionAuditTrail ENTER ETH + indicadores + razonamiento → ESPERADO: snapshot guardado con vinculación → OBTENIDO: recuperable con datos correctos', async () => {
+      // Fase 1: ENTRADA - Crear decisión simulada
+      const decisionId = '550e8400-e29b-41d4-a716-446655440001';
+      const decision = {
+        id: decisionId,
+        symbol: 'ETH',
+        decision: 'ENTER',
+        timestamp: new Date(),
+        confidence: 0.75,
+        proposedEntry: 2300,
+        proposedTarget: 2450,
+        proposedStop: 2150,
+      };
+
+      // Fase 2: Crear PositionSnapshot con indicadores
+      const snapshot = new PositionSnapshot();
+      snapshot.id = '123e4567-e89b-12d3-a456-426614174001';
+      snapshot.symbol = 'ETH';
+      snapshot.timestamp = new Date();
+      snapshot.qty = 1;
+      snapshot.entryPrice = 2300;
+      snapshot.currentPrice = 2300;
+      snapshot.pnl = 0;
+      snapshot.pnlPercent = 0;
+
+      // Fase 3: Poblar indicadores técnicos
+      const marketData = {
+        volume: 850000,
+        trend: 'UP' as const,
+        rsi: 58.5,
+        atr: 45.25,
+        vix: 18.2,
+      };
+
+      const snapshotWithIndicators = await service.fillIndicators(
+        snapshot,
+        marketData,
+      );
+
+      // Verificar indicadores
+      expect(snapshotWithIndicators.volume).toBe(850000);
+      expect(snapshotWithIndicators.trend).toBe('UP');
+      expect(snapshotWithIndicators.rsi).toBe(58.5);
+      expect(snapshotWithIndicators.atr).toBe(45.25);
+      expect(snapshotWithIndicators.vix).toBe(18.2);
+
+      // Fase 4: Registrar razonamiento vinculado
+      const reason =
+        'ETH breakout at key support with volume spike. RSI not overbought, trend UP, VIX calm. Risk-reward favorable at 2300/2150.';
+
+      const snapshotWithReasoning = await service.registerDecisionReasoning(
+        snapshotWithIndicators,
+        decisionId,
+        reason,
+      );
+
+      // Verificar vinculación y razonamiento
+      expect(snapshotWithReasoning.decisionAuditTrailId).toBe(decisionId);
+      expect(snapshotWithReasoning.reasoning).toBe(reason);
+
+      // Fase 5: Guardar en BD (mock)
+      mockRepository.save.mockResolvedValue(snapshotWithReasoning);
+      const savedSnapshot = await service.save(snapshotWithReasoning);
+
+      expect(savedSnapshot.id).toBe(snapshot.id);
+      expect(savedSnapshot.symbol).toBe('ETH');
+
+      // Fase 6: Recuperar desde BD
+      mockRepository.findOne.mockResolvedValue(savedSnapshot);
+      const retrievedSnapshot = await service.getWithDecision(snapshot.id!);
+
+      // VERIFICACIÓN COMPLETA: Todos los datos pertenecen a la misma decisión y posición
+      expect(retrievedSnapshot).not.toBeNull();
+      expect(retrievedSnapshot?.symbol).toBe('ETH');
+      expect(retrievedSnapshot?.decisionAuditTrailId).toBe(decisionId);
+
+      // Indicadores intactos
+      expect(retrievedSnapshot?.volume).toBe(850000);
+      expect(retrievedSnapshot?.trend).toBe('UP');
+      expect(retrievedSnapshot?.rsi).toBe(58.5);
+      expect(retrievedSnapshot?.atr).toBe(45.25);
+      expect(retrievedSnapshot?.vix).toBe(18.2);
+
+      // Razonamiento intacto
+      expect(retrievedSnapshot?.reasoning).toBe(reason);
+
+      console.log(`
+        ✅ PIPELINE COMPLETO ETH:
+
+        ENTRADA:
+        - DecisionId: ${decisionId}
+        - Symbol: ETH
+        - Decision: ENTER @ 2300
+        - Indicadores: Vol=${marketData.volume}, Trend=${marketData.trend}, RSI=${marketData.rsi}
+
+        ESPERADO:
+        - Snapshot guardado con vinculación a decisión
+        - Indicadores preservados
+        - Razonamiento preservado
+        - Recuperable después
+
+        OBTENIDO:
+        - Symbol: ${retrievedSnapshot?.symbol} ✓
+        - DecisionAuditTrailId: ${retrievedSnapshot?.decisionAuditTrailId} ✓
+        - Volume: ${retrievedSnapshot?.volume} ✓
+        - Trend: ${retrievedSnapshot?.trend} ✓
+        - RSI: ${retrievedSnapshot?.rsi} ✓
+        - ATR: ${retrievedSnapshot?.atr} ✓
+        - VIX: ${retrievedSnapshot?.vix} ✓
+        - Reasoning: "${retrievedSnapshot?.reasoning?.substring(0, 50)}..." ✓
+
+        RESULTADO: PASS ✅
+      `);
+    });
+
+    it('ENTRADA: Múltiples snapshots en ciclo de monitoreo → ESPERADO: todos vinculados a decisión, razonamiento progresivo → OBTENIDO: historia completa recuperable', async () => {
+      const decisionId = '550e8400-e29b-41d4-a716-446655440002';
+
+      // Ciclo 1: Entrada
+      const snap1 = new PositionSnapshot();
+      snap1.id = 'snap-1';
+      snap1.symbol = 'ETH';
+      snap1.currentPrice = 2300;
+      snap1.entryPrice = 2300;
+      snap1.qty = 1;
+      snap1.pnl = 0;
+      snap1.pnlPercent = 0;
+      snap1.timestamp = new Date();
+
+      const snap1WithReasoning = await service.registerDecisionReasoning(
+        snap1,
+        decisionId,
+        'Entry: Breakout confirmed',
+      );
+
+      // Ciclo 2: Monitoreo - Precio sube
+      const snap2 = new PositionSnapshot();
+      snap2.id = 'snap-2';
+      snap2.symbol = 'ETH';
+      snap2.currentPrice = 2350;
+      snap2.entryPrice = 2300;
+      snap2.qty = 1;
+      snap2.pnl = 50;
+      snap2.pnlPercent = 2.17;
+      snap2.timestamp = new Date(Date.now() + 300000);
+
+      const snap2WithReasoning = await service.registerDecisionReasoning(
+        snap2,
+        decisionId,
+        'Monitor: Trend strong, RSI 65, holding',
+      );
+
+      // Ciclo 3: Monitoreo - Precio cae ligeramente
+      const snap3 = new PositionSnapshot();
+      snap3.id = 'snap-3';
+      snap3.symbol = 'ETH';
+      snap3.currentPrice = 2330;
+      snap3.entryPrice = 2300;
+      snap3.qty = 1;
+      snap3.pnl = 30;
+      snap3.pnlPercent = 1.3;
+      snap3.timestamp = new Date(Date.now() + 600000);
+
+      const snap3WithReasoning = await service.registerDecisionReasoning(
+        snap3,
+        decisionId,
+        'Pullback: Support holding, RSI 52, still UP trend',
+      );
+
+      // Todos guardados (mock)
+      const allSnapshots = [
+        snap1WithReasoning,
+        snap2WithReasoning,
+        snap3WithReasoning,
+      ];
+
+      mockRepository.find.mockResolvedValue(allSnapshots);
+
+      // Recuperar historia
+      const history = await service.getByDecision(decisionId);
+
+      // VERIFICACIÓN: Todos pertenecen a la misma decisión
+      expect(history.length).toBe(3);
+      expect(
+        history.every((s) => s.decisionAuditTrailId === decisionId),
+      ).toBe(true);
+
+      // VERIFICACIÓN: Razonamiento progresivo
+      expect(history[0].reasoning).toContain('Entry');
+      expect(history[1].reasoning).toContain('Monitor');
+      expect(history[2].reasoning).toContain('Pullback');
+
+      // VERIFICACIÓN: P&L progresivo
+      expect(history[0].pnl).toBe(0);
+      expect(history[1].pnl).toBe(50);
+      expect(history[2].pnl).toBe(30);
+
+      console.log(`
+        ✅ CICLO COMPLETO MONITOREO ETH:
+
+        ENTRADA:
+        - 3 snapshots en ciclo de trading (entrada → subida → corrección)
+        - Todos vinculados a decisionId: ${decisionId}
+
+        ESPERADO:
+        - Recuperar historia completa de decisión
+        - Razonamiento progresivo (Entry → Monitor → Pullback)
+        - P&L actualizado (0 → +50 → +30)
+
+        OBTENIDO:
+        - Snapshots recuperados: ${history.length}
+        - Vinculación correcta: ${history.every((s) => s.decisionAuditTrailId === decisionId)}
+        - Razonamientos presentes: ${history.map((s) => s.reasoning?.substring(0, 10)).join(', ')}
+        - P&L progresivo: ${history.map((s) => s.pnl).join(' → ')}
+
+        RESULTADO: PASS ✅
+      `);
+    });
+  });
 });
