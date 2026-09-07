@@ -16,6 +16,7 @@ describe('PositionSnapshotService - Task 1 Indicadores Técnicos', () => {
     mockRepository = {
       save: vi.fn((snapshot) => Promise.resolve(snapshot)),
       findOne: vi.fn(),
+      find: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -347,6 +348,151 @@ describe('PositionSnapshotService - Task 1 Indicadores Técnicos', () => {
           - rsi: ${obtenido.rsi}
           - atr: ${obtenido.atr}
           - vix: ${obtenido.vix}
+      `);
+    });
+  });
+
+  describe('Task 2: Registración vinculada a DecisionAuditTrail', () => {
+    it('ENTRADA: snapshot + decisionId + reason → ESPERADO: decisionAuditTrailId y reasoning poblados → OBTENIDO: snapshot con vinculación', async () => {
+      const snapshot = new PositionSnapshot();
+      snapshot.symbol = 'BTC';
+      snapshot.qty = 0.5;
+      snapshot.currentPrice = 42000;
+      snapshot.entryPrice = 40000;
+      snapshot.pnl = 500;
+      snapshot.pnlPercent = 2.5;
+
+      const decisionId = '550e8400-e29b-41d4-a716-446655440000';
+      const reason = 'Long entry: Trend reversal at support with high RSI oversold condition';
+
+      const esperado = {
+        decisionAuditTrailId: decisionId,
+        reasoning: reason,
+      };
+
+      const obtenido = await service.registerDecisionReasoning(
+        snapshot,
+        decisionId,
+        reason,
+      );
+
+      expect(obtenido.decisionAuditTrailId).toBe(esperado.decisionAuditTrailId);
+      expect(obtenido.reasoning).toBe(esperado.reasoning);
+
+      console.log(`
+        ENTRADA: snapshot BTC + decisionId
+        ESPERADO: decisionAuditTrailId y reasoning poblados
+        OBTENIDO:
+          - decisionAuditTrailId: ${obtenido.decisionAuditTrailId}
+          - reasoning: ${obtenido.reasoning}
+      `);
+    });
+
+    it('ENTRADA: decisionId vacío → ESPERADO: error → OBTENIDO: lanza error', async () => {
+      const snapshot = new PositionSnapshot();
+      snapshot.symbol = 'BTC';
+
+      try {
+        await service.registerDecisionReasoning(snapshot, '', 'some reason');
+        fail('debería haber lanzado error');
+      } catch (error: any) {
+        expect(error.message).toContain('decisionAuditTrailId no puede estar vacío');
+      }
+    });
+
+    it('ENTRADA: reasoning vacío → ESPERADO: error → OBTENIDO: lanza error', async () => {
+      const snapshot = new PositionSnapshot();
+      snapshot.symbol = 'BTC';
+      const decisionId = '550e8400-e29b-41d4-a716-446655440000';
+
+      try {
+        await service.registerDecisionReasoning(snapshot, decisionId, '');
+        fail('debería haber lanzado error');
+      } catch (error: any) {
+        expect(error.message).toContain('reasoning no puede estar vacío');
+      }
+    });
+
+    it('ENTRADA: snapshot sin symbol → ESPERADO: error → OBTENIDO: lanza error', async () => {
+      const snapshot: any = { qty: 0.5 };
+      const decisionId = '550e8400-e29b-41d4-a716-446655440000';
+
+      try {
+        await service.registerDecisionReasoning(
+          snapshot,
+          decisionId,
+          'some reason',
+        );
+        fail('debería haber lanzado error');
+      } catch (error: any) {
+        expect(error.message).toContain('snapshot debe tener symbol');
+      }
+    });
+
+    it('ENTRADA: snapshot guardado → ESPERADO: recuperable por snapshotId con vinculación → OBTENIDO: datos correctos', async () => {
+      const snapshot = new PositionSnapshot();
+      snapshot.id = '123e4567-e89b-12d3-a456-426614174000';
+      snapshot.symbol = 'ETH';
+      snapshot.qty = 1;
+      snapshot.currentPrice = 2300;
+      snapshot.entryPrice = 2250;
+      snapshot.pnl = 50;
+      snapshot.pnlPercent = 2.22;
+
+      const decisionId = '550e8400-e29b-41d4-a716-446655440000';
+      const reason = 'Short entry: Resistance break with volume spike';
+
+      await service.registerDecisionReasoning(snapshot, decisionId, reason);
+
+      // Simular recuperación (mockRepository.findOne retorna el snapshot)
+      mockRepository.findOne.mockResolvedValue(snapshot);
+
+      const obtenido = await service.getWithDecision(snapshot.id!);
+
+      expect(obtenido).not.toBeNull();
+      expect(obtenido?.decisionAuditTrailId).toBe(decisionId);
+      expect(obtenido?.reasoning).toBe(reason);
+
+      console.log(`
+        ENTRADA: snapshot ETH guardado con vinculación
+        ESPERADO: recuperable con decisionAuditTrailId correcto
+        OBTENIDO:
+          - id: ${obtenido?.id}
+          - symbol: ${obtenido?.symbol}
+          - decisionAuditTrailId: ${obtenido?.decisionAuditTrailId}
+          - reasoning: ${obtenido?.reasoning}
+      `);
+    });
+
+    it('ENTRADA: múltiples snapshots vinculados a misma decisión → ESPERADO: recuperables todos → OBTENIDO: lista correcta', async () => {
+      const decisionId = '550e8400-e29b-41d4-a716-446655440000';
+
+      const snapshots = [
+        {
+          id: '1',
+          symbol: 'BTC',
+          decisionAuditTrailId: decisionId,
+          reasoning: 'Entry reason',
+        },
+        {
+          id: '2',
+          symbol: 'BTC',
+          decisionAuditTrailId: decisionId,
+          reasoning: 'Update reason',
+        },
+      ];
+
+      mockRepository.find.mockResolvedValue(snapshots);
+
+      const obtenido = await service.getByDecision(decisionId);
+
+      expect(obtenido.length).toBe(2);
+      expect(obtenido.every((s) => s.decisionAuditTrailId === decisionId)).toBe(true);
+
+      console.log(`
+        ENTRADA: decisionId con 2 snapshots vinculados
+        ESPERADO: recuperar lista de snapshots
+        OBTENIDO: ${obtenido.length} snapshots con vinculación correcta
       `);
     });
   });

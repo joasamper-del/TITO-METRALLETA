@@ -91,4 +91,54 @@ export class PositionSnapshotService {
       order: { timestamp: 'DESC' },
     });
   }
+
+  /**
+   * S62 Task 2: Registrar razonamiento vinculado a DecisionAuditTrail
+   * ENTRADA: snapshot + decisionAuditTrailId + reasoning
+   * ESPERADO: snapshot guardado con vinculación + reasoning
+   * OBTENIDO: snapshot recuperado con decisionAuditTrailId correcto + reasoning
+   */
+  async registerDecisionReasoning(
+    snapshot: PositionSnapshot,
+    decisionAuditTrailId: string,
+    reasoning: string,
+  ): Promise<PositionSnapshot> {
+    // Validación
+    if (!decisionAuditTrailId || decisionAuditTrailId.trim().length === 0) {
+      throw new Error('decisionAuditTrailId no puede estar vacío');
+    }
+
+    if (!reasoning || reasoning.trim().length === 0) {
+      throw new Error('reasoning no puede estar vacío');
+    }
+
+    if (!snapshot.symbol) {
+      throw new Error('snapshot debe tener symbol');
+    }
+
+    // Registrar vinculación
+    snapshot.decisionAuditTrailId = decisionAuditTrailId;
+    snapshot.reasoning = reasoning;
+
+    return snapshot;
+  }
+
+  /**
+   * Recuperar snapshot con su DecisionAuditTrail vinculado
+   */
+  async getWithDecision(snapshotId: string): Promise<PositionSnapshot | null> {
+    return this.snapshotRepository.findOne({
+      where: { id: snapshotId },
+    });
+  }
+
+  /**
+   * Recuperar todos los snapshots vinculados a una decisión
+   */
+  async getByDecision(decisionAuditTrailId: string): Promise<PositionSnapshot[]> {
+    return this.snapshotRepository.find({
+      where: { decisionAuditTrailId },
+      order: { timestamp: 'DESC' },
+    });
+  }
 }

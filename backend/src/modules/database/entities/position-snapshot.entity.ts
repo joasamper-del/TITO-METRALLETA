@@ -75,6 +75,10 @@ export class PositionSnapshot {
   @Column('varchar', { length: 50, nullable: true })
   reassessmentForecast?: string; // HOLD, TAKE_PROFIT, STOP_LOSS, MONITOR
 
+  // S62 Task 2: Vinculación con DecisionAuditTrail
+  @Column('uuid', { nullable: true })
+  decisionAuditTrailId?: string;
+
   @CreateDateColumn()
   createdAt!: Date;
 }
