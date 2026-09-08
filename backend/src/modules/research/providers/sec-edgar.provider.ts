@@ -1,175 +1,160 @@
 /**
- * SEC Edgar Provider - Financial Filings
- *
- * Fetches SEC filings:
- * - 10-K (annual report)
- * - 10-Q (quarterly report)
- * - 8-K (current report)
- *
- * Extracts key metrics and management discussion
+ * SEC/EDGAR Financial Data Provider
+ * Fetches official financial metrics from SEC EDGAR API (public access, no auth required)
  */
 
-import { Injectable, Logger, HttpException, HttpStatus } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
-import { FundamentalProvider, FundamentalData } from '../types/research.types';
+import axios from 'axios';
 
-interface EdgarFiling {
-  type: '10-K' | '10-Q' | '8-K';
-  filedDate: Date;
-  reportDate: Date;
-  url: string;
+export interface SecEdgarData {
+  ticker: string;
+  cik: string;
+  eps: {
+    value: number | null;
+    source: string;
+    timestamp: string;
+    freshness: 'LIVE' | 'DELAYED' | 'CACHED' | 'STALE';
+    confidence: number;
+  };
+  revenueTtm: {
+    value: number | null;
+    source: string;
+    timestamp: string;
+    freshness: 'LIVE' | 'DELAYED' | 'CACHED' | 'STALE';
+    confidence: number;
+  };
+  netIncome: {
+    value: number | null;
+    source: string;
+    timestamp: string;
+    freshness: 'LIVE' | 'DELAYED' | 'CACHED' | 'STALE';
+    confidence: number;
+  };
+  latestFilingDate: string | null;
+  success: boolean;
+  error?: string;
 }
 
-@Injectable()
-export class SECEdgarProvider implements FundamentalProvider {
-  private readonly logger = new Logger(SECEdgarProvider.name);
-  private readonly edgarUrl = 'https://data.sec.gov/api/xbrl';
-  private readonly rateLimitDelay = 500;
-  private lastRequestTime = 0;
+export class SecEdgarProvider {
+  private readonly tickerCikMap: Record<string, string> = {
+    GOOGL: '0001652044',
+    GOOG: '0001652044',
+    MSFT: '0000789019',
+    AAPL: '0000320193',
+    AMZN: '0001018724',
+  };
 
-  constructor(private readonly http: HttpService) {}
+  async getFinancialData(ticker: string): Promise<SecEdgarData> {
+    const cik = this.tickerCikMap[ticker.toUpperCase()];
+    const timestamp = new Date().toISOString();
 
-  async fetchFundamentals(ticker: string): Promise<FundamentalData> {
+    if (!cik) {
+      return this.createErrorResponse(ticker, 'UNKNOWN', timestamp, `CIK not found for ${ticker}`);
+    }
+
     try {
-      await this.respectRateLimit();
-
-      this.logger.debug(`Fetching SEC filings for ${ticker}`);
-
-      // Fetch recent filings
-      const filings = await this.fetchRecentFilings(ticker);
-
-      // Parse most recent 10-Q
-      const latestQuarterly = filings.find(f => f.type === '10-Q');
-      const fundamentals = latestQuarterly
-        ? await this.parseQuarterlyReport(ticker, latestQuarterly)
-        : this.getPlaceholderFundamentals(ticker);
-
-      this.logger.log(`Fetched fundamentals for ${ticker} from SEC`);
-      return fundamentals;
-    } catch (error) {
-      this.logger.error(`SEC Edgar fetch failed: ${error.message}`);
-      throw new HttpException(
-        `SEC Edgar provider error: ${error.message}`,
-        HttpStatus.SERVICE_UNAVAILABLE
+      // Fetch company facts (financial metrics)
+      const factsResponse = await axios.get(
+        `https://data.sec.gov/submissions/CIK${cik.padStart(10, '0')}.json`,
+        { timeout: 10000 }
       );
+
+      if (!factsResponse.data?.facts?.['us-gaap']) {
+        return this.createErrorResponse(ticker, cik, timestamp, 'No financial facts found');
+      }
+
+      const gaapData = factsResponse.data.facts['us-gaap'];
+      const latestFilingDate = factsResponse.data.filings?.recent?.filingDate?.[0] || null;
+      const metrics = this.extractMetrics(gaapData, timestamp);
+
+      return {
+        ticker,
+        cik,
+        eps: metrics.eps,
+        revenueTtm: metrics.revenueTtm,
+        netIncome: metrics.netIncome,
+        latestFilingDate,
+        success: true,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      return this.createErrorResponse(ticker, cik, timestamp, `Failed to fetch: ${errorMessage}`);
     }
   }
 
-  private async fetchRecentFilings(ticker: string): Promise<EdgarFiling[]> {
-    // In production, call SEC API or parse Edgar database
-    // For now, return placeholder
-    return [
-      {
-        type: '10-Q',
-        filedDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-        reportDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
-        url: `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${ticker}&type=10-Q&dateb=&owner=exclude&count=100`,
-      },
-      {
-        type: '10-K',
-        filedDate: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000),
-        reportDate: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000),
-        url: `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${ticker}&type=10-K&dateb=&owner=exclude&count=100`,
-      },
-    ];
-  }
-
-  private async parseQuarterlyReport(
-    ticker: string,
-    filing: EdgarFiling
-  ): Promise<FundamentalData> {
-    // In production, parse HTML/XML from SEC and extract metrics
-    // For now, return structure with key fields
-    return {
-      ticker,
-      dataDate: filing.reportDate,
-      source: 'SEC Edgar',
-      metrics: {
-        pe_ratio: 25.5,
-        debt_to_equity: 0.45,
-        current_ratio: 1.8,
-        roe: 0.15,
-        roe_trend: 'stable',
-      },
-      revenues: {
-        ttm: 150000000000, // $150B in trailing twelve months
-        trend: 'growing',
-      },
-      profitability: {
-        net_margin: 0.18,
-        gross_margin: 0.45,
-        operating_margin: 0.22,
-      },
-      growth: {
-        revenue_growth_yoy: 0.08,
-        earnings_growth_yoy: 0.12,
-      },
-      warnings: [],
+  private extractMetrics(gaapData: any, timestamp: string): Partial<SecEdgarData> {
+    const metrics: any = {
+      eps: this.nullMetric('sec-edgar', timestamp),
+      revenueTtm: this.nullMetric('sec-edgar', timestamp),
+      netIncome: this.nullMetric('sec-edgar', timestamp),
     };
-  }
 
-  private getPlaceholderFundamentals(ticker: string): FundamentalData {
-    return {
-      ticker,
-      dataDate: new Date(),
-      source: 'SEC Edgar (placeholder)',
-      metrics: {
-        pe_ratio: 0,
-        debt_to_equity: 0,
-        current_ratio: 0,
-        roe: 0,
-        roe_trend: 'unknown',
-      },
-      revenues: {
-        ttm: 0,
-        trend: 'unknown',
-      },
-      profitability: {
-        net_margin: 0,
-        gross_margin: 0,
-        operating_margin: 0,
-      },
-      growth: {
-        revenue_growth_yoy: 0,
-        earnings_growth_yoy: 0,
-      },
-      warnings: ['SEC filing data not available - using placeholder'],
-    };
-  }
-
-  private async respectRateLimit(): Promise<void> {
-    const now = Date.now();
-    const timeSinceLastRequest = now - this.lastRequestTime;
-
-    if (timeSinceLastRequest < this.rateLimitDelay) {
-      const waitTime = this.rateLimitDelay - timeSinceLastRequest;
-      await new Promise(resolve => setTimeout(resolve, waitTime));
+    // Extract EPS
+    if (gaapData.EarningsPerShareBasic) {
+      const epsData = gaapData.EarningsPerShareBasic.units.USD?.[0];
+      if (epsData?.val) {
+        metrics.eps = {
+          value: parseFloat(epsData.val.toFixed(2)),
+          source: 'sec-edgar',
+          timestamp: epsData.end,
+          freshness: this.determineFreshness(epsData.end),
+          confidence: 95,
+        };
+      }
     }
 
-    this.lastRequestTime = Date.now();
+    // Extract Revenue
+    if (gaapData.Revenues) {
+      const revenueData = gaapData.Revenues.units.USD?.[0];
+      if (revenueData?.val) {
+        metrics.revenueTtm = {
+          value: parseFloat((revenueData.val / 1e9).toFixed(2)),
+          source: 'sec-edgar',
+          timestamp: revenueData.end,
+          freshness: this.determineFreshness(revenueData.end),
+          confidence: 95,
+        };
+      }
+    }
+
+    // Extract Net Income
+    if (gaapData.NetIncomeLoss) {
+      const netIncomeData = gaapData.NetIncomeLoss.units.USD?.[0];
+      if (netIncomeData?.val) {
+        metrics.netIncome = {
+          value: parseFloat((netIncomeData.val / 1e9).toFixed(2)),
+          source: 'sec-edgar',
+          timestamp: netIncomeData.end,
+          freshness: this.determineFreshness(netIncomeData.end),
+          confidence: 95,
+        };
+      }
+    }
+
+    return metrics;
   }
 
-  getName(): string {
-    return 'SECEdgar';
+  private determineFreshness(filingDate: string): 'LIVE' | 'DELAYED' | 'CACHED' | 'STALE' {
+    const daysOld = Math.floor((Date.now() - new Date(filingDate).getTime()) / (1000 * 60 * 60 * 24));
+    if (daysOld <= 7) return 'LIVE';
+    if (daysOld <= 30) return 'DELAYED';
+    if (daysOld <= 90) return 'CACHED';
+    return 'STALE';
   }
 
-  getType(): string {
-    return 'fundamentals';
+  private nullMetric(source: string, timestamp: string): SecEdgarData['eps'] {
+    return { value: null, source, timestamp, freshness: 'STALE', confidence: 0 };
   }
 
-  getPriority(): number {
-    return 2; // Secondary source (after Yahoo)
-  }
-
-  isHealthy(): boolean {
-    return true;
-  }
-
-  getLastCheckTime(): Date {
-    return new Date();
-  }
-
-  getResponseTimeMs(): number {
-    return 800; // SEC is slower
+  private createErrorResponse(ticker: string, cik: string, timestamp: string, error: string): SecEdgarData {
+    return {
+      ticker,
+      cik,
+      eps: this.nullMetric('sec-edgar', timestamp),
+      revenueTtm: this.nullMetric('sec-edgar', timestamp),
+      netIncome: this.nullMetric('sec-edgar', timestamp),
+      latestFilingDate: null,
+      success: false,
+      error,
+    };
   }
 }
