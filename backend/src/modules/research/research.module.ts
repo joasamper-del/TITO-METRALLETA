@@ -21,6 +21,11 @@ import { CalendarProvider } from './providers/calendar.provider';
 import { SECEdgarProvider } from './providers/sec-edgar.provider';
 import { YahooProvider } from './providers/yahoo.provider';
 
+// Additional Providers (S62 Implementation)
+import { MarketSnacksProvider } from './providers/market-snacks.provider';
+import { TradingViewProvider } from './providers/trading-view.provider';
+import { VIXProvider } from './providers/vix.provider';
+
 // Guardian & Operations (S60-S61 Implementation)
 import { OperationsTaskList } from './guardians/operations-task-list';
 
@@ -43,8 +48,9 @@ import { OperationsTaskList } from './guardians/operations-task-list';
       },
     },
 
-    // News Provider
+    // News Providers
     NewsAPIProvider,
+    MarketSnacksProvider,
 
     // Event Providers
     EarningsProvider,
@@ -53,6 +59,10 @@ import { OperationsTaskList } from './guardians/operations-task-list';
     // Fundamental Providers
     YahooProvider,
     SECEdgarProvider,
+
+    // Technical & Market Regime Providers
+    TradingViewProvider,
+    VIXProvider,
 
     // Guardian & Operations
     OperationsTaskList,
