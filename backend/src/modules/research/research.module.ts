@@ -14,6 +14,10 @@ import { ResearchController } from './controllers/research.controller';
 import { AlpacaPaperExecutor } from './services/alpaca-paper-executor';
 import { AlpacaValidationController } from './controllers/alpaca-validation.controller';
 
+// Research Engines (S62 Implementation)
+import { TickerResearchService } from './services/ticker-research.service';
+import { TickerAnalysisController } from './controllers/ticker-analysis.controller';
+
 // Data Providers (S61 Implementation)
 import { NewsAPIProvider } from './providers/news-api.provider';
 import { EarningsProvider } from './providers/earnings.provider';
@@ -48,6 +52,9 @@ import { OperationsTaskList } from './guardians/operations-task-list';
       },
     },
 
+    // Research Engines (S62)
+    TickerResearchService,
+
     // News Providers
     NewsAPIProvider,
     MarketSnacksProvider,
@@ -67,8 +74,8 @@ import { OperationsTaskList } from './guardians/operations-task-list';
     // Guardian & Operations
     OperationsTaskList,
   ],
-  controllers: [ResearchController, AlpacaValidationController],
-  exports: [WebResearchService, AlpacaPaperExecutor], // Export for other modules
+  controllers: [ResearchController, AlpacaValidationController, TickerAnalysisController],
+  exports: [WebResearchService, AlpacaPaperExecutor, TickerResearchService], // Export for other modules
 })
 export class ResearchModule {
   private readonly logger = new Logger(ResearchModule.name);
