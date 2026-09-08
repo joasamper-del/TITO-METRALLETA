@@ -1,0 +1,136 @@
+{
+  "session": "S63",
+  "timestamp": "2026-09-08T07:47:00Z",
+  "ticker": "GOOGL",
+  "phase": "live-validation",
+  "status": "IN_PROGRESS",
+
+  "analysis": {
+    "target": "Comprehensive GOOGL research with 7+ sources",
+    "sources_required": [
+      "sec-edgar",
+      "investor-relations",
+      "earnings-calendar",
+      "news-api",
+      "market-data",
+      "tradingview",
+      "vix-context"
+    ],
+
+    "data_collected": {
+      "sec-edgar": {
+        "status": "pending",
+        "required_fields": ["pe-ratio", "eps", "revenue", "growth-rate"],
+        "notes": "Will fetch from latest 10-Q filing"
+      },
+
+      "investor-relations": {
+        "status": "pending",
+        "required_fields": ["earnings-date", "guidance", "official-announcements"],
+        "notes": "Check investor.google.com for official IR data"
+      },
+
+      "earnings-calendar": {
+        "status": "pending",
+        "required_fields": ["next-earnings-date", "eps-consensus", "revenue-consensus"],
+        "notes": "Cross-validate with IR dates"
+      },
+
+      "news-api": {
+        "status": "pending",
+        "required_fields": ["recent-news", "sentiment", "article-timestamps"],
+        "notes": "Aggregate from NewsAPI provider"
+      },
+
+      "market-data": {
+        "status": "pending",
+        "required_fields": ["current-price", "bid-ask-spread", "volume", "market-cap"],
+        "notes": "Fetch from Alpaca (paper-api.alpaca.markets)"
+      },
+
+      "tradingview": {
+        "status": "pending",
+        "required_fields": ["rsi", "adx", "supertrend"],
+        "notes": "When TradingView integration available (STUB currently)"
+      },
+
+      "vix-context": {
+        "status": "pending",
+        "required_fields": ["vix-value", "regime", "macro-context"],
+        "notes": "Fetch from FRED VIXCLS API"
+      }
+    }
+  },
+
+  "cross_validation": {
+    "critical_data_points": [
+      {
+        "data_point": "P/E Ratio",
+        "source_1": "sec-edgar",
+        "source_2": "yahoo-finance",
+        "status": "pending",
+        "required_for_decision": true
+      },
+      {
+        "data_point": "Latest Earnings Date",
+        "source_1": "earnings-calendar",
+        "source_2": "investor-relations",
+        "status": "pending",
+        "required_for_decision": true
+      },
+      {
+        "data_point": "Current Price",
+        "source_1": "alpaca",
+        "source_2": "yahoo-finance",
+        "status": "pending",
+        "required_for_decision": true
+      }
+    ],
+
+    "conflicts_detected": [],
+    "discrepancy_threshold": "5%"
+  },
+
+  "scoring": {
+    "confidence_score": null,
+    "risk_score": null,
+    "confidence_calculation": "Average of all data point confidences - conflicts penalty",
+    "risk_calculation": "Data staleness + validation conflicts + missing critical data"
+  },
+
+  "decision": {
+    "status": "pending",
+    "options": ["CALL", "PUT", "WAIT", "NO_TRADE"],
+    "selected": null,
+    "reasoning": null,
+    "confidence_threshold": 75,
+    "risk_threshold": 30
+  },
+
+  "evidence_trail": {
+    "sources_queried": [],
+    "validations_performed": [],
+    "conflicts_reported": [],
+    "all_data_has_source_timestamp_freshness": false
+  },
+
+  "next_steps": [
+    "1. Query all 7 data sources",
+    "2. Apply SOURCE+TIMESTAMP+FRESHNESS to each data point",
+    "3. Cross-validate critical data (min 2 sources)",
+    "4. Report any discrepancies",
+    "5. Calculate confidence and risk scores",
+    "6. Make final decision with full reasoning",
+    "7. Document complete evidence trail",
+    "8. NO orders executed (validation phase only)"
+  ],
+
+  "rules_enforced": [
+    "Every data point must have: value + source + timestamp + freshness + confidence",
+    "Critical data must be validated by minimum 2 sources",
+    "Conflicts must be detected and reported (NEVER silent)",
+    "Decision must explain EXACTLY why (not vague)",
+    "Full evidence trail required",
+    "NO orders sent to Alpaca during S63"
+  ]
+}
