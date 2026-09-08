@@ -15,10 +15,15 @@ import { Injectable } from '@nestjs/common';
 @Injectable()
 export class GuardianSecretMasker {
   private readonly secretPatterns = [
+    // Alpaca Credentials (CRITICAL)
+    { pattern: /APCA-API-KEY-ID[=:\s]+([a-zA-Z0-9_-]+)/gi, name: 'ALPACA_KEY' },
+    { pattern: /APCA-API-SECRET-KEY[=:\s]+([a-zA-Z0-9_-]+)/gi, name: 'ALPACA_SECRET' },
+
     // API Keys
     { pattern: /apikey[=:\s]+([a-zA-Z0-9_-]+)/gi, name: 'API_KEY' },
     { pattern: /api_key[=:\s]+([a-zA-Z0-9_-]+)/gi, name: 'API_KEY' },
     { pattern: /NEWSAPI_KEY[=:\s]+([a-zA-Z0-9_-]+)/gi, name: 'NEWSAPI_KEY' },
+    { pattern: /FRED_API_KEY[=:\s]+([a-zA-Z0-9_-]+)/gi, name: 'FRED_API_KEY' },
 
     // Tokens
     { pattern: /token[=:\s]+([a-zA-Z0-9._-]+)/gi, name: 'TOKEN' },

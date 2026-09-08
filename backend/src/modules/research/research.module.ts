@@ -10,6 +10,10 @@ import { HttpModule } from '@nestjs/axios';
 import { WebResearchService } from './services/web-research.service';
 import { ResearchController } from './controllers/research.controller';
 
+// Execution Engines (S62 Implementation)
+import { AlpacaPaperExecutor } from './services/alpaca-paper-executor';
+import { AlpacaValidationController } from './controllers/alpaca-validation.controller';
+
 // Data Providers (S61 Implementation)
 import { NewsAPIProvider } from './providers/news-api.provider';
 import { EarningsProvider } from './providers/earnings.provider';
@@ -25,6 +29,20 @@ import { OperationsTaskList } from './guardians/operations-task-list';
   providers: [
     WebResearchService,
 
+    // Execution Engines (S62)
+    {
+      provide: AlpacaPaperExecutor,
+      useFactory: () => {
+        const apiKey = process.env.ALPACA_API_KEY;
+        const secretKey = process.env.ALPACA_SECRET_KEY;
+        if (!apiKey || !secretKey) {
+          console.warn('⚠️  ALPACA credentials not configured - Paper Trading disabled');
+          return null;
+        }
+        return new AlpacaPaperExecutor(apiKey, secretKey);
+      },
+    },
+
     // News Provider
     NewsAPIProvider,
 
@@ -39,8 +57,8 @@ import { OperationsTaskList } from './guardians/operations-task-list';
     // Guardian & Operations
     OperationsTaskList,
   ],
-  controllers: [ResearchController],
-  exports: [WebResearchService], // Export for other modules
+  controllers: [ResearchController, AlpacaValidationController],
+  exports: [WebResearchService, AlpacaPaperExecutor], // Export for other modules
 })
 export class ResearchModule {
   private readonly logger = new Logger(ResearchModule.name);
