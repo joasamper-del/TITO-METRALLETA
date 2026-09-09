@@ -9,6 +9,7 @@ import { ConfirmationResult } from "../confirmation/types";
 import { DecisionHistoryLogger } from "../confirmation/decisionHistory";
 import { SupervisorGate, SupervisorDecision, AccountData, MarketData } from "./supervisorGate";
 import { AlpacaAdapter, AlpacaOrder, AlpacaPosition } from "./alpacaAdapter";
+import { AlpacaOptionsAdapter } from "./alpacaOptionsAdapter"; // NEW: Options support
 import { AuditTrailIntegration } from "./auditTrailIntegration"; // S57
 
 export interface ExecutionContext {
@@ -36,6 +37,7 @@ export interface ExecutionDecision {
 export class ExecutionEngine {
   private supervisor: SupervisorGate;
   private alpaca: AlpacaAdapter;
+  private alpacaOptions: AlpacaOptionsAdapter; // NEW: Options support
   private logger: DecisionHistoryLogger;
   private openPositions: Map<string, AlpacaPosition> = new Map();
   private auditTrail?: AuditTrailIntegration; // S57: Optional audit trail
@@ -44,6 +46,7 @@ export class ExecutionEngine {
   constructor(alpacaApiKey: string, alpacaSecretKey: string, sessionId?: string, auditTrail?: AuditTrailIntegration) {
     this.supervisor = new SupervisorGate();
     this.alpaca = new AlpacaAdapter(alpacaApiKey, alpacaSecretKey);
+    this.alpacaOptions = new AlpacaOptionsAdapter(alpacaApiKey, alpacaSecretKey); // NEW
     this.logger = new DecisionHistoryLogger(sessionId);
     this.auditTrail = auditTrail; // S57
   }
@@ -194,16 +197,15 @@ export class ExecutionEngine {
     // Step 4: Calculate position size
     const positionSize = this.calculatePositionSize(context);
 
-    // Step 5: Place order on Alpaca
-    const order = await this.alpaca.placeOCOOrder({
-      symbol: context.marketData.symbol,
-      quantity: positionSize,
-      side: "buy",
-      entryPrice: context.marketData.price,
-      stopLoss: this.calculateStopLoss(context),
-      takeProfit: this.calculateTakeProfit(context),
-      clientOrderId: `tito_${Date.now()}`,
-    });
+    // Step 5: Place order on Alpaca (routes to equity, crypto, or options adapter)
+    const clientOrderId = `tito_${Date.now()}`;
+    const order = await this.executeStrategy(
+      context.selectionResult.selectedStrategy,
+      context.marketData.symbol,
+      positionSize,
+      context,
+      clientOrderId
+    );
 
     if (order.status === "rejected") {
       const decision: ExecutionDecision = {
@@ -407,5 +409,87 @@ export class ExecutionEngine {
    */
   getAlpaca(): AlpacaAdapter {
     return this.alpaca;
+  }
+
+  /**
+   * Detect strategy type and execute with correct adapter
+   * NEW: Supports both equity/crypto and options strategies
+   */
+  private async executeStrategy(
+    strategyName: string | undefined,
+    symbol: string,
+    positionSize: number,
+    context: ExecutionContext,
+    clientOrderId: string
+  ): Promise<any> {
+    // Options strategies
+    if (strategyName === "BearPutSpreadStrategy") {
+      return this.executeBearPutSpread(symbol, context, clientOrderId);
+    }
+
+    if (strategyName === "WheelStrategy") {
+      return this.executeWheel(symbol, context, clientOrderId);
+    }
+
+    // Default: Equity/Crypto strategies via traditional adapter
+    return this.alpaca.placeOCOOrder({
+      symbol,
+      quantity: positionSize,
+      side: "buy",
+      entryPrice: context.marketData.price,
+      stopLoss: this.calculateStopLoss(context),
+      takeProfit: this.calculateTakeProfit(context),
+      clientOrderId,
+    });
+  }
+
+  /**
+   * Execute Bear Put Spread on next expiration
+   */
+  private async executeBearPutSpread(
+    symbol: string,
+    context: ExecutionContext,
+    clientOrderId: string
+  ): Promise<any> {
+    console.log(`\n🐻 Bear Put Spread Strategy Activation`);
+    console.log(`   Symbol: ${symbol}`);
+
+    const underlyingPrice = context.marketData.price;
+    const shortStrike = Math.round(underlyingPrice * 0.98); // 2% OTM
+    const longStrike = Math.round(underlyingPrice * 0.96); // 4% OTM
+    const expiration = "092626"; // Next 30 DTE
+
+    return this.alpacaOptions.placeBearPutSpread({
+      symbol,
+      shortStrike,
+      longStrike,
+      expiration,
+      quantity: 1,
+      clientOrderId,
+    });
+  }
+
+  /**
+   * Execute Wheel Strategy - sell puts
+   */
+  private async executeWheel(
+    symbol: string,
+    context: ExecutionContext,
+    clientOrderId: string
+  ): Promise<any> {
+    console.log(`\n🎡 Wheel Strategy Activation`);
+    console.log(`   Symbol: ${symbol}`);
+
+    const underlyingPrice = context.marketData.price;
+    const strikePrice = Math.round(underlyingPrice * 0.97); // 3% OTM
+    const expiration = "092626";
+
+    return this.alpacaOptions.placeWheelPutSale({
+      symbol,
+      strikePrice,
+      expiration,
+      quantity: 1,
+      clientOrderId,
+    });
   }
 }
