@@ -141,10 +141,11 @@ export class IBKrAdapterFull {
 
       // Send order to IBKR
       // TODO (next session): Replace with actual IBKR /orders endpoint
+      const timestamp = Date.now() + Math.random() * 1000;
       const mockOrderResponse: IBKrOrderResponse = {
-        orderId: `IBKR_${Date.now()}`,
+        orderId: `IBKR_${Math.floor(timestamp)}`,
         clientOrderId: orderRequest.clientOrderId,
-        permId: `PERM_${Date.now()}`,
+        permId: `PERM_${Math.floor(timestamp)}`,
         status: "PENDING",
         filled: 0,
         remaining: params.quantity,
