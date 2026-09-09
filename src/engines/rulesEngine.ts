@@ -205,11 +205,9 @@ export class RulesEngine {
   ): AnalysisResult {
     const ruleEvaluations = this.evaluate(data, context);
     const totalScore = ruleEvaluations.reduce((sum, r) => sum + r.points, 0);
-    const maxScore = this.rules
-      .values()
-      .toArray()
-      .filter((r) => r.enabled)
-      .reduce((sum, r) => sum + r.weight, 0);
+    const maxScore = Array.from(this.rules.values())
+      .filter((r: any) => r.enabled)
+      .reduce((sum: number, r: any) => sum + r.weight, 0);
 
     const percentageScore = maxScore > 0 ? (totalScore / maxScore) * 100 : 0;
 

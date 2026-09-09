@@ -1,0 +1,64 @@
+{
+  "cycle": 1,
+  "timestamp": "2026-09-06T15:52:12.443Z",
+  "observations": [
+    {
+      "cycle": 1,
+      "timestamp": "2026-09-06T15:52:12.443Z",
+      "unixTime": 1788709932443,
+      "symbol": "ETHUSD",
+      "price": 2479.7,
+      "entry": 2458.117891037,
+      "qty": 0.209475,
+      "pnl": 0,
+      "pnlPercent": 0,
+      "dataSource": "alpaca-get-positions",
+      "dataFreshness": "REAL (live)",
+      "indicators": {
+        "volume": "MISSING (not in Alpaca API)",
+        "trend": "MISSING (need historical bars)",
+        "rsi": "MISSING (TVContext not integrated)",
+        "atr": "MISSING (TVContext not integrated)"
+      },
+      "apiEndpointsUsed": [
+        "GET /v2/positions"
+      ],
+      "signal": "HOLD",
+      "action": "NONE"
+    },
+    {
+      "cycle": 1,
+      "timestamp": "2026-09-06T15:52:12.443Z",
+      "unixTime": 1788709932443,
+      "symbol": "BTCUSD",
+      "price": null,
+      "entry": null,
+      "qty": 0,
+      "pnl": null,
+      "pnlPercent": null,
+      "dataSource": "alpaca-get-positions",
+      "dataFreshness": "NO DATA (no open position)",
+      "indicators": {
+        "volume": "MISSING",
+        "trend": "MISSING",
+        "rsi": "MISSING",
+        "atr": "MISSING"
+      },
+      "apiEndpointsUsed": [
+        "GET /v2/positions"
+      ],
+      "signal": "UNKNOWN",
+      "action": "NONE"
+    }
+  ],
+  "apiCallLog": [
+    "GET /v2/account",
+    "GET /v2/positions"
+  ],
+  "validations": {
+    "actionAllNone": true,
+    "noOrderEndpointsCalled": true,
+    "allIndicatorsMissing": false,
+    "noSecretsInLog": true
+  }
+}

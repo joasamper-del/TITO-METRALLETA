@@ -1,0 +1,46 @@
+{
+  "cycle": 3,
+  "timestamp": "2026-09-06T16:13:52.531Z",
+  "observations": [
+    {
+      "cycle": 3,
+      "timestamp": "2026-09-06T16:13:52.531Z",
+      "unixTime": 1788711232531,
+      "symbol": "ETHUSD",
+      "price": 2479.175,
+      "entry": 2458.117891037,
+      "pnl": 0,
+      "pnlPercent": 0,
+      "qty": 0.209475,
+      "source": "alpaca-positions",
+      "indicators": {
+        "volume": "MISSING",
+        "trend": "MISSING",
+        "rsi": "MISSING",
+        "atr": "MISSING"
+      },
+      "signal": "WAIT",
+      "action": "NONE"
+    },
+    {
+      "cycle": 3,
+      "timestamp": "2026-09-06T16:13:52.531Z",
+      "unixTime": 1788711232531,
+      "symbol": "BTCUSD",
+      "price": 0,
+      "entry": 0,
+      "pnl": 0,
+      "pnlPercent": 0,
+      "qty": 0,
+      "source": "missing",
+      "indicators": {
+        "volume": "MISSING",
+        "trend": "MISSING",
+        "rsi": "MISSING",
+        "atr": "MISSING"
+      },
+      "signal": "UNKNOWN",
+      "action": "NONE"
+    }
+  ]
+}

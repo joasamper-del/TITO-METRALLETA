@@ -1,0 +1,384 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 12px;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #999;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.closeBtn:hover {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.questionSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.questionSection h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.decisionCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #f9f9f9;
+  border-left: 3px solid #007bff;
+  border-radius: 4px;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.label {
+  font-weight: 600;
+  color: #666;
+  min-width: 120px;
+}
+
+.feedbackSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.statusRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 14px;
+}
+
+.statusBadge {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.statusHypothesis {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.statusValidation {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.statusProposed {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.statusConfirmed {
+  background: #e8f5e9;
+  color: #388e3c;
+}
+
+.statusRejected {
+  background: #ffebee;
+  color: #d32f2f;
+}
+
+.statusDefault {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.evidenceSection {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+.evidenceCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 20px;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+.favorCount {
+  font-size: 20px;
+  font-weight: 700;
+  color: #4caf50;
+}
+
+.favorLabel {
+  font-size: 12px;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.againstCount {
+  font-size: 20px;
+  font-weight: 700;
+  color: #f44336;
+}
+
+.againstLabel {
+  font-size: 12px;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.formGroup label {
+  font-weight: 600;
+  color: #1a1a1a;
+  font-size: 14px;
+}
+
+.formGroup textarea {
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 14px;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.formGroup textarea:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+.formGroup textarea:disabled {
+  background: #f5f5f5;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.error {
+  padding: 12px;
+  background: #ffebee;
+  color: #c62828;
+  border-radius: 4px;
+  font-size: 14px;
+  border-left: 3px solid #d32f2f;
+}
+
+.success {
+  padding: 12px;
+  background: #e8f5e9;
+  color: #2e7d32;
+  border-radius: 4px;
+  font-size: 14px;
+  border-left: 3px solid #4caf50;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.submitBtn,
+.cancelBtn {
+  padding: 10px 16px;
+  border-radius: 4px;
+  border: none;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.submitBtn {
+  background: #007bff;
+  color: white;
+}
+
+.submitBtn:hover:not(:disabled) {
+  background: #0056b3;
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+}
+
+.submitBtn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.cancelBtn {
+  background: #f5f5f5;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+.cancelBtn:hover {
+  background: #eeeeee;
+}
+
+.auditSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.auditSection h3 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #999;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.auditTrail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auditEntry {
+  display: flex;
+  gap: 12px;
+  padding: 8px;
+  background: #f9f9f9;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.auditTime {
+  color: #999;
+  min-width: 140px;
+  font-weight: 500;
+}
+
+.auditAction {
+  color: #666;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.auditDetails {
+  color: #999;
+  flex: 1;
+}
+
+@media (max-width: 600px) {
+  .container {
+    max-width: 100%;
+    border-radius: 0;
+  }
+
+  .decisionCard {
+    padding: 8px;
+  }
+
+  .row {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .label {
+    min-width: unset;
+  }
+
+  .actions {
+    flex-direction: column-reverse;
+  }
+
+  .submitBtn,
+  .cancelBtn {
+    width: 100%;
+  }
+
+  .evidenceSection {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .evidenceCard {
+    flex-direction: row;
+    justify-content: space-around;
+    gap: 12px;
+  }
+}

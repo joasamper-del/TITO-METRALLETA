@@ -1,12 +1,25 @@
-{
-  "version": "0.0.1",
-  "configurations": [
-    {
-      "name": "tito-web",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev", "--prefix", "./Agente Tito Metralleta/web"],
-      "port": 3000,
-      "autoPort": true
-    }
-  ]
+﻿{
+    "version":  "0.0.1",
+    "configurations":  [
+                           {
+                               "port":  3000,
+                               "runtimeExecutable":  "npm",
+                               "name":  "tito-web",
+                               "cwd":  "Agente Tito Metralleta/web",
+                               "runtimeArgs":  [
+                                                   "run",
+                                                   "dev"
+                                               ]
+                           },
+                           {
+                               "port":  3001,
+                               "runtimeExecutable":  "npm",
+                               "name":  "tito-backend",
+                               "cwd":  "backend",
+                               "runtimeArgs":  [
+                                                   "run",
+                                                   "start:dev"
+                                               ]
+                           }
+                       ]
 }

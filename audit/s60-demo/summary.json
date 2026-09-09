@@ -1,0 +1,76 @@
+{
+  "startTime": "2026-09-06T15:16:25.440Z",
+  "endTime": "2026-09-06T15:46:25.440Z",
+  "cyclesCompleted": 3,
+  "expectedCycles24h": 144,
+  "observations": [
+    {
+      "cycle": 1,
+      "timestamp": "2026-09-06T15:46:05.081Z",
+      "positions": [
+        {
+          "symbol": "ETHUSD",
+          "price": 2480.64,
+          "entry": 2458.117891037,
+          "qty": 0.209475,
+          "pnl": 0,
+          "pnlPercent": "0.00",
+          "timestamp": "2026-09-06T15:46:05.082Z"
+        }
+      ]
+    },
+    {
+      "cycle": 2,
+      "timestamp": "2026-09-06T15:46:15.260Z",
+      "positions": [
+        {
+          "symbol": "ETHUSD",
+          "price": 2480.64,
+          "entry": 2458.117891037,
+          "qty": 0.209475,
+          "pnl": 0,
+          "pnlPercent": "0.00",
+          "timestamp": "2026-09-06T15:46:15.260Z"
+        }
+      ]
+    },
+    {
+      "cycle": 3,
+      "timestamp": "2026-09-06T15:46:25.438Z",
+      "positions": [
+        {
+          "symbol": "ETHUSD",
+          "price": 2480.64,
+          "entry": 2458.117891037,
+          "qty": 0.209475,
+          "pnl": 0,
+          "pnlPercent": "0.00",
+          "timestamp": "2026-09-06T15:46:25.438Z"
+        }
+      ]
+    }
+  ],
+  "findings": {
+    "dataAvailability": {
+      "price": "✅ REAL (Alpaca positions)",
+      "volume": "❌ MISSING (no en API pública)",
+      "trend": "❌ MISSING (necesita histórico)",
+      "rsi": "❌ MISSING (TVContext no integrado)",
+      "atr": "❌ MISSING (TVContext no integrado)"
+    },
+    "eth": {
+      "status": "MONITOREANDO",
+      "notes": "Posición abierta en Alpaca Paper, P&L registrado en cada ciclo"
+    },
+    "btc": {
+      "status": "SIN DATOS",
+      "notes": "Sin posición abierta, Alpaca no expone precio público para nuevas órdenes"
+    }
+  },
+  "nextSteps": [
+    "✅ Prueba corta completada exitosamente",
+    "⏳ Para 24h genuinas: integrar en NestJS o usar PM2",
+    "💡 Versión real continuaría cada 10 minutos durante 24 horas",
+    "📊 Acumularía 144 ciclos totales"
+  ]
+}

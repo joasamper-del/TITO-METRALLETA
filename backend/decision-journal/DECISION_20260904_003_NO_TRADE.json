@@ -1,0 +1,41 @@
+{
+  "decisionId": "DECISION_20260904_003_NO_TRADE",
+  "timestamp": "2026-09-04T05:06:01.298Z",
+  "ticker": "IWM",
+  "decisionType": "NO_TRADE",
+  "underlyingPrice": 198.45,
+  "trend": "BEARISH",
+  "rsi": 28,
+  "adx": 12,
+  "atr": 1.25,
+  "volume": 380000,
+  "vix": 18.5,
+  "strikeConsidered": 198,
+  "expirationDate": "2026-09-04T16:00:00Z",
+  "bid": 0.5,
+  "ask": 0.6,
+  "spread": 0.1,
+  "spreadPercent": 18.2,
+  "contractVolume": 420,
+  "openInterest": 220,
+  "delta": -0.45,
+  "theta": -0.04,
+  "gamma": 0.008,
+  "vega": 0.12,
+  "premium": 0.55,
+  "confidenceLevel": 32,
+  "reasonsFor": [],
+  "reasonsAgainst": [
+    "Very wide spread (18.2%) - poor liquidity",
+    "Low ADX - no trend strength",
+    "Low volume and open interest",
+    "RSI 28 shows oversold, reversal risk",
+    "Low premium doesn't justify risk"
+  ],
+  "missingConditions": [
+    "Adequate liquidity (spread < 5%)",
+    "Volume > 500",
+    "Open interest > 100",
+    "Clear trend direction"
+  ]
+}

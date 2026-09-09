@@ -495,8 +495,52 @@
         }
 
         @media (max-width: 768px) {
+            body {
+                font-size: 16px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: var(--spacing-md);
+                text-align: center;
+                padding: var(--spacing-lg) var(--spacing-md);
+            }
+
+            .header-content h1.logo {
+                font-size: 1.5rem;
+            }
+
+            .main-content {
+                padding: var(--spacing-lg) var(--spacing-md);
+                gap: var(--spacing-lg);
+            }
+
+            .decision-panel {
+                padding: var(--spacing-lg);
+                border-radius: var(--radius-md);
+            }
+
             .decision-input {
                 grid-template-columns: 1fr;
+                gap: var(--spacing-md);
+                margin-bottom: var(--spacing-lg);
+            }
+
+            .symbol-input, .strategy-input {
+                font-size: 16px;
+                padding: var(--spacing-lg) var(--spacing-md);
+                min-height: 48px;
+            }
+
+            .btn {
+                padding: var(--spacing-lg) var(--spacing-md);
+                font-size: 16px;
+                min-height: 48px;
+                width: 100%;
+            }
+
+            .btn-primary {
+                margin-top: var(--spacing-md);
             }
 
             .decision-header {
@@ -504,13 +548,199 @@
             }
 
             .decision-metrics {
+                grid-template-columns: 1fr 1fr;
                 grid-column: 1 !important;
             }
 
-            .header {
+            .decision-main-content {
                 flex-direction: column;
+                gap: var(--spacing-lg);
+            }
+
+            .decision-decision {
+                font-size: 2.5rem;
+            }
+
+            .metric-value {
+                font-size: 1.75rem;
+            }
+
+            .decision-box {
+                padding: var(--spacing-lg);
+                border-radius: var(--radius-md);
+            }
+
+            .market-summary {
+                grid-template-columns: repeat(3, 1fr);
+                gap: var(--spacing-sm);
+                padding: var(--spacing-md);
+                font-size: 0.75rem;
+            }
+
+            .reasons-list {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-sm);
+            }
+
+            .reasons-list li {
+                font-size: 0.75rem;
+            }
+
+            .watchlist-section {
+                max-width: 100%;
+                padding: var(--spacing-md);
+            }
+
+            .watchlist-input input {
+                font-size: 16px;
+                padding: var(--spacing-md);
+                min-height: 44px;
+            }
+
+            .watchlist-input button {
+                font-size: 16px;
+                min-width: 44px;
+                min-height: 44px;
+            }
+
+            .watchlist-item {
+                font-size: 0.875rem;
+                padding: var(--spacing-md);
+                min-height: 44px;
+            }
+
+            .footer {
+                padding: var(--spacing-md);
+                font-size: 0.75rem;
+            }
+
+            .conditions-list {
+                gap: var(--spacing-sm);
+            }
+
+            .conditions-list li {
+                font-size: 0.75rem;
+                padding: var(--spacing-sm);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: var(--spacing-md) var(--spacing-sm);
+            }
+
+            .header-content h1.logo {
+                font-size: 1.25rem;
+            }
+
+            .header-content .subtitle {
+                font-size: 0.75rem;
+            }
+
+            .main-content {
+                padding: var(--spacing-md) var(--spacing-sm);
                 gap: var(--spacing-md);
-                text-align: center;
+            }
+
+            .decision-panel {
+                padding: var(--spacing-md);
+            }
+
+            .decision-input {
+                gap: var(--spacing-sm);
+            }
+
+            .symbol-input, .strategy-input {
+                padding: var(--spacing-md) var(--spacing-sm);
+                font-size: 16px;
+            }
+
+            .btn {
+                padding: var(--spacing-md) var(--spacing-sm);
+                font-size: 14px;
+                width: 100%;
+            }
+
+            .decision-decision {
+                font-size: 2rem;
+            }
+
+            .metric-label {
+                font-size: 0.7rem;
+            }
+
+            .metric-value {
+                font-size: 1.5rem;
+            }
+
+            .decision-box {
+                padding: var(--spacing-md);
+            }
+
+            .market-summary {
+                padding: var(--spacing-sm);
+                gap: var(--spacing-xs);
+            }
+
+            .market-item {
+                gap: var(--spacing-xs);
+            }
+
+            .market-label {
+                font-size: 0.65rem;
+            }
+
+            .market-value {
+                font-size: 0.8rem;
+            }
+
+            .reasons-box {
+                padding: var(--spacing-md);
+            }
+
+            .reasons-list {
+                gap: var(--spacing-xs);
+            }
+
+            .reasons-list li {
+                font-size: 0.7rem;
+                gap: var(--spacing-xs);
+            }
+
+            .watchlist-section {
+                padding: var(--spacing-md) var(--spacing-sm);
+            }
+
+            .watchlist-section h2 {
+                font-size: 1rem;
+            }
+
+            .watchlist-input {
+                gap: var(--spacing-xs);
+            }
+
+            .watchlist-input input {
+                font-size: 16px;
+                padding: var(--spacing-sm);
+            }
+
+            .watchlist-item {
+                font-size: 0.8rem;
+                padding: var(--spacing-sm);
+            }
+
+            .footer {
+                padding: var(--spacing-sm);
+                font-size: 0.65rem;
+            }
+
+            .conditions-box {
+                padding: var(--spacing-md);
+            }
+
+            .conditions-list li {
+                font-size: 0.7rem;
+                padding: var(--spacing-xs);
             }
         }
     </style>
@@ -576,7 +806,75 @@
     </div>
 
     <script>
-        // Motor simplificado
+        // Detectar servidor dinámicamente
+        const API_HOSTNAME = window.location.hostname || 'localhost';
+        const API_PORT = 3001;
+        const DEFAULT_API_URL = `http://${API_HOSTNAME}:${API_PORT}`;
+
+        // Cliente API inline
+        class TitoAPI {
+          constructor(baseUrl = DEFAULT_API_URL, timeout = 5000) {
+            this.baseUrl = baseUrl;
+            this.timeout = timeout;
+          }
+
+          async analyze(symbol, strategy, plan) {
+            try {
+              const response = await this.postWithTimeout(
+                `${this.baseUrl}/api/api/analyze`,
+                { symbol, strategy, plan },
+                this.timeout
+              );
+
+              if (!response.ok) {
+                throw new Error(`API error: ${response.status}`);
+              }
+
+              const data = await response.json();
+              return {
+                analysis: data,
+                source: 'backend',
+                error: null,
+              };
+            } catch (error) {
+              return {
+                analysis: null,
+                source: 'mock',
+                error: error.message,
+              };
+            }
+          }
+
+          postWithTimeout(url, data, timeoutMs) {
+            return Promise.race([
+              fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+              }),
+              new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('Request timeout')), timeoutMs)
+              ),
+            ]);
+          }
+
+          async isBackendAvailable() {
+            try {
+              const response = await fetch(`${this.baseUrl}/api/health`, {
+                method: 'GET',
+                signal: AbortSignal.timeout(2000),
+              });
+              return response.ok;
+            } catch {
+              return false;
+            }
+          }
+        }
+
+        // Inicializar cliente API con URL dinámico
+        const titoAPI = new TitoAPI(DEFAULT_API_URL, 5000);
+
+        // Motor simplificado (fallback cuando API no esté disponible)
         class TitoMotor {
             constructor() {
                 this.rules = this.initRules();
@@ -655,7 +953,7 @@
         const motor = new TitoMotor();
 
         // UI
-        function performAnalysis() {
+        async function performAnalysis() {
             const symbol = document.getElementById('symbolInput').value.trim().toUpperCase();
             const strategy = document.getElementById('strategyInput').value.trim();
 
@@ -664,17 +962,47 @@
                 return;
             }
 
-            const analysis = motor.analyze(symbol, strategy);
-            renderDecision(analysis);
+            // Mostrar loading
+            const resultEl = document.getElementById('decisionResult');
+            resultEl.innerHTML = '<div style="text-align: center; padding: 2rem;"><p>⏳ Analizando...</p></div>';
+            resultEl.style.display = 'block';
+            document.getElementById('emptyState').style.display = 'none';
+
+            // Intenta llamar a la API real, si falla usa motor local
+            const result = await titoAPI.analyze(symbol, strategy, {
+                entry: 100,
+                target: 110,
+                stop: 95,
+                notes: 'Análisis desde frontend'
+            });
+
+            let analysis;
+            let source;
+
+            if (result.source === 'backend') {
+                analysis = result.analysis;
+                source = 'backend';
+            } else {
+                // Usar motor local como fallback
+                analysis = motor.analyze(symbol, strategy);
+                source = 'mock';
+            }
+
+            renderDecision(analysis, source);
             motor.addToWatchlist(symbol);
             renderWatchlist();
         }
 
-        function renderDecision(analysis) {
+        function renderDecision(analysis, source = 'mock') {
             const decisionMap = { 'operar': 'OPERAR', 'esperar': 'ESPERAR', 'no_operar': 'NO OPERAR' };
             const classMap = { 'operar': 'operate', 'esperar': 'wait', 'no_operar': 'no-operate' };
             const emojiMap = { 'operar': '✅', 'esperar': '⏳', 'no_operar': '❌' };
             const riskEmoji = { 'bajo': '🟢', 'medio': '🟡', 'alto': '🔴' };
+
+            // Indicador de fuente de datos
+            const sourceIndicator = source === 'backend'
+                ? '<span style="background: #10b981; color: white; padding: 0.25rem 0.75rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">✓ Backend Real</span>'
+                : '<span style="background: #f59e0b; color: white; padding: 0.25rem 0.75rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 600;">📋 Datos Locales</span>';
 
             const now = new Date();
             const timeStr = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -686,26 +1014,14 @@
             const vixPrice = (15 + Math.random() * 15).toFixed(2);
 
             // Determina qué condiciones faltan
-            const missingConditions = [];
-            if (analysis.score < 85) {
-                // Para pasar de NO OPERAR a ESPERAR (< 50 a >= 65)
-                if (analysis.score < 65) {
-                    missingConditions.push('Mejorar tendencia del activo');
-                    missingConditions.push('Aumentar volumen de operación');
-                    missingConditions.push('Confirmar zona de operación');
-                }
-                // Para pasar de ESPERAR a OPERAR (>= 65 a >= 85)
-                else if (analysis.score >= 65 && analysis.score < 85) {
-                    missingConditions.push('Mejorar contexto general (SPY/QQQ)');
-                    missingConditions.push('Aumentar confirmación de entrada');
-                    missingConditions.push('Reducir niveles de volatilidad (VIX)');
-                }
-            }
+            const missingConditions = analysis.invalidationConditions || [];
+            const scoreValue = analysis.score || (analysis.confidence * 100) || 50;
 
             const html = `
                 <div class="decision-box ${classMap[analysis.decision]}">
                     <div class="decision-meta">
                         <span>Actualizado: ${dateStr} ${timeStr}</span>
+                        ${sourceIndicator}
                         <button class="refresh-btn" onclick="performAnalysis()">🔄 Refrescar</button>
                     </div>
 
@@ -736,7 +1052,7 @@
                         <div class="decision-metrics">
                             <div class="metric">
                                 <div class="metric-label">Confianza</div>
-                                <div class="metric-value">${analysis.score}%</div>
+                                <div class="metric-value">${Math.round((analysis.score || analysis.confidence || 0) * 100)}%</div>
                             </div>
                             <div class="metric">
                                 <div class="metric-label">Riesgo</div>
@@ -750,7 +1066,7 @@
                     <div class="reasons-box">
                         <h3>Justificación</h3>
                         <ul class="reasons-list">
-                            ${analysis.reasons.map(r => `<li>${r}</li>`).join('')}
+                            ${(analysis.mainReasons || analysis.reasons || []).map(r => `<li>${r}</li>`).join('')}
                         </ul>
                     </div>
 

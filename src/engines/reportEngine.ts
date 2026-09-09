@@ -1,5 +1,4 @@
 import { AnalysisResult, OpportunityReport, OperationPlan, TradeResult } from '../types';
-import { v4 as uuidv4 } from 'crypto';
 
 export class ReportEngine {
   /**

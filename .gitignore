@@ -1,18 +1,25 @@
-# --- secretos: NUNCA subir ---
+# --- SECRETS: NEVER COMMIT ---
 .env
 .env.local
 .env*.local
 **/.env.local
 
-# --- historial local del agente (datos de mercado acumulados) ---
+# --- Agent local history (market data accumulation) ---
 web/data/
 data/
 
-# --- dependencias y build ---
+# --- Dependencies ---
 node_modules/
+package-lock.json
+npm-debug.log
+yarn-error.log
+pnpm-lock.yaml
+
+# --- Build outputs ---
 .next/
 out/
 build/
+dist/
 *.tsbuildinfo
 next-env.d.ts
 
@@ -22,14 +29,69 @@ next-env.d.ts
 .Spotlight-V100
 .Trashes
 
-# --- editores ---
+# --- Editors ---
 .vscode/
 .idea/
 *.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
 
-# --- temporales ---
+# --- Testing ---
+coverage/
+.nyc_output/
+*.lcov
+
+# --- Logs ---
+logs/
 *.log
-.claude/
 
-# --- artefactos internos del agente (planes/briefs/reports de desarrollo) ---
+# --- Temporary files ---
+*.tmp
+*.temp
+temp/
+tmp/
+
+# --- OS ---
+Thumbs.db
+
+# --- NestJS specific ---
+.env.production
+
+# --- React specific ---
+.parcel-cache/
+
+# --- Docker ---
+.dockerignore
+
+# --- Database ---
+*.db
+*.sqlite
+*.sql
+
+# --- IDE Debug ---
+.debug
+
+# --- yarn ---
+.yarn/
+.yarn/plugins
+.yarn/releases
+
+# --- Misc ---
+.cache/
+.claude/
 .superpowers/
+*.pid
+*.pid.lock
+
+# --- Backend dist ---
+backend/dist/
+
+# --- Frontend build ---
+frontend/dist/
+
+# --- HTTPS Certificates (keep private keys secure) ---
+web/certs/
+*.key
+*.crt

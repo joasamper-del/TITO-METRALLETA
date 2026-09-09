@@ -1,0 +1,15 @@
+{
+  "recoveryDate": "2026-09-07T07:53:00.000Z",
+  "recovery": "PENDING",
+  "note": "Datos a recuperarse vía AlpacaClient.getClosedOrders('BTCUSD')",
+  "expectedData": {
+    "symbol": "BTCUSD",
+    "status": "filled",
+    "side": "sell",
+    "filled_at": "TBD",
+    "filled_avg_price": "TBD",
+    "qty": "TBD",
+    "pnl_estimated": "TBD"
+  },
+  "deficiency": "RAZÓN DE CIERRE NO REGISTRADA — Bitcoin fue cerrado pero sin motivo en AuditTrail"
+}
