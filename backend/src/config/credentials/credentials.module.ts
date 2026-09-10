@@ -1,10 +1,11 @@
 /**
  * Credentials Module
- * Registers CredentialManager globally so all services can inject it
+ * Registers CredentialManager and HealthCheckService globally
  */
 
 import { Module } from '@nestjs/common';
 import { CredentialManager } from './manager';
+import { HealthCheckService } from './health/health.service';
 import {
   AlpacaBroker,
   MassiveBroker,
@@ -52,7 +53,8 @@ import {
         return manager;
       },
     },
+    HealthCheckService,
   ],
-  exports: [CredentialManager],
+  exports: [CredentialManager, HealthCheckService],
 })
 export class CredentialsModule {}
