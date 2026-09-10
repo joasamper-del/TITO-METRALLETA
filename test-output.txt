@@ -1,0 +1,48 @@
+﻿
+> tito-metralleta@1.0.0 test
+> vitest alpacaOptionsAdapter.test.ts
+
+
+ RUN  v4.1.11 C:/Users/18327/Downloads/Agente Tito Metralleta
+
+stdout | backend/strategyLibrary/execution/alpacaOptionsAdapter.test.ts > AlpacaOptionsAdapter > BearPutSpread > should track DTE (days to expiration)
+
+📍 BEAR PUT SPREAD ORDER
+   Underlying: SPY
+   Sell Put: 450 strike
+   Buy Put: 448 strike
+   Expiration: 101726
+   Qty: 1
+✅ Bear Put Spread order submitted: spread_test-5
+   Status: Awaiting fill...
+
+ ❯ backend/strategyLibrary/execution/alpacaOptionsAdapter.test.ts (14 tests | 1 failed) 47ms
+       × should track DTE (days to expiration) 7ms
+node.exe : 
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  backend/strategyLibrary/execution/alpacaOptionsAdapter.test.ts > AlpacaOptionsAdapter > BearPutSpread > should 
+track DTE (days to expiration)
+AssertionError: expected -5585 to be greater than or equal to 40
+ ❯ backend/strategyLibrary/execution/alpacaOptionsAdapter.test.ts:93:45
+     91|
+     92|       const positions = adapter.getPositionsBySymbol("SPY");
+     93|       expect(positions[0].daysToExpiration).toBeGreaterThanOrEqual(40)…
+       |                                             ^
+     94|       expect(positions[0].daysToExpiration).toBeLessThanOrEqual(50);
+     95|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 13 passed (14)
+   Start at  08:35:45
+   Duration  952ms (transform 112ms, setup 0ms, import 470ms, tests 47ms, environment 0ms)
+
