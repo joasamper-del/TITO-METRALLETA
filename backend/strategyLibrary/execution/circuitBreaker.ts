@@ -26,8 +26,8 @@ export class CircuitBreaker {
   private isTripped: boolean = false;
   private tripReason: string = "";
   private tripTime?: Date;
-  private dailyResetTime: Date = new Date();
-  private weeklyResetTime: Date = new Date();
+  private dailyResetTime: Date = new Date(0);
+  private weeklyResetTime: Date = new Date(0);
 
   constructor(config: CircuitBreakerConfig = {
     dailyLossLimit: -2,
