@@ -1,11 +1,13 @@
 /**
  * Credentials Module
  * Registers CredentialManager and HealthCheckService globally
+ * Exports Health Check API endpoints
  */
 
 import { Module } from '@nestjs/common';
 import { CredentialManager } from './manager';
 import { HealthCheckService } from './health/health.service';
+import { HealthCheckController } from './health/health.controller';
 import {
   AlpacaBroker,
   MassiveBroker,
@@ -55,6 +57,7 @@ import {
     },
     HealthCheckService,
   ],
+  controllers: [HealthCheckController],
   exports: [CredentialManager, HealthCheckService],
 })
 export class CredentialsModule {}
