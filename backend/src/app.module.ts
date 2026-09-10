@@ -7,6 +7,7 @@ import { CoreModule } from './modules/core/core.module';
 import { ApiModule } from './modules/api/api.module';
 import { DatabaseModule } from './modules/database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { CredentialsModule } from './config/credentials/credentials.module';
 
 @Module({
   imports: [
@@ -15,6 +16,9 @@ import { AuthModule } from './modules/auth/auth.module';
       isGlobal: true,
       envFilePath: ['.env.local', '.env'],
     }),
+
+    // Credentials management (must load before other modules)
+    CredentialsModule,
 
     // Database configuration
     TypeOrmModule.forRootAsync({
