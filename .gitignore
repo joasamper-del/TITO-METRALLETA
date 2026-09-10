@@ -95,3 +95,4 @@ frontend/dist/
 web/certs/
 *.key
 *.crt
+backend/.env.local
