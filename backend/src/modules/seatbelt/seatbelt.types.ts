@@ -3,6 +3,8 @@
  * Five-gate safety system for autonomous trading
  */
 
+export type OrderType = 'market' | 'limit' | 'stop' | 'stop_limit';
+
 export interface GateResult {
   valid: boolean;
   reason: string;
@@ -45,6 +47,7 @@ export interface Order {
   qty: number;
   price: number;
   side: 'buy' | 'sell';
+  orderType?: OrderType;
 }
 
 export interface Account {
