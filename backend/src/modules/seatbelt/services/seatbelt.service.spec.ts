@@ -4,6 +4,8 @@ import { SeatbeltService } from './seatbelt.service';
 import { Gate1MarketHealthService } from './gate1-market-health.service';
 import { Gate2RiskBoundaryService } from './gate2-risk-boundary.service';
 import { Gate3DecisionAuditService } from './gate3-decision-audit.service';
+import { Gate4ExecutionEngineService } from './gate4-execution-engine.service';
+import { Gate5BrokerConnectivityService } from './gate5-broker-connectivity.service';
 import { Account, MarketState, Order, SeatbeltConfig } from '../seatbelt.types';
 
 describe('SeatbeltService - Checkpoint 1', () => {
@@ -11,6 +13,8 @@ describe('SeatbeltService - Checkpoint 1', () => {
   let gate1: Gate1MarketHealthService;
   let gate2: Gate2RiskBoundaryService;
   let gate3: Gate3DecisionAuditService;
+  let gate4: Gate4ExecutionEngineService;
+  let gate5: Gate5BrokerConnectivityService;
 
   const mockConfig: SeatbeltConfig = {
     ENABLED: false,
@@ -61,6 +65,18 @@ describe('SeatbeltService - Checkpoint 1', () => {
             validate: vi.fn(),
           },
         },
+        {
+          provide: Gate4ExecutionEngineService,
+          useValue: {
+            validate: vi.fn(),
+          },
+        },
+        {
+          provide: Gate5BrokerConnectivityService,
+          useValue: {
+            validate: vi.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -68,6 +84,8 @@ describe('SeatbeltService - Checkpoint 1', () => {
     gate1 = module.get<Gate1MarketHealthService>(Gate1MarketHealthService);
     gate2 = module.get<Gate2RiskBoundaryService>(Gate2RiskBoundaryService);
     gate3 = module.get<Gate3DecisionAuditService>(Gate3DecisionAuditService);
+    gate4 = module.get<Gate4ExecutionEngineService>(Gate4ExecutionEngineService);
+    gate5 = module.get<Gate5BrokerConnectivityService>(Gate5BrokerConnectivityService);
   });
 
   describe('validateCheckpoint1', () => {
@@ -298,6 +316,205 @@ describe('SeatbeltService - Checkpoint 1', () => {
 
       const disabledConfig = { ...mockConfig, ENABLED: false };
       expect(service.isSeatbeltEnabled(disabledConfig)).toBe(false);
+    });
+  });
+
+  describe('validateFull (Gates 1-5)', () => {
+    it('Test 1: should PASS when all 5 gates pass', async () => {
+      (gate1.validate as vi.Mock).mockResolvedValue({
+        valid: true,
+        reason: 'Market healthy',
+        gate: 'gate1',
+      });
+      (gate2.validate as vi.Mock).mockResolvedValue({
+        valid: true,
+        reason: 'Risk OK',
+        gate: 'gate2',
+      });
+      (gate3.validate as vi.Mock).mockResolvedValue({
+        valid: true,
+        reason: 'Decision OK',
+        gate: 'gate3',
+      });
+      (gate4.validate as vi.Mock).mockResolvedValue({
+        valid: true,
+        reason: 'Order valid',
+        gate: 'gate4',
+      });
+      (gate5.validate as vi.Mock).mockResolvedValue({
+        valid: true,
+        reason: 'Broker online',
+        gate: 'gate5',
+      });
+
+      const result = await service.validateFull(
+        mockOrder,
+        mockAccount,
+        mockMarket,
+        mockConfig,
+        'trade-1',
+        100,
+      );
+
+      expect(result.allGatesPass).toBe(true);
+      expect(result.gates).toHaveLength(5);
+      expect(result.reason).toContain('All gates pass');
+    });
+
+    it('Test 2: should fail fast when gate4 fails', async () => {
+      (gate1.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate1', reason: 'OK' });
+      (gate2.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate2', reason: 'OK' });
+      (gate3.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate3', reason: 'OK' });
+      (gate4.validate as vi.Mock).mockResolvedValue({
+        valid: false,
+        reason: 'Price typo',
+        gate: 'gate4',
+      });
+
+      const result = await service.validateFull(
+        mockOrder,
+        mockAccount,
+        mockMarket,
+        mockConfig,
+        'trade-1',
+        100,
+      );
+
+      expect(result.allGatesPass).toBe(false);
+      expect(result.reason).toContain('gate4');
+      expect(gate5.validate).not.toHaveBeenCalled();
+    });
+
+    it('Test 3: should report gate5 failure', async () => {
+      (gate1.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate1', reason: 'OK' });
+      (gate2.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate2', reason: 'OK' });
+      (gate3.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate3', reason: 'OK' });
+      (gate4.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate4', reason: 'OK' });
+      (gate5.validate as vi.Mock).mockResolvedValue({
+        valid: false,
+        reason: 'Broker down',
+        gate: 'gate5',
+      });
+
+      const result = await service.validateFull(
+        mockOrder,
+        mockAccount,
+        mockMarket,
+        mockConfig,
+        'trade-1',
+        100,
+      );
+
+      expect(result.allGatesPass).toBe(false);
+      expect(result.reason).toContain('gate5');
+    });
+
+    it('Test 4: should include gate4 when injected', async () => {
+      (gate1.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate1', reason: 'OK' });
+      (gate2.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate2', reason: 'OK' });
+      (gate3.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate3', reason: 'OK' });
+      (gate4.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate4', reason: 'OK' });
+      (gate5.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate5', reason: 'OK' });
+
+      await service.validateFull(
+        mockOrder,
+        mockAccount,
+        mockMarket,
+        mockConfig,
+        'trade-1',
+        100,
+      );
+
+      expect(gate4.validate).toHaveBeenCalled();
+    });
+
+    it('Test 5: should include gate5 when injected', async () => {
+      (gate1.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate1', reason: 'OK' });
+      (gate2.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate2', reason: 'OK' });
+      (gate3.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate3', reason: 'OK' });
+      (gate4.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate4', reason: 'OK' });
+      (gate5.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate5', reason: 'OK' });
+
+      await service.validateFull(
+        mockOrder,
+        mockAccount,
+        mockMarket,
+        mockConfig,
+        'trade-1',
+        100,
+      );
+
+      expect(gate5.validate).toHaveBeenCalled();
+    });
+
+    it('Test 6: should pass referencePrice to gate4', async () => {
+      (gate1.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate1', reason: 'OK' });
+      (gate2.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate2', reason: 'OK' });
+      (gate3.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate3', reason: 'OK' });
+      (gate4.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate4', reason: 'OK' });
+      (gate5.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate5', reason: 'OK' });
+
+      const refPrice = 450;
+      await service.validateFull(
+        mockOrder,
+        mockAccount,
+        mockMarket,
+        mockConfig,
+        'trade-1',
+        refPrice,
+      );
+
+      expect(gate4.validate).toHaveBeenCalledWith(mockOrder, refPrice);
+    });
+
+    it('Test 7: should pass symbol and orderType to gate5', async () => {
+      (gate1.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate1', reason: 'OK' });
+      (gate2.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate2', reason: 'OK' });
+      (gate3.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate3', reason: 'OK' });
+      (gate4.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate4', reason: 'OK' });
+      (gate5.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate5', reason: 'OK' });
+
+      const orderWithType = { ...mockOrder, orderType: 'limit' };
+      await service.validateFull(
+        orderWithType,
+        mockAccount,
+        mockMarket,
+        mockConfig,
+        'trade-1',
+        100,
+      );
+
+      expect(gate5.validate).toHaveBeenCalledWith(mockOrder.symbol, 'limit');
+    });
+
+    it('Test 8: AND logic: any gate failure blocks execution', async () => {
+      (gate1.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate1', reason: 'OK' });
+      (gate2.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate2', reason: 'OK' });
+      (gate3.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate3', reason: 'OK' });
+      (gate4.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate4', reason: 'OK' });
+      (gate5.validate as vi.Mock).mockResolvedValue({
+        valid: false,
+        reason: 'Broker down',
+        gate: 'gate5',
+      });
+
+      const result = await service.validateFull(
+        mockOrder,
+        mockAccount,
+        mockMarket,
+        mockConfig,
+        'trade-1',
+        100,
+      );
+
+      expect(result.allGatesPass).toBe(false);
+      expect(result.reason).toContain('gate5');
+      // All gates should be called before failure on gate5
+      expect(gate1.validate).toHaveBeenCalled();
+      expect(gate2.validate).toHaveBeenCalled();
+      expect(gate3.validate).toHaveBeenCalled();
+      expect(gate4.validate).toHaveBeenCalled();
+      expect(gate5.validate).toHaveBeenCalled();
     });
   });
 });
