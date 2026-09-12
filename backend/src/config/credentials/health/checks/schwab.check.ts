@@ -7,6 +7,10 @@ import { HealthCheckConfig, HealthStatus } from '../types';
 
 const SCHWAB_AUTH_URL = 'https://api.schwabapi.com/v1/oauth/token';
 
+function isSchwabTokenResponse(data: unknown): data is { access_token: string } {
+  return typeof data === 'object' && data !== null && 'access_token' in data;
+}
+
 export const schwabHealthChecks: HealthCheckConfig[] = [
   {
     id: 'schwab_credentials',
@@ -60,8 +64,8 @@ export const schwabHealthChecks: HealthCheckConfig[] = [
           throw new Error(`HTTP ${response.status}`);
         }
 
-        const data = await response.json();
-        if (!data.access_token) {
+        const data = await response.json() as unknown;
+        if (!isSchwabTokenResponse(data)) {
           throw new Error('No access token in response');
         }
 

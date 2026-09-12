@@ -41,6 +41,9 @@ export interface BrokerCredential {
 
   /** Why not configured (if isConfigured = false) */
   error?: string;
+
+  /** For OAuth tokens — when this credential expires */
+  expiresAt?: Date;
 }
 
 /**

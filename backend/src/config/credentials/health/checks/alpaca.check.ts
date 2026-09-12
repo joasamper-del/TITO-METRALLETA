@@ -7,6 +7,10 @@ import { HealthCheckConfig, HealthStatus } from '../types';
 
 const ALPACA_API_BASE = process.env.ALPACA_API_BASE || 'https://paper-api.alpaca.markets';
 
+function isAlpacaAccountResponse(data: unknown): data is { account_number: string | number } {
+  return typeof data === 'object' && data !== null && 'account_number' in data;
+}
+
 export const alpacaHealthChecks: HealthCheckConfig[] = [
   {
     id: 'alpaca_credentials',
@@ -92,9 +96,9 @@ export const alpacaHealthChecks: HealthCheckConfig[] = [
           throw new Error(`Failed to fetch account: ${response.status}`);
         }
 
-        const account = await response.json();
+        const account = await response.json() as unknown;
 
-        if (!account.account_number) {
+        if (!isAlpacaAccountResponse(account)) {
           throw new Error('Invalid account response');
         }
 
