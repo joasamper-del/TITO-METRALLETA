@@ -9,6 +9,7 @@ import {
   RelationId,
 } from 'typeorm';
 import { DecisionAuditTrail } from './decision-audit-trail.entity';
+import { TradeExecution } from './trade-execution.entity';
 
 @Entity('position_snapshots')
 @Index(['timestamp'])
@@ -87,6 +88,14 @@ export class PositionSnapshot {
 
   @RelationId((snapshot: PositionSnapshot) => snapshot.decisionAuditTrail)
   decisionAuditTrailId?: string; // Read-only: automatically populated by @RelationId from FK
+
+  // Etapa 2: Vinculación con TradeExecution (FK - opcional)
+  @ManyToOne(() => TradeExecution, { eager: false, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'trade_execution_id' })
+  tradeExecution?: TradeExecution;
+
+  @RelationId((snapshot: PositionSnapshot) => snapshot.tradeExecution)
+  tradeExecutionId?: string; // Read-only: automatically populated by @RelationId from FK
 
   @CreateDateColumn()
   createdAt!: Date;

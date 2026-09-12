@@ -5,7 +5,9 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   Index,
+  OneToMany,
 } from 'typeorm';
+import { TradeExecution } from './trade-execution.entity';
 
 @Entity('decision_audit_trail')
 @Index(['timestamp'])
@@ -84,6 +86,13 @@ export class DecisionAuditTrail {
 
   @Column('text', { nullable: true })
   notes: string | null = null;
+
+  // === Etapa 2: Relación reversa a TradeExecution ===
+  @OneToMany(() => TradeExecution, (exec) => exec.decisionAuditTrail, {
+    lazy: true,
+    cascade: false,
+  })
+  tradeExecutions?: TradeExecution[];
 
   @CreateDateColumn()
   createdAt!: Date;
