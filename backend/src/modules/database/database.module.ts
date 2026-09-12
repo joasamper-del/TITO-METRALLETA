@@ -1,9 +1,27 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Opportunity, TradeResult, DecisionAuditTrail, DecisionFeedback, FeedbackValidationRecord } from './entities';
+import {
+  Opportunity,
+  TradeResult,
+  DecisionAuditTrail,
+  DecisionFeedback,
+  FeedbackValidationRecord,
+  TradeExecution,
+  ExecutionEvent,
+} from './entities';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Opportunity, TradeResult, DecisionAuditTrail, DecisionFeedback, FeedbackValidationRecord])],
+  imports: [
+    TypeOrmModule.forFeature([
+      Opportunity,
+      TradeResult,
+      DecisionAuditTrail,
+      DecisionFeedback,
+      FeedbackValidationRecord,
+      TradeExecution,
+      ExecutionEvent,
+    ]),
+  ],
   exports: [TypeOrmModule],
 })
 export class DatabaseModule {}
