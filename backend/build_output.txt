@@ -1,0 +1,278 @@
+
+> tito-metralleta-backend@0.1.0 prebuild
+> rimraf dist
+
+
+> tito-metralleta-backend@0.1.0 build
+> nest build -p tsconfig.build.json
+
+[96msrc/config/credentials/health/checks/alpaca.check.ts[0m:[93m97[0m:[93m22[0m - [91merror[0m[90m TS2339: [0mProperty 'account_number' does not exist on type 'unknown'.
+
+[7m97[0m         if (!account.account_number) {
+[7m  [0m [91m                     ~~~~~~~~~~~~~~[0m
+[96msrc/config/credentials/health/checks/schwab.check.ts[0m:[93m64[0m:[93m19[0m - [91merror[0m[90m TS2339: [0mProperty 'access_token' does not exist on type 'unknown'.
+
+[7m64[0m         if (!data.access_token) {
+[7m  [0m [91m                  ~~~~~~~~~~~~[0m
+[96msrc/config/credentials/utils/validation.ts[0m:[93m74[0m:[93m20[0m - [91merror[0m[90m TS2339: [0mProperty 'expiresAt' does not exist on type 'BrokerCredential'.
+
+[7m74[0m     if (credential.expiresAt && willExpireSoon(credential.expiresAt)) {
+[7m  [0m [91m                   ~~~~~~~~~[0m
+[96msrc/config/credentials/utils/validation.ts[0m:[93m74[0m:[93m59[0m - [91merror[0m[90m TS2339: [0mProperty 'expiresAt' does not exist on type 'BrokerCredential'.
+
+[7m74[0m     if (credential.expiresAt && willExpireSoon(credential.expiresAt)) {
+[7m  [0m [91m                                                          ~~~~~~~~~[0m
+[96msrc/config/credentials/utils/validation.ts[0m:[93m77[0m:[93m57[0m - [91merror[0m[90m TS2339: [0mProperty 'expiresAt' does not exist on type 'BrokerCredential'.
+
+[7m77[0m         message: `Credential expires soon (${credential.expiresAt.toISOString()})`,
+[7m  [0m [91m                                                        ~~~~~~~~~[0m
+[96msrc/modules/research/guardians/system-guardian-director.ts[0m:[93m60[0m:[93m40[0m - [91merror[0m[90m TS2341: [0mProperty 'detectIncidentPatterns' is private and only accessible within class 'SystemIntelligence'.
+
+[7m60[0m     const patterns = this.intelligence.detectIncidentPatterns(health.incidents || []);
+[7m  [0m [91m                                       ~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/modules/research/guardians/system-guardian-director.ts[0m:[93m67[0m:[93m9[0m - [91merror[0m[90m TS2367: [0mThis comparison appears to be unintentional because the types '"rate_limit" | "recovery" | "connection_timeout" | "api_error" | "invalid_response"' and '"error"' have no overlap.
+
+[7m67[0m         incident.type === 'error' ? 'warning' :
+[7m  [0m [91m        ~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/modules/research/guardians/system-guardian-director.ts[0m:[93m74[0m:[93m56[0m - [91merror[0m[90m TS2367: [0mThis comparison appears to be unintentional because the types '"high" | "medium" | "low"' and '"error"' have no overlap.
+
+[7m74[0m       severity: incident.severity === 'critical' ? 8 : incident.severity === 'error' ? 5 : 2,
+[7m  [0m [91m                                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/modules/research/guardians/system-guardian-director.ts[0m:[93m111[0m:[93m28[0m - [91merror[0m[90m TS2339: [0mProperty 'overallUptime' does not exist on type 'SystemHealthReport'.
+
+[7m111[0m       systemUptime: health.overallUptime || 98,
+[7m   [0m [91m                           ~~~~~~~~~~~~~[0m
+[96msrc/modules/research/guardians/system-guardian-director.ts[0m:[93m159[0m:[93m52[0m - [91merror[0m[90m TS2339: [0mProperty 'readinessScore' does not exist on type 'SystemReadinessCheck[]'.
+
+[7m159[0m       confidenceScore: (confirmation.checkResults?.readinessScore || 0) / 100,
+[7m   [0m [91m                                                   ~~~~~~~~~~~~~~[0m
+[96msrc/modules/research/guardians/system-guardian-director.ts[0m:[93m177[0m:[93m40[0m - [91merror[0m[90m TS2341: [0mProperty 'detectIncidentPatterns' is private and only accessible within class 'SystemIntelligence'.
+
+[7m177[0m     const patterns = this.intelligence.detectIncidentPatterns(health.incidents || []);
+[7m   [0m [91m                                       ~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/modules/research/guardians/system-guardian-director.ts[0m:[93m207[0m:[93m40[0m - [91merror[0m[90m TS2341: [0mProperty 'detectIncidentPatterns' is private and only accessible within class 'SystemIntelligence'.
+
+[7m207[0m     const patterns = this.intelligence.detectIncidentPatterns(health.incidents || []);
+[7m   [0m [91m                                       ~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/modules/research/guardians/system-guardian-director.ts[0m:[93m236[0m:[93m40[0m - [91merror[0m[90m TS2341: [0mProperty 'detectIncidentPatterns' is private and only accessible within class 'SystemIntelligence'.
+
+[7m236[0m     const patterns = this.intelligence.detectIncidentPatterns(health.incidents || []);
+[7m   [0m [91m                                       ~~~~~~~~~~~~~~~~~~~~~~[0m
+[96msrc/modules/research/guardians/system-guardian-director.ts[0m:[93m239[0m:[93m28[0m - [91merror[0m[90m TS2339: [0mProperty 'overallUptime' does not exist on type 'SystemHealthReport'.
+
+[7m239[0m       systemUptime: health.overallUptime || 98,
+[7m   [0m [91m                           ~~~~~~~~~~~~~[0m
+[96msrc/modules/research/guardians/system-guardian.ts[0m:[93m20[0m:[93m38[0m - [91merror[0m[90m TS2307: [0mCannot find module '@nestjs/schedule' or its corresponding type declarations.
+
+[7m20[0m import { Cron, CronExpression } from '@nestjs/schedule';
+[7m  [0m [91m                                     ~~~~~~~~~~~~~~~~~~[0m
+[96msrc/modules/research/guardians/system-intelligence.ts[0m:[93m158[0m:[93m7[0m - [91merror[0m[90m TS2322: [0mType '{ status: string; issues: string[]; }' is not assignable to type '{ status: "fail" | "pass"; issues: string[]; }'.
+  Types of property 'status' are incompatible.
+    Type 'string' is not assignable to type '"fail" | "pass"'.
+
+[7m158[0m       apiConnectivity: apiStatus,
+[7m   [0m [91m      ~~~~~~~~~~~~~~~[0m
+
+  [96msrc/modules/research/guardians/system-intelligence.ts[0m:[93m52[0m:[93m3[0m
+    [7m52[0m   apiConnectivity: { status: 'pass' | 'fail'; issues: string[] };
+    [7m  [0m [96m  ~~~~~~~~~~~~~~~[0m
+    The expected type comes from property 'apiConnectivity' which is declared here on type 'ComprehensiveInspectionResult'
+[96msrc/modules/research/guardians/system-intelligence.ts[0m:[93m159[0m:[93m7[0m - [91merror[0m[90m TS2322: [0mType '{ status: string; issues: any[]; }' is not assignable to type '{ status: "fail" | "pass"; issues: string[]; }'.
+  Types of property 'status' are incompatible.
+    Type 'string' is not assignable to type '"fail" | "pass"'.
+
+[7m159[0m       authentication: authStatus,
+[7m   [0m [91m      ~~~~~~~~~~~~~~[0m
+
+  [96msrc/modules/research/guardians/system-intelligence.ts[0m:[93m53[0m:[93m3[0m
+    [7m53[0m   authentication: { status: 'pass' | 'fail'; issues: string[] };
+    [7m  [0m [96m  ~~~~~~~~~~~~~~[0m
+    The expected type comes from property 'authentication' which is declared here on type 'ComprehensiveInspectionResult'
+[96msrc/modules/research/guardians/system-intelligence.ts[0m:[93m160[0m:[93m7[0m - [91merror[0m[90m TS2322: [0mType '{ status: string; issues: string[]; }' is not assignable to type '{ status: "fail" | "pass"; issues: string[]; }'.
+  Types of property 'status' are incompatible.
+    Type 'string' is not assignable to type '"fail" | "pass"'.
+
+[7m160[0m       dataFreshness: freshness,
+[7m   [0m [91m      ~~~~~~~~~~~~~[0m
+
+  [96msrc/modules/research/guardians/system-intelligence.ts[0m:[93m54[0m:[93m3[0m
+    [7m54[0m   dataFreshness: { status: 'pass' | 'fail'; issues: string[] };
+    [7m  [0m [96m  ~~~~~~~~~~~~~[0m
+    The expected type comes from property 'dataFreshness' which is declared here on type 'ComprehensiveInspectionResult'
+[96msrc/modules/research/guardians/system-intelligence.ts[0m:[93m161[0m:[93m7[0m - [91merror[0m[90m TS2322: [0mType '{ status: string; issues: string[]; }' is not assignable to type '{ status: "fail" | "pass"; issues: string[]; }'.
+  Types of property 'status' are incompatible.
+    Type 'string' is not assignable to type '"fail" | "pass"'.
+
+[7m161[0m       networkLatency: latency,
+[7m   [0m [91m      ~~~~~~~~~~~~~~[0m
+
+  [96msrc/modules/research/guardians/system-intelligence.ts[0m:[93m55[0m:[93m3[0m
+    [7m55[0m   networkLatency: { status: 'pass' | 'fail'; issues: string[] };
+    [7m  [0m [96m  ~~~~~~~~~~~~~~[0m
+    The expected type comes from property 'networkLatency' which is declared here on type 'ComprehensiveInspectionResult'
+[96msrc/modules/research/guardians/system-intelligence.ts[0m:[93m162[0m:[93m24[0m - [91merror[0m[90m TS2322: [0mType '"warn" | "pass"' is not assignable to type '"fail" | "pass"'.
+  Type '"warn"' is not assignable to type '"fail" | "pass"'.
+
+[7m162[0m       errorPatterns: { status: patterns.length === 0 ? 'pass' : 'warn', issues: patterns.map(p => p.pattern) },
+[7m   [0m [91m                       ~~~~~~[0m
+
+  [96msrc/modules/research/guardians/system-intelligence.ts[0m:[93m56[0m:[93m20[0m
+    [7m56[0m   errorPatterns: { status: 'pass' | 'fail'; issues: string[] };
+    [7m  [0m [96m                   ~~~~~~[0m
+    The expected type comes from property 'status' which is declared here on type '{ status: "fail" | "pass"; issues: string[]; }'
+[96msrc/modules/research/guardians/system-intelligence.ts[0m:[93m163[0m:[93m7[0m - [91merror[0m[90m TS2322: [0mType '{ status: string; issues: any[]; }' is not assignable to type '{ status: "fail" | "pass"; issues: string[]; }'.
+  Types of property 'status' are incompatible.
+    Type 'string' is not assignable to type '"fail" | "pass"'.
+
+[7m163[0m       resourceUsage: resources,
+[7m   [0m [91m      ~~~~~~~~~~~~~[0m
+
+  [96msrc/modules/research/guardians/system-intelligence.ts[0m:[93m57[0m:[93m3[0m
+    [7m57[0m   resourceUsage: { status: 'pass' | 'fail'; issues: string[] };
+    [7m  [0m [96m  ~~~~~~~~~~~~~[0m
+    The expected type comes from property 'resourceUsage' which is declared here on type 'ComprehensiveInspectionResult'
+[96msrc/modules/research/providers/calendar.provider.ts[0m:[93m13[0m:[93m29[0m - [91merror[0m[90m TS2307: [0mCannot find module '@nestjs/axios' or its corresponding type declarations.
+
+[7m13[0m import { HttpService } from '@nestjs/axios';
+[7m  [0m [91m                            ~~~~~~~~~~~~~~~[0m
+[96msrc/modules/research/providers/calendar.provider.ts[0m:[93m17[0m:[93m14[0m - [91merror[0m[90m TS2420: [0mClass 'CalendarProvider' incorrectly implements interface 'EventProvider'.
+  Type 'CalendarProvider' is missing the following properties from type 'EventProvider': name, priority, isAvailable, getUpcomingEvents
+
+[7m17[0m export class CalendarProvider implements EventProvider {
+[7m  [0m [91m             ~~~~~~~~~~~~~~~~[0m
+[96msrc/modules/research/providers/calendar.provider.ts[0m:[93m25[0m:[93m7[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'title' does not exist in type 'EconomicEvent'.
+
+[7m25[0m       title: 'FOMC Meeting & Decision',
+[7m  [0m [91m      ~~~~~[0m
+[96msrc/modules/research/providers/calendar.provider.ts[0m:[93m34[0m:[93m7[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'title' does not exist in type 'EconomicEvent'.
+
+[7m34[0m       title: 'CPI (Consumer Price Index)',
+[7m  [0m [91m      ~~~~~[0m
+[96msrc/modules/research/providers/calendar.provider.ts[0m:[93m43[0m:[93m7[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'title' does not exist in type 'EconomicEvent'.
+
+[7m43[0m       title: 'Non-Farm Payroll',
+[7m  [0m [91m      ~~~~~[0m
+[96msrc/modules/research/providers/calendar.provider.ts[0m:[93m52[0m:[93m7[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'title' does not exist in type 'EconomicEvent'.
+
+[7m52[0m       title: 'Unemployment Rate',
+[7m  [0m [91m      ~~~~~[0m
+[96msrc/modules/research/providers/calendar.provider.ts[0m:[93m61[0m:[93m7[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'title' does not exist in type 'EconomicEvent'.
+
+[7m61[0m       title: 'Retail Sales',
+[7m  [0m [91m      ~~~~~[0m
+[96msrc/modules/research/providers/earnings.provider.ts[0m:[93m12[0m:[93m29[0m - [91merror[0m[90m TS2307: [0mCannot find module '@nestjs/axios' or its corresponding type declarations.
+
+[7m12[0m import { HttpService } from '@nestjs/axios';
+[7m  [0m [91m                            ~~~~~~~~~~~~~~~[0m
+[96msrc/modules/research/providers/earnings.provider.ts[0m:[93m17[0m:[93m14[0m - [91merror[0m[90m TS2420: [0mClass 'EarningsProvider' incorrectly implements interface 'EventProvider'.
+  Type 'EarningsProvider' is missing the following properties from type 'EventProvider': name, priority, isAvailable, getUpcomingEvents
+
+[7m17[0m export class EarningsProvider implements EventProvider {
+[7m  [0m [91m             ~~~~~~~~~~~~~~~~[0m
+[96msrc/modules/research/providers/earnings.provider.ts[0m:[93m35[0m:[93m11[0m - [91merror[0m[90m TS2353: [0mObject literal may only specify known properties, and 'title' does not exist in type 'EconomicEvent'.
+
+[7m35[0m           title: `${ticker} Q4 Earnings Report`,
+[7m  [0m [91m          ~~~~~[0m
+[96msrc/modules/research/providers/index.ts[0m:[93m14[0m:[93m10[0m - [91merror[0m[90m TS2724: [0m'"./sec-edgar.provider"' has no exported member named 'SECEdgarProvider'. Did you mean 'SecEdgarProvider'?
+
+[7m14[0m export { SECEdgarProvider } from './sec-edgar.provider';
+[7m  [0m [91m         ~~~~~~~~~~~~~~~~[0m
+
+  [96msrc/modules/research/providers/sec-edgar.provider.ts[0m:[93m37[0m:[93m14[0m
+    [7m37[0m export class SecEdgarProvider {
+    [7m  [0m [96m             ~~~~~~~~~~~~~~~~[0m
+    'SecEdgarProvider' is declared here.
+[96msrc/modules/research/providers/investor-relations.provider.ts[0m:[93m138[0m:[93m7[0m - [91merror[0m[90m TS2741: [0mProperty 'text' is missing in type '{ date: any; source: string; timestamp: string; freshness: "STALE"; confidence: number; }' but required in type '{ text: string; source: string; timestamp: string; freshness: "LIVE" | "DELAYED" | "CACHED" | "STALE"; confidence: number; }'.
+
+[7m138[0m       guidance: this.nullMetric('investor-relations', timestamp),
+[7m   [0m [91m      ~~~~~~~~[0m
+
+  [96msrc/modules/research/providers/investor-relations.provider.ts[0m:[93m19[0m:[93m5[0m
+    [7m19[0m     text: string | null;
+    [7m  [0m [96m    ~~~~[0m
+    'text' is declared here.
+  [96msrc/modules/research/providers/investor-relations.provider.ts[0m:[93m18[0m:[93m3[0m
+    [7m18[0m   guidance: {
+    [7m  [0m [96m  ~~~~~~~~[0m
+    The expected type comes from property 'guidance' which is declared here on type 'InvestorRelationsData'
+[96msrc/modules/research/providers/market-snacks.provider.ts[0m:[93m28[0m:[93m3[0m - [91merror[0m[90m TS2416: [0mProperty 'isAvailable' in type 'MarketSnacksProvider' is not assignable to the same property in base type 'NewsProvider'.
+  Type '() => boolean' is not assignable to type '() => Promise<boolean>'.
+    Type 'boolean' is not assignable to type 'Promise<boolean>'.
+
+[7m28[0m   isAvailable(): boolean {
+[7m  [0m [91m  ~~~~~~~~~~~[0m
+[96msrc/modules/research/providers/news-api.provider.ts[0m:[93m14[0m:[93m29[0m - [91merror[0m[90m TS2307: [0mCannot find module '@nestjs/axios' or its corresponding type declarations.
+
+[7m14[0m import { HttpService } from '@nestjs/axios';
+[7m  [0m [91m                            ~~~~~~~~~~~~~~~[0m
+[96msrc/modules/research/providers/news-api.provider.ts[0m:[93m34[0m:[93m14[0m - [91merror[0m[90m TS2420: [0mClass 'NewsAPIProvider' incorrectly implements interface 'NewsProvider'.
+  Type 'NewsAPIProvider' is missing the following properties from type 'NewsProvider': name, priority, isAvailable, search
+
+[7m34[0m export class NewsAPIProvider implements NewsProvider {
+[7m  [0m [91m             ~~~~~~~~~~~~~~~[0m
+[96msrc/modules/research/providers/news-api.provider.ts[0m:[93m82[0m:[93m20[0m - [91merror[0m[90m TS2339: [0mProperty 'data' does not exist on type 'unknown'.
+
+[7m82[0m       if (response.data.status !== 'ok') {
+[7m  [0m [91m                   ~~~~[0m
+[96msrc/modules/research/providers/news-api.provider.ts[0m:[93m83[0m:[93m52[0m - [91merror[0m[90m TS2339: [0mProperty 'data' does not exist on type 'unknown'.
+
+[7m83[0m         throw new Error(`NewsAPI error: ${response.data.status}`);
+[7m  [0m [91m                                                   ~~~~[0m
+[96msrc/modules/research/providers/news-api.provider.ts[0m:[93m87[0m:[93m46[0m - [91merror[0m[90m TS2339: [0mProperty 'data' does not exist on type 'unknown'.
+
+[7m87[0m       const newsItems: NewsItem[] = response.data.articles.map(article => ({
+[7m  [0m [91m                                             ~~~~[0m
+[96msrc/modules/research/providers/yahoo.provider.ts[0m:[93m13[0m:[93m29[0m - [91merror[0m[90m TS2307: [0mCannot find module '@nestjs/axios' or its corresponding type declarations.
+
+[7m13[0m import { HttpService } from '@nestjs/axios';
+[7m  [0m [91m                            ~~~~~~~~~~~~~~~[0m
+[96msrc/modules/research/providers/yahoo.provider.ts[0m:[93m17[0m:[93m14[0m - [91merror[0m[90m TS2420: [0mClass 'YahooProvider' incorrectly implements interface 'FundamentalProvider'.
+  Type 'YahooProvider' is missing the following properties from type 'FundamentalProvider': name, priority, isAvailable, getFundamentals
+
+[7m17[0m export class YahooProvider implements FundamentalProvider {
+[7m  [0m [91m             ~~~~~~~~~~~~~[0m
+[96msrc/modules/research/providers/yahoo.provider.ts[0m:[93m35[0m:[93m9[0m - [91merror[0m[90m TS2322: [0mType '"Yahoo Finance"' is not assignable to type '"unknown" | "yahoo" | "sec" | "google" | "cached"'.
+
+[7m35[0m         source: 'Yahoo Finance',
+[7m  [0m [91m        ~~~~~~[0m
+
+  [96msrc/modules/research/types/research.types.ts[0m:[93m183[0m:[93m3[0m
+    [7m183[0m   source: 'yahoo' | 'sec' | 'google' | 'cached' | 'unknown';
+    [7m   [0m [96m  ~~~~~~[0m
+    The expected type comes from property 'source' which is declared here on type 'FundamentalData'
+[96msrc/modules/research/research.module.ts[0m:[93m9[0m:[93m28[0m - [91merror[0m[90m TS2307: [0mCannot find module '@nestjs/axios' or its corresponding type declarations.
+
+[7m9[0m import { HttpModule } from '@nestjs/axios';
+[7m [0m [91m                           ~~~~~~~~~~~~~~~[0m
+[96msrc/modules/research/research.module.ts[0m:[93m25[0m:[93m10[0m - [91merror[0m[90m TS2724: [0m'"./providers/sec-edgar.provider"' has no exported member named 'SECEdgarProvider'. Did you mean 'SecEdgarProvider'?
+
+[7m25[0m import { SECEdgarProvider } from './providers/sec-edgar.provider';
+[7m  [0m [91m         ~~~~~~~~~~~~~~~~[0m
+
+  [96msrc/modules/research/providers/sec-edgar.provider.ts[0m:[93m37[0m:[93m14[0m
+    [7m37[0m export class SecEdgarProvider {
+    [7m  [0m [96m             ~~~~~~~~~~~~~~~~[0m
+    'SecEdgarProvider' is declared here.
+[96msrc/modules/research/services/ticker-research.service.ts[0m:[93m181[0m:[93m28[0m - [91merror[0m[90m TS2339: [0mProperty 'pe' does not exist on type 'FundamentalData'.
+
+[7m181[0m       report.fundamentals?.pe?.confidence || 0,
+[7m   [0m [91m                           ~~[0m
+[96msrc/modules/research/services/ticker-research.service.ts[0m:[93m214[0m:[93m30[0m - [91merror[0m[90m TS2339: [0mProperty 'pe' does not exist on type 'FundamentalData'.
+
+[7m214[0m     if (report.fundamentals?.pe?.confidence > 0) {
+[7m   [0m [91m                             ~~[0m
+[96msrc/modules/research/services/ticker-research.service.ts[0m:[93m215[0m:[93m46[0m - [91merror[0m[90m TS2339: [0mProperty 'pe' does not exist on type 'FundamentalData'.
+
+[7m215[0m       parts.push(`P/E: ${report.fundamentals.pe.value}`);
+[7m   [0m [91m                                             ~~[0m
+[96msrc/modules/research/services/ticker-research.service.ts[0m:[93m259[0m:[93m28[0m - [91merror[0m[90m TS2339: [0mProperty 'pe' does not exist on type 'FundamentalData'.
+
+[7m259[0m       report.fundamentals?.pe,
+[7m   [0m [91m                           ~~[0m
+[96msrc/modules/research/services/web-research.service.ts[0m:[93m202[0m:[93m47[0m - [91merror[0m[90m TS2339: [0mProperty 'getEventsForDate' does not exist on type 'EventProvider'.
+
+[7m202[0m         const economicEvents = await provider.getEventsForDate(new Date());
+[7m   [0m [91m                                              ~~~~~~~~~~~~~~~~[0m
+
+Found 49 error(s).
+
