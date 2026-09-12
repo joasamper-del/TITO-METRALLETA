@@ -9,6 +9,8 @@ import {
   TradeExecution,
   ExecutionEvent,
 } from './entities';
+import { TradeExecutionService } from './services/trade-execution.service';
+import { ExecutionEventService } from './services/execution-event.service';
 
 @Module({
   imports: [
@@ -22,6 +24,7 @@ import {
       ExecutionEvent,
     ]),
   ],
-  exports: [TypeOrmModule],
+  providers: [TradeExecutionService, ExecutionEventService],
+  exports: [TypeOrmModule, TradeExecutionService, ExecutionEventService],
 })
 export class DatabaseModule {}
