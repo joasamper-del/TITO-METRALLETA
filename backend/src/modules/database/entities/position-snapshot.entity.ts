@@ -15,7 +15,6 @@ import { TradeExecution } from './trade-execution.entity';
 @Index(['timestamp'])
 @Index(['symbol'])
 @Index(['timestamp', 'symbol'])
-@Index(['decision_audit_trail_id'])
 export class PositionSnapshot {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

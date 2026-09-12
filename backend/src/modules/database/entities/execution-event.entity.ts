@@ -10,9 +10,7 @@ import {
 import { TradeExecution } from './trade-execution.entity';
 
 @Entity('execution_events')
-@Index(['tradeExecutionId'])
 @Index(['eventType'])
-@Index(['createdAt'])
 export class ExecutionEvent {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

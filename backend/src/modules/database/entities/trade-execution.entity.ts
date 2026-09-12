@@ -12,7 +12,6 @@ import { DecisionAuditTrail } from './decision-audit-trail.entity';
 
 @Entity('trade_executions')
 @Index(['tradeId'])
-@Index(['decisionAuditTrailId'])
 @Index(['status'])
 @Index(['createdAt'])
 export class TradeExecution {
