@@ -3,15 +3,21 @@
  * Validates that provider correctly parses real SEC/EDGAR response structure
  */
 
+import { vi } from 'vitest';
 import { SecEdgarProvider, SecEdgarData } from './sec-edgar.provider';
+
+// Mock axios at module level for Vitest
+vi.mock('axios', () => ({
+  default: {
+    get: vi.fn(),
+  },
+}));
 
 describe('SecEdgarProvider Integration', () => {
   let provider: SecEdgarProvider;
 
   beforeEach(() => {
     provider = new SecEdgarProvider();
-    // Mock axios for this test
-    jest.mock('axios');
   });
 
   describe('SEC Response Parsing', () => {

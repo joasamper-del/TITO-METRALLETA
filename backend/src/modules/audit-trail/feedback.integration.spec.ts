@@ -1,11 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { vi } from 'vitest';
 import { AuditTrailModule } from './audit-trail.module';
 import { FeedbackService } from './feedback.service';
 import { DecisionFeedback, FeedbackStatus } from '../database/entities/feedback.entity';
 import { FeedbackValidationRecord, ValidationOutcome } from '../database/entities/feedback-validation.entity';
 import { DecisionAuditTrail } from '../database/entities/decision-audit-trail.entity';
+import { Lesson } from '../database/entities/lesson.entity';
+import { PositionSnapshot } from '../database/entities/position-snapshot.entity';
+import { DecisionChangeLog } from '../database/entities/decision-change-log.entity';
 
 /**
  * S59 Integration Test: Full Learning Loop
@@ -40,6 +44,24 @@ describe('S59 - Feedback Learning Loop Integration', () => {
       findOne: vi.fn(),
     };
 
+    const mockLessonRepo = {
+      create: vi.fn(),
+      save: vi.fn(),
+      findOne: vi.fn(),
+      find: vi.fn(),
+    };
+
+    const mockPositionSnapshotRepo = {
+      create: vi.fn(),
+      save: vi.fn(),
+      findOne: vi.fn(),
+    };
+
+    const mockDecisionChangeLogRepo = {
+      create: vi.fn(),
+      save: vi.fn(),
+    };
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AuditTrailModule],
     })
@@ -49,6 +71,12 @@ describe('S59 - Feedback Learning Loop Integration', () => {
       .useValue(mockValidationRepo)
       .overrideProvider(getRepositoryToken(DecisionAuditTrail))
       .useValue(mockAuditTrailRepo)
+      .overrideProvider(getRepositoryToken(Lesson))
+      .useValue(mockLessonRepo)
+      .overrideProvider(getRepositoryToken(PositionSnapshot))
+      .useValue(mockPositionSnapshotRepo)
+      .overrideProvider(getRepositoryToken(DecisionChangeLog))
+      .useValue(mockDecisionChangeLogRepo)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -57,7 +85,9 @@ describe('S59 - Feedback Learning Loop Integration', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    if (app) {
+      await app.close();
+    }
   });
 
   describe('Complete Learning Loop', () => {

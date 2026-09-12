@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { vi } from 'vitest';
 import { AuditTrailService } from './audit-trail.service';
 import { DecisionAuditTrail } from '../database/entities/decision-audit-trail.entity';
 
@@ -31,11 +32,11 @@ describe('AuditTrailService - S61 PnL Correction', () => {
         {
           provide: getRepositoryToken(DecisionAuditTrail),
           useValue: {
-            createQueryBuilder: jest.fn().mockReturnValue({
-              where: jest.fn().mockReturnThis(),
-              andWhere: jest.fn().mockReturnThis(),
-              orderBy: jest.fn().mockReturnThis(),
-              getMany: jest.fn().mockResolvedValue([mockDecision]),
+            createQueryBuilder: vi.fn().mockReturnValue({
+              where: vi.fn().mockReturnThis(),
+              andWhere: vi.fn().mockReturnThis(),
+              orderBy: vi.fn().mockReturnThis(),
+              getMany: vi.fn().mockResolvedValue([mockDecision]),
             }),
           },
         },
@@ -89,13 +90,13 @@ describe('AuditTrailService - S61 PnL Correction', () => {
         { ...mockDecision, timestamp: new Date('2026-09-07T04:00:00Z') },
       ];
 
-      jest
+      vi
         .spyOn(repository, 'createQueryBuilder')
         .mockReturnValue({
-          where: jest.fn().mockReturnThis(),
-          andWhere: jest.fn().mockReturnThis(),
-          orderBy: jest.fn().mockReturnThis(),
-          getMany: jest.fn().mockResolvedValue(cycles),
+          where: vi.fn().mockReturnThis(),
+          andWhere: vi.fn().mockReturnThis(),
+          orderBy: vi.fn().mockReturnThis(),
+          getMany: vi.fn().mockResolvedValue(cycles),
         } as any);
 
       const result = await service.getDecisions({
