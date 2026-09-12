@@ -283,7 +283,9 @@ describe('Gate5BrokerConnectivityService', () => {
     });
 
     it('Test 20: all gate5 results include timestamp and gate label', async () => {
-      const result = await service.validate('SPY', 'market');
+      const promise = service.validate('SPY', 'market');
+      await vi.runAllTimersAsync();
+      const result = await promise;
 
       expect(result).toHaveProperty('gate');
       expect(result).toHaveProperty('timestamp');
