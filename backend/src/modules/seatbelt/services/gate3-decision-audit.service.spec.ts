@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Gate3DecisionAuditService } from './gate3-decision-audit.service';
 import { MarketState, Order } from '../seatbelt.types';
 import { DecisionAuditTrail } from '../../database/entities/decision-audit-trail.entity';

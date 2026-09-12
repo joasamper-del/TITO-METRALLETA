@@ -1,16 +1,20 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SeatbeltService } from './seatbelt.service';
 import { Gate1MarketHealthService } from './gate1-market-health.service';
 import { Gate2RiskBoundaryService } from './gate2-risk-boundary.service';
 import { Gate3DecisionAuditService } from './gate3-decision-audit.service';
+import { Gate4ExecutionReadinessService, BrokerStatus } from './gate4-execution-readiness.service';
+import { Gate5PostTradeValidationService, TradeExecution } from './gate5-post-trade-validation.service';
 import { Account, MarketState, Order, SeatbeltConfig } from '../seatbelt.types';
 
-describe('SeatbeltService - Checkpoint 1', () => {
+describe('SeatbeltService - Checkpoint 1 & 2', () => {
   let service: SeatbeltService;
   let gate1: Gate1MarketHealthService;
   let gate2: Gate2RiskBoundaryService;
   let gate3: Gate3DecisionAuditService;
+  let gate4: Gate4ExecutionReadinessService;
+  let gate5: Gate5PostTradeValidationService;
 
   const mockConfig: SeatbeltConfig = {
     ENABLED: false,
@@ -61,6 +65,18 @@ describe('SeatbeltService - Checkpoint 1', () => {
             validate: vi.fn(),
           },
         },
+        {
+          provide: Gate4ExecutionReadinessService,
+          useValue: {
+            validate: vi.fn(),
+          },
+        },
+        {
+          provide: Gate5PostTradeValidationService,
+          useValue: {
+            validate: vi.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -68,6 +84,8 @@ describe('SeatbeltService - Checkpoint 1', () => {
     gate1 = module.get<Gate1MarketHealthService>(Gate1MarketHealthService);
     gate2 = module.get<Gate2RiskBoundaryService>(Gate2RiskBoundaryService);
     gate3 = module.get<Gate3DecisionAuditService>(Gate3DecisionAuditService);
+    gate4 = module.get<Gate4ExecutionReadinessService>(Gate4ExecutionReadinessService);
+    gate5 = module.get<Gate5PostTradeValidationService>(Gate5PostTradeValidationService);
   });
 
   describe('validateCheckpoint1', () => {
@@ -288,6 +306,202 @@ describe('SeatbeltService - Checkpoint 1', () => {
       expect(result).toHaveProperty('gates');
       expect(result).toHaveProperty('reason');
       expect(result).toHaveProperty('timestamp');
+    });
+  });
+
+  describe('validateCheckpoint2', () => {
+    const mockBrokerStatus: BrokerStatus = {
+      connected: true,
+      lastPing: new Date(),
+      latencyMs: 500,
+    };
+
+    const mockExecution: TradeExecution = {
+      orderId: 'order-123',
+      symbol: 'ETHUSD',
+      qty: 10,
+      entryPrice: 2500,
+      filledPrice: 2501,
+      filledQty: 10,
+      timestamp: new Date(),
+    };
+
+    const mockCP1Result: any = {
+      allGatesPass: true,
+      gates: [
+        { valid: true, gate: 'gate1', reason: 'OK' },
+        { valid: true, gate: 'gate2', reason: 'OK' },
+        { valid: true, gate: 'gate3', reason: 'OK' },
+      ],
+      reason: 'All gates pass',
+      timestamp: new Date(),
+    };
+
+    it('should return PASS when gates 4-5 pass', async () => {
+      (gate4.validate as vi.Mock).mockResolvedValue({
+        valid: true,
+        gate: 'gate4',
+        reason: 'Execution ready',
+      });
+      (gate5.validate as vi.Mock).mockResolvedValue({
+        valid: true,
+        gate: 'gate5',
+        reason: 'Trade validated',
+      });
+
+      const result = await service.validateCheckpoint2(
+        mockCP1Result,
+        mockBrokerStatus,
+        mockExecution,
+        mockConfig,
+      );
+
+      expect(result.allGatesPass).toBe(true);
+      expect(result.gates).toHaveLength(2);
+      expect(result.reason).toContain('All gates pass');
+    });
+
+    it('should FAIL fast when gate4 fails', async () => {
+      (gate4.validate as vi.Mock).mockResolvedValue({
+        valid: false,
+        gate: 'gate4',
+        reason: 'Broker offline',
+      });
+
+      const result = await service.validateCheckpoint2(
+        mockCP1Result,
+        mockBrokerStatus,
+        mockExecution,
+        mockConfig,
+      );
+
+      expect(result.allGatesPass).toBe(false);
+      expect(result.reason).toContain('gate4');
+      expect(gate5.validate).not.toHaveBeenCalled();
+    });
+
+    it('should report gate5 failure', async () => {
+      (gate4.validate as vi.Mock).mockResolvedValue({
+        valid: true,
+        gate: 'gate4',
+        reason: 'OK',
+      });
+      (gate5.validate as vi.Mock).mockResolvedValue({
+        valid: false,
+        gate: 'gate5',
+        reason: 'Slippage too high',
+      });
+
+      const result = await service.validateCheckpoint2(
+        mockCP1Result,
+        mockBrokerStatus,
+        mockExecution,
+        mockConfig,
+      );
+
+      expect(result.allGatesPass).toBe(false);
+      expect(result.reason).toContain('gate5');
+    });
+  });
+
+  describe('validateFull', () => {
+    const mockBrokerStatus: BrokerStatus = {
+      connected: true,
+      lastPing: new Date(),
+      latencyMs: 500,
+    };
+
+    const mockExecution: TradeExecution = {
+      orderId: 'order-123',
+      symbol: 'ETHUSD',
+      qty: 10,
+      entryPrice: 2500,
+      filledPrice: 2501,
+      filledQty: 10,
+      timestamp: new Date(),
+    };
+
+    it('should validate all 5 gates when all pass', async () => {
+      (gate1.validate as vi.Mock).mockResolvedValue({
+        valid: true,
+        gate: 'gate1',
+        reason: 'OK',
+      });
+      (gate2.validate as vi.Mock).mockResolvedValue({
+        valid: true,
+        gate: 'gate2',
+        reason: 'OK',
+      });
+      (gate3.validate as vi.Mock).mockResolvedValue({
+        valid: true,
+        gate: 'gate3',
+        reason: 'OK',
+      });
+      (gate4.validate as vi.Mock).mockResolvedValue({
+        valid: true,
+        gate: 'gate4',
+        reason: 'OK',
+      });
+      (gate5.validate as vi.Mock).mockResolvedValue({
+        valid: true,
+        gate: 'gate5',
+        reason: 'OK',
+      });
+
+      const result = await service.validateFull(
+        mockOrder,
+        mockAccount,
+        mockMarket,
+        mockConfig,
+        'trade-1',
+        mockBrokerStatus,
+        mockExecution,
+      );
+
+      expect(result.allGatesPass).toBe(true);
+      expect(result.gates).toHaveLength(5);
+    });
+
+    it('should stop at gate1 if it fails', async () => {
+      (gate1.validate as vi.Mock).mockResolvedValue({
+        valid: false,
+        gate: 'gate1',
+        reason: 'Market closed',
+      });
+
+      const result = await service.validateFull(
+        mockOrder,
+        mockAccount,
+        mockMarket,
+        mockConfig,
+        'trade-1',
+        mockBrokerStatus,
+        mockExecution,
+      );
+
+      expect(result.allGatesPass).toBe(false);
+      expect(result.gates).toHaveLength(1);
+      expect(gate4.validate).not.toHaveBeenCalled();
+    });
+
+    it('should include all 5 gates in result when all pass', async () => {
+      (gate1.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate1', reason: 'OK' });
+      (gate2.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate2', reason: 'OK' });
+      (gate3.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate3', reason: 'OK' });
+      (gate4.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate4', reason: 'OK' });
+      (gate5.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate5', reason: 'OK' });
+
+      const result = await service.validateFull(
+        mockOrder,
+        mockAccount,
+        mockMarket,
+        mockConfig,
+        'trade-1',
+        mockBrokerStatus,
+        mockExecution,
+      );
+
+      expect(result.gates.map((g) => g.gate)).toEqual(['gate1', 'gate2', 'gate3', 'gate4', 'gate5']);
     });
   });
 

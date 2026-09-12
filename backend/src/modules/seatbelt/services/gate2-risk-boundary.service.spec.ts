@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { Gate2RiskBoundaryService } from './gate2-risk-boundary.service';
 import { Account, Order, SeatbeltConfig } from '../seatbelt.types';
 
