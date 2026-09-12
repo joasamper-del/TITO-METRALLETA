@@ -6,6 +6,7 @@
     "test",
     "scripts",
     "**/*spec.ts",
-    "../src"
+    "../src",
+    "src/modules/research/**"
   ]
 }
