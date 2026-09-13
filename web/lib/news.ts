@@ -153,14 +153,17 @@ export function mentionsCompany(text: string, aliases: string[]): string | null 
 
 const HOUR = 3600_000;
 
-/** Peso por frescura: una noticia de hoy pesa más que una de la semana pasada. */
+/** Peso por frescura (B2 — decisión Víctor):
+ * ≤24h: 1.0, ≤72h: 0.6, ≤7d: 0.3, >7d: 0.0 (excluido del cálculo).
+ * Cumple especificación: "noticias válidas de hasta 7 días".
+ */
 export function recencyWeight(publishedUtc: string, now: Date): number {
   const age = (now.getTime() - new Date(publishedUtc).getTime()) / HOUR;
   if (!Number.isFinite(age) || age < 0) return 1;
   if (age <= 24) return 1;
   if (age <= 72) return 0.6;
   if (age <= 24 * 7) return 0.3;
-  return 0.1;
+  return 0;  // B2: >7d excluido, no peso 0.1
 }
 
 export interface NewsBias {
@@ -302,8 +305,15 @@ export async function fetchTickerNews(ticker: string, limit = 12): Promise<NewsI
   return items;
 }
 
-/** Capa 1 — los feeds RSS del documento. Idénticos para todos los tickers → se cachean. */
+/** Capa 1 — los feeds RSS del documento. Idénticos para todos los tickers → se cachean.
+ *
+ * C5 (Fallback RSS caído): Si fetch falla, devuelve caché aún válida sin fabricar datos.
+ * Política: caché es válida hasta 60min (3× TTL), después se descarta.
+ */
+const CACHE_EXPIRY = 60 * 60_000; // 60 min: caché es válida pero vieja
+
 export async function fetchMacroFeeds(): Promise<NewsItem[]> {
+  // Cache hit: se devuelve si aún está en TTL (fresco)
   if (macroCache.entry && Date.now() - macroCache.entry.at < MACRO_TTL) {
     return macroCache.entry.value;
   }
@@ -324,28 +334,46 @@ export async function fetchMacroFeeds(): Promise<NewsItem[]> {
     }),
   );
 
-  const seen = new Set<string>();
-  const items = results
-    .flat()
-    .filter((it) => (seen.has(it.url) ? false : (seen.add(it.url), true)))
-    .sort((a, b) => b.publishedUtc.localeCompare(a.publishedUtc));
+  const flat = results.flat();
+  if (flat.length > 0) {
+    // Fetch exitoso: actualizar caché
+    const seen = new Set<string>();
+    const items = flat
+      .filter((it) => (seen.has(it.url) ? false : (seen.add(it.url), true)))
+      .sort((a, b) => b.publishedUtc.localeCompare(a.publishedUtc));
+    macroCache.entry = { at: Date.now(), value: items };
+    return items;
+  }
 
-  macroCache.entry = { at: Date.now(), value: items };
-  return items;
+  // Fetch falló (todos los feeds devolvieron []). C5: Fallback a caché si aún es válida.
+  if (macroCache.entry && Date.now() - macroCache.entry.at < CACHE_EXPIRY) {
+    // Caché vieja pero aún válida — devolvemos pero marcamos que es fallback
+    return macroCache.entry.value.map((it) => ({
+      ...it,
+      // Marcar en publisher que es de caché, NO de fetch fresco
+      publisher: `${it.publisher} (caché ${new Date(macroCache.entry!.at).toISOString()})`,
+    }));
+  }
+
+  // Sin caché válida: devolver vacío (buildNewsReport() manejará)
+  return [];
 }
 
 export interface NewsReport {
   ticker: string;
-  company: NewsItem[];
-  macro: NewsItem[];
-  /** Titulares de los feeds RSS que sí nombran a la empresa. */
-  promoted: NewsItem[];
+  /** C3 (R9) — Top 5 total unificado: company + macro + promoted, ordenado DESC por frescura. */
+  news: NewsItem[];
   bias: NewsBias;
   feedsOk: number;
   feedsTotal: number;
 }
 
-/** Junta las dos capas y calcula el sesgo de noticias del ticker. */
+/** Junta las dos capas y calcula el sesgo de noticias del ticker.
+ *
+ * Retorna top 5 noticias unificadas (company + macro + promoted) ordenadas DESC
+ * por publishedUtc (más reciente primero), respetando C3 y decisión Víctor sobre
+ * orden y límite. El sesgo se calcula solo sobre company (la única con sentiment por ticker).
+ */
 export async function buildNewsReport(
   ticker: string,
   companyName: string | null,
@@ -365,11 +393,14 @@ export async function buildNewsReport(
     else macro.push(it);
   }
 
+  // C3 (R9) — Unificar top 5 total, ordenado DESC por frescura, dedup por URL ya ocurrió en fetchMacroFeeds()
+  const unified = [...company, ...macro, ...promoted]
+    .sort((a, b) => b.publishedUtc.localeCompare(a.publishedUtc))
+    .slice(0, 5);
+
   return {
     ticker,
-    company,
-    macro: macro.slice(0, 6),
-    promoted: promoted.slice(0, 4),
+    news: unified,  // C3: top 5 DESC
     // El sesgo sale solo de la capa de empresa: es la única con sentimiento por ticker.
     bias: newsBias(company, now),
     feedsOk: new Set(macroAll.map((i) => i.publisher)).size,

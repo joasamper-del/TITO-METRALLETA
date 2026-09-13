@@ -104,11 +104,11 @@ describe("mentionsCompany", () => {
 });
 
 describe("recencyWeight", () => {
-  it("pesa completo lo de hoy y menos lo viejo", () => {
-    expect(recencyWeight("2026-07-24T06:00:00Z", NOW)).toBe(1);
-    expect(recencyWeight("2026-07-22T12:00:00Z", NOW)).toBe(0.6);
-    expect(recencyWeight("2026-07-20T12:00:00Z", NOW)).toBe(0.3);
-    expect(recencyWeight("2026-06-01T12:00:00Z", NOW)).toBe(0.1);
+  it("B2 — pesa 1.0/0.6/0.3 hasta 7 días, luego 0 (excluido)", () => {
+    expect(recencyWeight("2026-07-24T06:00:00Z", NOW)).toBe(1);     // ≤24h
+    expect(recencyWeight("2026-07-22T12:00:00Z", NOW)).toBe(0.6);   // ≤72h
+    expect(recencyWeight("2026-07-20T12:00:00Z", NOW)).toBe(0.3);   // ≤7d
+    expect(recencyWeight("2026-06-01T12:00:00Z", NOW)).toBe(0);     // >7d: excluido (B2)
   });
 });
 
