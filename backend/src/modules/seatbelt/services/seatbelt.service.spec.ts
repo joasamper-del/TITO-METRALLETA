@@ -7,6 +7,7 @@ import { Gate3DecisionAuditService } from './gate3-decision-audit.service';
 import { Gate4ExecutionEngineService } from './gate4-execution-engine.service';
 import { Gate5BrokerConnectivityService } from './gate5-broker-connectivity.service';
 import { DecisionAuditService } from '../../api/services/decision-audit.service';
+import { PreExecutionEvidenceService } from '../../database/services/pre-execution-evidence.service';
 import { Account, MarketState, Order, SeatbeltConfig } from '../seatbelt.types';
 
 describe('SeatbeltService - Checkpoint 1', () => {
@@ -17,6 +18,7 @@ describe('SeatbeltService - Checkpoint 1', () => {
   let gate4: Gate4ExecutionEngineService;
   let gate5: Gate5BrokerConnectivityService;
   let decisionAudit: DecisionAuditService;
+  let preExecutionEvidence: PreExecutionEvidenceService;
 
   const mockConfig: SeatbeltConfig = {
     ENABLED: false,
@@ -86,6 +88,16 @@ describe('SeatbeltService - Checkpoint 1', () => {
             recordDecision: vi.fn(),
           },
         },
+        {
+          provide: PreExecutionEvidenceService,
+          useValue: {
+            recordEvidence: vi.fn(),
+            findByTradeId: vi.fn(),
+            isConsumed: vi.fn(),
+            validateIntegrityBeforeUse: vi.fn(),
+            markAsConsumed: vi.fn(),
+          },
+        },
       ],
     }).compile();
 
@@ -96,6 +108,7 @@ describe('SeatbeltService - Checkpoint 1', () => {
     gate4 = module.get<Gate4ExecutionEngineService>(Gate4ExecutionEngineService);
     gate5 = module.get<Gate5BrokerConnectivityService>(Gate5BrokerConnectivityService);
     decisionAudit = module.get<DecisionAuditService>(DecisionAuditService);
+    preExecutionEvidence = module.get<PreExecutionEvidenceService>(PreExecutionEvidenceService);
 
     // Setup default mock for DecisionAuditService (TASK 3 - OPTION B)
     // All tests should have this mock return a valid decision record
@@ -105,6 +118,23 @@ describe('SeatbeltService - Checkpoint 1', () => {
       decision: 'SEATBELT_INITIATED',
       timestamp: new Date(),
     });
+
+    // Setup default mock for PreExecutionEvidenceService (TASK 4)
+    // All tests should have pre-execution evidence working by default
+    (preExecutionEvidence.recordEvidence as vi.Mock).mockResolvedValue(undefined);
+    (preExecutionEvidence.findByTradeId as vi.Mock).mockResolvedValue({
+      trade_id: 'default-trade',
+      gate1_result: { valid: true },
+      gate2_result: { valid: true },
+      gate3_result: { valid: true },
+      gate4_result: { valid: true },
+      gate5_result: { valid: true },
+      all_gates_pass: true,
+      consumed: false,
+      valid_until: new Date(Date.now() + 5 * 60 * 1000),
+      isExpired: () => false,
+    });
+    (preExecutionEvidence.validateIntegrityBeforeUse as vi.Mock).mockReturnValue(true);
   });
 
   describe('validateCheckpoint1', () => {
@@ -616,6 +646,18 @@ describe('SeatbeltService - Checkpoint 1', () => {
       (decisionAudit.recordDecision as vi.Mock).mockResolvedValue({
         id: 'audit-456',
       });
+      (preExecutionEvidence.recordEvidence as vi.Mock).mockResolvedValue(undefined);
+      (preExecutionEvidence.findByTradeId as vi.Mock).mockResolvedValue({
+        trade_id: 'trade-1',
+        gate1_result: { valid: true },
+        gate2_result: { valid: true },
+        gate3_result: { valid: true },
+        all_gates_pass: true,
+        consumed: false,
+        valid_until: new Date(Date.now() + 5 * 60 * 1000),
+        isExpired: () => false,
+      });
+      (preExecutionEvidence.validateIntegrityBeforeUse as vi.Mock).mockReturnValue(true);
       (gate1.validate as vi.Mock).mockResolvedValue({
         valid: true,
         reason: 'Market healthy',
@@ -653,6 +695,18 @@ describe('SeatbeltService - Checkpoint 1', () => {
       (decisionAudit.recordDecision as vi.Mock).mockResolvedValue({
         id: 'audit-789',
       });
+      (preExecutionEvidence.recordEvidence as vi.Mock).mockResolvedValue(undefined);
+      (preExecutionEvidence.findByTradeId as vi.Mock).mockResolvedValue({
+        trade_id: 'trade-1',
+        gate1_result: { valid: true },
+        gate2_result: { valid: true },
+        gate3_result: { valid: true },
+        all_gates_pass: true,
+        consumed: false,
+        valid_until: new Date(Date.now() + 5 * 60 * 1000),
+        isExpired: () => false,
+      });
+      (preExecutionEvidence.validateIntegrityBeforeUse as vi.Mock).mockReturnValue(true);
       (gate1.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate1', reason: 'OK' });
       (gate2.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate2', reason: 'OK' });
       (gate3.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate3', reason: 'OK' });
@@ -728,6 +782,213 @@ describe('SeatbeltService - Checkpoint 1', () => {
           filtersApplied: { gates: ['gate1', 'gate2', 'gate3', 'gate4', 'gate5'] },
         }),
       );
+    });
+  });
+
+  describe('TASK 4 - Pre-Execution Evidence Recording', () => {
+    // T1: Evidence registrada para CADA gate
+    it('T1: Evidence is recorded for EACH gate that passes', async () => {
+      (decisionAudit.recordDecision as vi.Mock).mockResolvedValue({ id: 'audit-t1' });
+      (preExecutionEvidence.recordEvidence as vi.Mock).mockResolvedValue(undefined);
+      (preExecutionEvidence.findByTradeId as vi.Mock).mockResolvedValue({
+        trade_id: 'trade-t1',
+        gate1_result: { valid: true },
+        gate2_result: { valid: true },
+        gate3_result: { valid: true },
+        all_gates_pass: true,
+        consumed: false,
+        valid_until: new Date(Date.now() + 5 * 60 * 1000),
+        isExpired: () => false,
+      });
+      (preExecutionEvidence.validateIntegrityBeforeUse as vi.Mock).mockReturnValue(true);
+      (gate1.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate1', reason: 'OK' });
+      (gate2.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate2', reason: 'OK' });
+      (gate3.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate3', reason: 'OK' });
+
+      await service.validateCheckpoint1(mockOrder, mockAccount, mockMarket, mockConfig, 'trade-t1');
+
+      expect(preExecutionEvidence.recordEvidence).toHaveBeenCalled();
+      // Verify recordEvidence was called for each gate
+      expect(preExecutionEvidence.recordEvidence).toHaveBeenCalledTimes(4); // gate1, gate2, gate3, + final
+    });
+
+    // T2: Si recordEvidence falla, BLOQUEA
+    it('T2: If recordEvidence fails, validateCheckpoint1 blocks execution (fail-closed)', async () => {
+      (decisionAudit.recordDecision as vi.Mock).mockResolvedValue({ id: 'audit-t2' });
+      (preExecutionEvidence.recordEvidence as vi.Mock).mockRejectedValue(new Error('BD timeout'));
+      (gate1.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate1', reason: 'OK' });
+
+      const result = await service.validateCheckpoint1(mockOrder, mockAccount, mockMarket, mockConfig, 'trade-t2');
+
+      expect(result.allGatesPass).toBe(false);
+      expect(result.reason).toContain('Cannot record pre-execution evidence');
+      // Gates 2 and 3 should NOT be called (early exit)
+      expect(gate2.validate).not.toHaveBeenCalled();
+      expect(gate3.validate).not.toHaveBeenCalled();
+    });
+
+    // T3: Integridad — Evidence coincide con Gate results
+    it('T3: Evidence integrity - recorded evidence matches gate results exactly', async () => {
+      (decisionAudit.recordDecision as vi.Mock).mockResolvedValue({ id: 'audit-t3' });
+      (preExecutionEvidence.recordEvidence as vi.Mock).mockResolvedValue(undefined);
+      (preExecutionEvidence.findByTradeId as vi.Mock).mockResolvedValue({
+        trade_id: 'trade-t3',
+        gate2_result: { valid: false, reason: 'Risk too high' },
+        all_gates_pass: false,
+        consumed: false,
+        valid_until: new Date(Date.now() + 5 * 60 * 1000),
+        isExpired: () => false,
+      });
+      (preExecutionEvidence.validateIntegrityBeforeUse as vi.Mock).mockReturnValue(false);
+      (gate1.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate1', reason: 'OK' });
+      (gate2.validate as vi.Mock).mockResolvedValue({ valid: false, reason: 'Risk too high', gate: 'gate2' });
+
+      await service.validateCheckpoint1(mockOrder, mockAccount, mockMarket, mockConfig, 'trade-t3');
+
+      // Verify gate2 result was passed to recordEvidence
+      const recordEvidenceCalls = (preExecutionEvidence.recordEvidence as vi.Mock).mock.calls;
+      const gate2Call = recordEvidenceCalls[1]; // Second call should have gate2_result
+      expect(gate2Call[0].gate2_result).toEqual({ valid: false, reason: 'Risk too high', gate: 'gate2' });
+    });
+
+    // T4: validateIntegrityBeforeUse valida completitud
+    it('T4: validateIntegrityBeforeUse validates evidence completeness before execution', async () => {
+      (decisionAudit.recordDecision as vi.Mock).mockResolvedValue({ id: 'audit-t4' });
+      (preExecutionEvidence.recordEvidence as vi.Mock).mockResolvedValue(undefined);
+      (preExecutionEvidence.findByTradeId as vi.Mock).mockResolvedValue({
+        trade_id: 'trade-t4',
+        gate1_result: { valid: true },
+        // gate2_result MISSING (incomplete)
+        gate3_result: { valid: true },
+        all_gates_pass: false,
+        consumed: false,
+        valid_until: new Date(Date.now() + 5 * 60 * 1000),
+        isExpired: () => false,
+      });
+      (preExecutionEvidence.validateIntegrityBeforeUse as vi.Mock).mockReturnValue(false); // Incomplete
+      (gate1.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate1', reason: 'OK' });
+      (gate2.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate2', reason: 'OK' });
+      (gate3.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate3', reason: 'OK' });
+
+      const result = await service.validateCheckpoint1(mockOrder, mockAccount, mockMarket, mockConfig, 'trade-t4');
+
+      expect(result.allGatesPass).toBe(false);
+      expect(result.reason).toContain('Pre-execution evidence validation failed');
+      expect(preExecutionEvidence.validateIntegrityBeforeUse).toHaveBeenCalled();
+    });
+
+    // T5: Evidence expirada se rechaza
+    it('T5: Expired evidence is rejected', async () => {
+      (decisionAudit.recordDecision as vi.Mock).mockResolvedValue({ id: 'audit-t5' });
+      (preExecutionEvidence.recordEvidence as vi.Mock).mockResolvedValue(undefined);
+      const expiredEvidence = {
+        trade_id: 'trade-t5',
+        gate1_result: { valid: true },
+        gate2_result: { valid: true },
+        gate3_result: { valid: true },
+        all_gates_pass: true,
+        consumed: false,
+        valid_until: new Date(Date.now() - 1000), // Expired
+        isExpired: () => true,
+      };
+      (preExecutionEvidence.findByTradeId as vi.Mock).mockResolvedValue(expiredEvidence);
+      (preExecutionEvidence.validateIntegrityBeforeUse as vi.Mock).mockReturnValue(false);
+      (gate1.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate1', reason: 'OK' });
+      (gate2.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate2', reason: 'OK' });
+      (gate3.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate3', reason: 'OK' });
+
+      const result = await service.validateCheckpoint1(mockOrder, mockAccount, mockMarket, mockConfig, 'trade-t5');
+
+      expect(result.allGatesPass).toBe(false);
+      expect(result.reason).toContain('Pre-execution evidence validation failed');
+    });
+
+    // T6: Evidence consumida no se reutiliza
+    it('T6: Consumed evidence cannot be reused', async () => {
+      (decisionAudit.recordDecision as vi.Mock).mockResolvedValue({ id: 'audit-t6' });
+      (preExecutionEvidence.recordEvidence as vi.Mock).mockResolvedValue(undefined);
+      const consumedEvidence = {
+        trade_id: 'trade-t6',
+        gate1_result: { valid: true },
+        gate2_result: { valid: true },
+        gate3_result: { valid: true },
+        all_gates_pass: true,
+        consumed: true, // Already consumed
+        valid_until: new Date(Date.now() + 5 * 60 * 1000),
+        isExpired: () => false,
+      };
+      (preExecutionEvidence.findByTradeId as vi.Mock).mockResolvedValue(consumedEvidence);
+      (preExecutionEvidence.validateIntegrityBeforeUse as vi.Mock).mockReturnValue(false);
+      (gate1.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate1', reason: 'OK' });
+      (gate2.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate2', reason: 'OK' });
+      (gate3.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate3', reason: 'OK' });
+
+      const result = await service.validateCheckpoint1(mockOrder, mockAccount, mockMarket, mockConfig, 'trade-t6');
+
+      expect(result.allGatesPass).toBe(false);
+      expect(result.reason).toContain('Pre-execution evidence validation failed');
+    });
+
+    // T7: Regresión TAREA 3
+    it('T7: TASK 3 regression - DecisionAuditService works without interference from TASK 4', async () => {
+      (decisionAudit.recordDecision as vi.Mock).mockResolvedValue({ id: 'audit-t7' });
+      (preExecutionEvidence.recordEvidence as vi.Mock).mockResolvedValue(undefined);
+      (preExecutionEvidence.findByTradeId as vi.Mock).mockResolvedValue({
+        trade_id: 'trade-t7',
+        gate1_result: { valid: true },
+        gate2_result: { valid: true },
+        gate3_result: { valid: true },
+        all_gates_pass: true,
+        consumed: false,
+        valid_until: new Date(Date.now() + 5 * 60 * 1000),
+        isExpired: () => false,
+      });
+      (preExecutionEvidence.validateIntegrityBeforeUse as vi.Mock).mockReturnValue(true);
+      (gate1.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate1', reason: 'OK' });
+      (gate2.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate2', reason: 'OK' });
+      (gate3.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate3', reason: 'OK' });
+
+      const result = await service.validateCheckpoint1(mockOrder, mockAccount, mockMarket, mockConfig, 'trade-t7');
+
+      // Verify DecisionAuditService still works
+      expect(decisionAudit.recordDecision).toHaveBeenCalledTimes(1);
+      expect(result.allGatesPass).toBe(true);
+      // Verify no regression in gate calling
+      expect(gate1.validate).toHaveBeenCalled();
+      expect(gate2.validate).toHaveBeenCalled();
+      expect(gate3.validate).toHaveBeenCalled();
+    });
+
+    // T8: validateFull with gates 1-5 records evidence for all
+    it('T8: validateFull with gates 1-5 records evidence for all gates', async () => {
+      (decisionAudit.recordDecision as vi.Mock).mockResolvedValue({ id: 'audit-t8' });
+      (preExecutionEvidence.recordEvidence as vi.Mock).mockResolvedValue(undefined);
+      (preExecutionEvidence.findByTradeId as vi.Mock).mockResolvedValue({
+        trade_id: 'trade-t8',
+        gate1_result: { valid: true },
+        gate2_result: { valid: true },
+        gate3_result: { valid: true },
+        gate4_result: { valid: true },
+        gate5_result: { valid: true },
+        all_gates_pass: true,
+        consumed: false,
+        valid_until: new Date(Date.now() + 5 * 60 * 1000),
+        isExpired: () => false,
+      });
+      (preExecutionEvidence.validateIntegrityBeforeUse as vi.Mock).mockReturnValue(true);
+      (gate1.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate1', reason: 'OK' });
+      (gate2.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate2', reason: 'OK' });
+      (gate3.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate3', reason: 'OK' });
+      (gate4.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate4', reason: 'OK' });
+      (gate5.validate as vi.Mock).mockResolvedValue({ valid: true, gate: 'gate5', reason: 'OK' });
+
+      const result = await service.validateFull(mockOrder, mockAccount, mockMarket, mockConfig, 'trade-t8', 100);
+
+      expect(result.allGatesPass).toBe(true);
+      expect(result.gates).toHaveLength(5);
+      // Verify all gate evidence was recorded (5 gates + final)
+      expect(preExecutionEvidence.recordEvidence).toHaveBeenCalled();
+      expect(preExecutionEvidence.validateIntegrityBeforeUse).toHaveBeenCalled();
     });
   });
 });
