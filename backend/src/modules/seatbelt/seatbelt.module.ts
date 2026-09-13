@@ -5,9 +5,10 @@ import { Gate2RiskBoundaryService } from './services/gate2-risk-boundary.service
 import { Gate3DecisionAuditService } from './services/gate3-decision-audit.service';
 import { SeatbeltService } from './services/seatbelt.service';
 import { DecisionAuditTrail } from '../database/entities/decision-audit-trail.entity';
+import { ApiModule } from '../api/api.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([DecisionAuditTrail])],
+  imports: [TypeOrmModule.forFeature([DecisionAuditTrail]), ApiModule],
   providers: [
     Gate1MarketHealthService,
     Gate2RiskBoundaryService,

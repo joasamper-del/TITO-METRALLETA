@@ -12,6 +12,7 @@ import { Gate2RiskBoundaryService } from './gate2-risk-boundary.service';
 import { Gate3DecisionAuditService } from './gate3-decision-audit.service';
 import { Gate4ExecutionEngineService } from './gate4-execution-engine.service';
 import { Gate5BrokerConnectivityService } from './gate5-broker-connectivity.service';
+import { DecisionAuditService } from '../../api/services/decision-audit.service';
 
 @Injectable()
 export class SeatbeltService {
@@ -19,6 +20,7 @@ export class SeatbeltService {
     private gate1: Gate1MarketHealthService,
     private gate2: Gate2RiskBoundaryService,
     private gate3: Gate3DecisionAuditService,
+    private decisionAudit: DecisionAuditService,
     @Optional() private gate4?: Gate4ExecutionEngineService,
     @Optional() private gate5?: Gate5BrokerConnectivityService,
   ) {}
@@ -35,6 +37,26 @@ export class SeatbeltService {
     tradeId: string,
   ): Promise<SeatbeltResult> {
     const gates: GateResult[] = [];
+
+    // TASK 3 (OPTION B): Record decision in audit trail BEFORE validating gates
+    // Ensures complete traceability: decision → execution → result
+    const decisionRecord = await this.decisionAudit.recordDecision({
+      symbol: order.symbol,
+      decision: 'SEATBELT_CHECKPOINT1_INITIATED',
+      timestamp: new Date(),
+      marketData: { currentPrice: currentMarket.price, vix: currentMarket.vix },
+      filtersApplied: { gates: ['gate1', 'gate2', 'gate3'] },
+      notes: `SEATBELT checkpoint 1 validation for trade ${tradeId}`,
+    });
+
+    if (!decisionRecord || !decisionRecord.id) {
+      return {
+        allGatesPass: false,
+        gates: [],
+        reason: 'Failed to record decision in audit trail - traceability broken',
+        timestamp: new Date(),
+      };
+    }
 
     // Gate 1: Market Health
     const gate1Result = await this.gate1.validate(order.symbol);
@@ -93,6 +115,26 @@ export class SeatbeltService {
     referencePrice?: number,
   ): Promise<SeatbeltResult> {
     const gates: GateResult[] = [];
+
+    // TASK 3 (OPTION B): Record decision in audit trail BEFORE validating gates
+    // Ensures complete traceability: decision → execution → result
+    const decisionRecord = await this.decisionAudit.recordDecision({
+      symbol: order.symbol,
+      decision: 'SEATBELT_FULL_INITIATED',
+      timestamp: new Date(),
+      marketData: { currentPrice: currentMarket.price, vix: currentMarket.vix },
+      filtersApplied: { gates: ['gate1', 'gate2', 'gate3', 'gate4', 'gate5'] },
+      notes: `SEATBELT full validation for trade ${tradeId}`,
+    });
+
+    if (!decisionRecord || !decisionRecord.id) {
+      return {
+        allGatesPass: false,
+        gates: [],
+        reason: 'Failed to record decision in audit trail - traceability broken',
+        timestamp: new Date(),
+      };
+    }
 
     // Gate 1: Market Health
     const gate1Result = await this.gate1.validate(order.symbol);
