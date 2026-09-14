@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CoreModule } from './modules/core/core.module';
@@ -16,6 +17,9 @@ import { CredentialsModule } from './config/credentials/credentials.module';
       isGlobal: true,
       envFilePath: ['.env.local', '.env'],
     }),
+
+    // Scheduling
+    ScheduleModule.forRoot(),
 
     // Credentials management (must load before other modules)
     CredentialsModule,
