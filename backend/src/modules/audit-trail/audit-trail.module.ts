@@ -6,7 +6,13 @@
 
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { DecisionAuditTrail, DecisionFeedback, FeedbackValidationRecord, Lesson, PositionSnapshot } from '../database/entities';
+import {
+  DecisionAuditTrail,
+  DecisionFeedback,
+  FeedbackValidationRecord,
+  Lesson,
+  PositionSnapshot,
+} from '../database/entities';
 import { DecisionChangeLog } from '../database/entities/decision-change-log.entity';
 import { AuditTrailService } from './audit-trail.service';
 import { AuditTrailController } from './audit-trail.controller';
@@ -29,8 +35,20 @@ import { AuditController } from './audit.controller';
       DecisionChangeLog,
     ]),
   ],
-  providers: [AuditTrailService, FeedbackService, LessonsService, PositionSnapshotService, AuditService],
+  providers: [
+    AuditTrailService,
+    FeedbackService,
+    LessonsService,
+    PositionSnapshotService,
+    AuditService,
+  ],
   controllers: [AuditTrailController, FeedbackController, LessonsController, AuditController],
-  exports: [AuditTrailService, FeedbackService, LessonsService, PositionSnapshotService, AuditService],
+  exports: [
+    AuditTrailService,
+    FeedbackService,
+    LessonsService,
+    PositionSnapshotService,
+    AuditService,
+  ],
 })
 export class AuditTrailModule {}

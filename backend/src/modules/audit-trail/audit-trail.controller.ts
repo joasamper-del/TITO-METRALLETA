@@ -37,9 +37,7 @@ export class AuditTrailController {
   ) {
     // Parse dates
     if (!startDateStr || !endDateStr) {
-      throw new BadRequestException(
-        'startDate and endDate are required (ISO format)',
-      );
+      throw new BadRequestException('startDate and endDate are required (ISO format)');
     }
 
     let startDate: Date;
@@ -53,23 +51,17 @@ export class AuditTrailController {
         throw new Error('Invalid date format');
       }
     } catch (error) {
-      throw new BadRequestException(
-        'Invalid date format. Use ISO format (YYYY-MM-DD)',
-      );
+      throw new BadRequestException('Invalid date format. Use ISO format (YYYY-MM-DD)');
     }
 
     // Parse multi-value query params
     const tickers = Array.isArray(tickersParam)
       ? tickersParam
       : tickersParam
-        ? [tickersParam]
-        : undefined;
+      ? [tickersParam]
+      : undefined;
 
-    const types = Array.isArray(typesParam)
-      ? typesParam
-      : typesParam
-        ? [typesParam]
-        : undefined;
+    const types = Array.isArray(typesParam) ? typesParam : typesParam ? [typesParam] : undefined;
 
     // Build query
     const query: AuditTrailQuery = {
@@ -118,9 +110,7 @@ export class AuditTrailController {
     @Query('endDate') endDateStr?: string,
   ) {
     if (!startDateStr || !endDateStr) {
-      throw new BadRequestException(
-        'startDate and endDate are required (ISO format)',
-      );
+      throw new BadRequestException('startDate and endDate are required (ISO format)');
     }
 
     let startDate: Date;
@@ -134,9 +124,7 @@ export class AuditTrailController {
         throw new Error('Invalid date format');
       }
     } catch (error) {
-      throw new BadRequestException(
-        'Invalid date format. Use ISO format (YYYY-MM-DD)',
-      );
+      throw new BadRequestException('Invalid date format. Use ISO format (YYYY-MM-DD)');
     }
 
     const query: AuditTrailQuery = { startDate, endDate };

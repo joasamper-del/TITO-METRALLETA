@@ -13,10 +13,7 @@ export class RulesController {
   }
 
   @Put(':id')
-  updateRule(
-    @Param('id') id: string,
-    @Body() updates: { weight?: number; enabled?: boolean },
-  ) {
+  updateRule(@Param('id') id: string, @Body() updates: { weight?: number; enabled?: boolean }) {
     return this.rulesService.updateRule(id, updates);
   }
 }

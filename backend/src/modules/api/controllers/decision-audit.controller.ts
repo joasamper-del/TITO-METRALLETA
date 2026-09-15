@@ -1,5 +1,9 @@
 import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
-import { DecisionAuditService, DecisionAuditInput, DecisionAuditUpdate } from '../services/decision-audit.service';
+import {
+  DecisionAuditService,
+  DecisionAuditInput,
+  DecisionAuditUpdate,
+} from '../services/decision-audit.service';
 
 @Controller('api/audit')
 export class DecisionAuditController {
@@ -11,18 +15,12 @@ export class DecisionAuditController {
   }
 
   @Post('update/:id')
-  async updateDecision(
-    @Param('id') id: string,
-    @Body() update: DecisionAuditUpdate,
-  ) {
+  async updateDecision(@Param('id') id: string, @Body() update: DecisionAuditUpdate) {
     return this.auditService.updateDecisionOutcome(id, update);
   }
 
   @Get('range')
-  async getDecisionsByRange(
-    @Query('start') start: string,
-    @Query('end') end: string,
-  ) {
+  async getDecisionsByRange(@Query('start') start: string, @Query('end') end: string) {
     const startDate = new Date(start);
     const endDate = new Date(end);
     return this.auditService.getDecisionsByDateRange(startDate, endDate);
@@ -40,20 +38,14 @@ export class DecisionAuditController {
   }
 
   @Get('stats')
-  async getDecisionStats(
-    @Query('start') start: string,
-    @Query('end') end: string,
-  ) {
+  async getDecisionStats(@Query('start') start: string, @Query('end') end: string) {
     const startDate = new Date(start);
     const endDate = new Date(end);
     return this.auditService.getDecisionStats(startDate, endDate);
   }
 
   @Get('mli-accuracy')
-  async getMliAccuracy(
-    @Query('start') start: string,
-    @Query('end') end: string,
-  ) {
+  async getMliAccuracy(@Query('start') start: string, @Query('end') end: string) {
     const startDate = new Date(start);
     const endDate = new Date(end);
     const accuracy = await this.auditService.getMliAccuracy(startDate, endDate);

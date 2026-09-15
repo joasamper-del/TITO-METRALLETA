@@ -14,7 +14,11 @@ import {
   CredentialFieldMissingError,
   CredentialValidationError,
 } from './utils/errors';
-import { validateBrokerCredential, buildValidationResult, formatCredentialForLog } from './utils/validation';
+import {
+  validateBrokerCredential,
+  buildValidationResult,
+  formatCredentialForLog,
+} from './utils/validation';
 
 @Injectable()
 export class CredentialManager {
@@ -96,7 +100,7 @@ export class CredentialManager {
       };
     }
 
-    const brokerList = Object.values(this.store).map(entry => ({
+    const brokerList = Object.values(this.store).map((entry) => ({
       credential: entry.credential,
       data: entry.data,
     }));
@@ -116,9 +120,7 @@ export class CredentialManager {
     const { credential } = this.store[brokerId];
 
     if (!credential.isConfigured) {
-      const missingFields = credential.requiredFields.filter(
-        f => !this.store[brokerId].data[f]
-      );
+      const missingFields = credential.requiredFields.filter((f) => !this.store[brokerId].data[f]);
       throw new CredentialMissingError(brokerId, missingFields);
     }
 
@@ -163,9 +165,7 @@ export class CredentialManager {
     const credential = entry.credential;
 
     if (!credential.isConfigured) {
-      const missingFields = credential.requiredFields.filter(
-        f => !entry.data[f]
-      );
+      const missingFields = credential.requiredFields.filter((f) => !entry.data[f]);
       throw new CredentialMissingError(brokerId, missingFields);
     }
 
@@ -178,7 +178,7 @@ export class CredentialManager {
    * Safe for logging and UI display (no secrets shown)
    */
   status(): StatusReport {
-    const brokers = Object.values(this.store).map(entry => ({
+    const brokers = Object.values(this.store).map((entry) => ({
       id: entry.credential.id,
       name: entry.credential.name,
       configured: entry.credential.isConfigured,
@@ -187,7 +187,7 @@ export class CredentialManager {
       scopes: entry.credential.scopes,
     }));
 
-    const isReady = brokers.every(b => b.configured);
+    const isReady = brokers.every((b) => b.configured);
 
     return {
       timestamp: new Date(),
@@ -201,10 +201,12 @@ export class CredentialManager {
    */
   statusString(): string {
     const status = this.status();
-    const lines = status.brokers.map(b =>
-      `  ${b.id.padEnd(15)} ${b.configured ? '✓' : '✗'} ${b.name}`
+    const lines = status.brokers.map(
+      (b) => `  ${b.id.padEnd(15)} ${b.configured ? '✓' : '✗'} ${b.name}`,
     );
-    return `Credentials Status (${status.isReady ? '✓ READY' : '✗ NOT READY'}):\n${lines.join('\n')}`;
+    return `Credentials Status (${status.isReady ? '✓ READY' : '✗ NOT READY'}):\n${lines.join(
+      '\n',
+    )}`;
   }
 
   /**
@@ -219,7 +221,7 @@ export class CredentialManager {
    */
   getMissing(): string[] {
     return Object.values(this.store)
-      .filter(entry => !entry.credential.isConfigured)
-      .map(entry => entry.credential.id);
+      .filter((entry) => !entry.credential.isConfigured)
+      .map((entry) => entry.credential.id);
   }
 }

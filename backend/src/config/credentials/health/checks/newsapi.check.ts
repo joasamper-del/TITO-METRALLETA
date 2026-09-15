@@ -15,10 +15,10 @@ export const newsapiHealthChecks: HealthCheckConfig[] = [
     interval: 3600,
     timeout: 2000,
     checker: async (): Promise<HealthStatus> => {
-      const apiKey = process.env.NEWSAPI_KEY;
+      const apiKey = process.env.NEWS_API_KEY;
 
       if (!apiKey || apiKey.trim() === '') {
-        throw new Error('Missing NEWSAPI_KEY');
+        throw new Error('Missing NEWS_API_KEY');
       }
 
       return 'green';
@@ -31,16 +31,19 @@ export const newsapiHealthChecks: HealthCheckConfig[] = [
     interval: 600,
     timeout: 8000,
     checker: async (): Promise<HealthStatus> => {
-      const apiKey = process.env.NEWSAPI_KEY;
+      const apiKey = process.env.NEWS_API_KEY;
 
       if (!apiKey) {
         return 'gray';
       }
 
       try {
-        const response = await fetch(`${NEWSAPI_BASE}/v2/top-headlines?country=us&pageSize=1&apiKey=${apiKey}`, {
-          method: 'GET',
-        });
+        const response = await fetch(
+          `${NEWSAPI_BASE}/v2/top-headlines?country=us&pageSize=1&apiKey=${apiKey}`,
+          {
+            method: 'GET',
+          },
+        );
 
         if (!response.ok) {
           if (response.status === 401 || response.status === 403) {

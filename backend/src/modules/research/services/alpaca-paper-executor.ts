@@ -176,7 +176,9 @@ export class AlpacaPaperExecutor {
     // Simulate order validation (do NOT post to API yet)
     const simulatedResult: ExecutionResult = {
       success: true,
-      message: `✅ VALIDATED (NOT EXECUTED): ${request.side.toUpperCase()} ${request.quantity} ${request.symbol} @ $${request.entryPrice}`,
+      message: `✅ VALIDATED (NOT EXECUTED): ${request.side.toUpperCase()} ${request.quantity} ${
+        request.symbol
+      } @ $${request.entryPrice}`,
     };
 
     return simulatedResult;
@@ -254,10 +256,7 @@ export class AlpacaPaperExecutor {
   /**
    * Private: Wait for order to fill
    */
-  private async waitForOrderFill(
-    orderId: string,
-    timeoutMs: number,
-  ): Promise<any | null> {
+  private async waitForOrderFill(orderId: string, timeoutMs: number): Promise<any | null> {
     const startTime = Date.now();
 
     while (Date.now() - startTime < timeoutMs) {
@@ -270,7 +269,7 @@ export class AlpacaPaperExecutor {
         // Retry
       }
 
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
 
     return null;
@@ -315,7 +314,7 @@ export class AlpacaPaperExecutor {
    * Cleanup on exit
    */
   cleanup(): void {
-    this.monitoringIntervals.forEach(interval => clearInterval(interval));
+    this.monitoringIntervals.forEach((interval) => clearInterval(interval));
     this.monitoringIntervals.clear();
     this.positions.clear();
   }

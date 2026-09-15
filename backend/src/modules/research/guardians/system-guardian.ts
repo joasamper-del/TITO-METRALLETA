@@ -145,7 +145,7 @@ export class SystemGuardian {
     type: 'news' | 'events' | 'fundamentals',
     priority: number,
     healthCheckUrl?: string,
-    apiKeyValidator?: () => Promise<boolean>
+    apiKeyValidator?: () => Promise<boolean>,
   ): void {
     this.providerHealth.set(name, {
       name,
@@ -171,7 +171,7 @@ export class SystemGuardian {
     type: 'connection_timeout' | 'api_error' | 'invalid_response' | 'rate_limit' | 'recovery',
     severity: 'critical' | 'high' | 'medium' | 'low',
     message: string,
-    statusCode?: number
+    statusCode?: number,
   ): string {
     const incidentId = `INC-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
@@ -216,34 +216,35 @@ export class SystemGuardian {
    * Called by dashboards or monitoring systems
    */
   getHealthReport(): SystemHealthReport {
-    const providers = Array.from(this.providerHealth.values())
-      .sort((a, b) => a.priority - b.priority);
+    const providers = Array.from(this.providerHealth.values()).sort(
+      (a, b) => a.priority - b.priority,
+    );
 
     // Calculate overall health
-    const healthyProviders = providers.filter(p => p.isHealthy).length;
+    const healthyProviders = providers.filter((p) => p.isHealthy).length;
     const healthScore = (healthyProviders / providers.length) * 100;
 
     const overallHealth =
-      healthScore >= 90 ? 'healthy' :
-      healthScore >= 70 ? 'degraded' :
-      'critical';
+      healthScore >= 90 ? 'healthy' : healthScore >= 70 ? 'degraded' : 'critical';
 
     // Generate recommendations
     const recommendations: string[] = [];
-    providers.forEach(p => {
+    providers.forEach((p) => {
       if (!p.isHealthy && p.consecutiveFailures >= 3) {
         recommendations.push(
-          `Provider ${p.name} has failed ${p.consecutiveFailures} times. Consider investigating.`
+          `Provider ${p.name} has failed ${p.consecutiveFailures} times. Consider investigating.`,
         );
       }
       if (p.responseTimeMs > 5000) {
-        recommendations.push(`Provider ${p.name} is slow (${p.responseTimeMs}ms). May need optimization.`);
+        recommendations.push(
+          `Provider ${p.name} is slow (${p.responseTimeMs}ms). May need optimization.`,
+        );
       }
     });
 
     // Filter recent incidents
     const recentIncidents = this.incidents.filter(
-      i => Date.now() - i.timestamp.getTime() < this.INCIDENT_RETENTION_MS
+      (i) => Date.now() - i.timestamp.getTime() < this.INCIDENT_RETENTION_MS,
     );
 
     return {
@@ -263,7 +264,7 @@ export class SystemGuardian {
   getProviderStatus(filterType?: 'news' | 'events' | 'fundamentals'): ProviderHealthStatus[] {
     const providers = Array.from(this.providerHealth.values());
     if (filterType) {
-      return providers.filter(p => p.type === filterType);
+      return providers.filter((p) => p.type === filterType);
     }
     return providers;
   }
@@ -281,20 +282,20 @@ export class SystemGuardian {
     let filtered = [...this.incidents];
 
     if (filters?.provider) {
-      filtered = filtered.filter(i => i.provider === filters.provider);
+      filtered = filtered.filter((i) => i.provider === filters.provider);
     }
 
     if (filters?.type) {
-      filtered = filtered.filter(i => i.type === filters.type);
+      filtered = filtered.filter((i) => i.type === filters.type);
     }
 
     if (filters?.severity) {
-      filtered = filtered.filter(i => i.severity === filters.severity);
+      filtered = filtered.filter((i) => i.severity === filters.severity);
     }
 
     if (filters?.hoursBack) {
       const cutoff = Date.now() - filters.hoursBack * 60 * 60 * 1000;
-      filtered = filtered.filter(i => i.timestamp.getTime() >= cutoff);
+      filtered = filtered.filter((i) => i.timestamp.getTime() >= cutoff);
     }
 
     return filtered.reverse(); // Most recent first
@@ -306,7 +307,7 @@ export class SystemGuardian {
    */
   private cleanupOldIncidents(): void {
     const cutoff = Date.now() - this.INCIDENT_RETENTION_MS;
-    this.incidents = this.incidents.filter(i => i.timestamp.getTime() >= cutoff);
+    this.incidents = this.incidents.filter((i) => i.timestamp.getTime() >= cutoff);
 
     if (this.incidents.length > this.MAX_INCIDENTS) {
       this.incidents = this.incidents.slice(-this.MAX_INCIDENTS);
@@ -319,10 +320,10 @@ export class SystemGuardian {
    */
   suggestNextProvider(
     failedProvider: string,
-    type: 'news' | 'events' | 'fundamentals'
+    type: 'news' | 'events' | 'fundamentals',
   ): ProviderHealthStatus | undefined {
     const candidates = Array.from(this.providerHealth.values())
-      .filter(p => p.type === type && p.name !== failedProvider)
+      .filter((p) => p.type === type && p.name !== failedProvider)
       .sort((a, b) => {
         // Prefer healthy providers, then by priority
         if (a.isHealthy !== b.isHealthy) {
@@ -378,8 +379,10 @@ export class SystemGuardian {
 
     // CSV format
     let csv = 'Timestamp,Provider,Type,Severity,Message,StatusCode,RecoveryAction\n';
-    this.incidents.forEach(i => {
-      csv += `"${i.timestamp.toISOString()}","${i.provider}","${i.type}","${i.severity}","${i.message}","${i.statusCode || ''}","${i.recoveryAction || ''}"\n`;
+    this.incidents.forEach((i) => {
+      csv += `"${i.timestamp.toISOString()}","${i.provider}","${i.type}","${i.severity}","${
+        i.message
+      }","${i.statusCode || ''}","${i.recoveryAction || ''}"\n`;
     });
 
     return csv;
@@ -396,9 +399,9 @@ export class SystemGuardian {
     providersDisabled: number;
     lastHealthCheckAt: Date;
   } {
-    const criticalIncidents = this.incidents.filter(i => i.severity === 'critical').length;
+    const criticalIncidents = this.incidents.filter((i) => i.severity === 'critical').length;
     const providersDisabled = Array.from(this.providerHealth.values()).filter(
-      p => !p.isHealthy
+      (p) => !p.isHealthy,
     ).length;
 
     return {
@@ -469,7 +472,7 @@ export class SystemGuardian {
     // 3. Data Freshness
     this.logger.debug('Guardian: Checking data freshness...');
     const staleSources = Array.from(this.providerHealth.values()).filter(
-      p => Date.now() - p.lastCheck.getTime() > 300_000 // > 5 minutes
+      (p) => Date.now() - p.lastCheck.getTime() > 300_000, // > 5 minutes
     );
     if (staleSources.length > 0) {
       warnings.push(`${staleSources.length} providers not checked in 5+ minutes`);
@@ -511,9 +514,9 @@ export class SystemGuardian {
 
     // 5. Network Latency
     this.logger.debug('Guardian: Measuring network latency...');
-    const avgLatency = Array.from(this.providerHealth.values()).reduce(
-      (sum, p) => sum + p.responseTimeMs, 0
-    ) / this.providerHealth.size;
+    const avgLatency =
+      Array.from(this.providerHealth.values()).reduce((sum, p) => sum + p.responseTimeMs, 0) /
+      this.providerHealth.size;
 
     if (avgLatency > 2000) {
       warnings.push(`High network latency: ${avgLatency.toFixed(0)}ms`);
@@ -535,10 +538,7 @@ export class SystemGuardian {
     }
 
     // Calculate readiness
-    const readinessScore = Math.max(
-      0,
-      100 - (blockers.length * 50 + warnings.length * 10)
-    );
+    const readinessScore = Math.max(0, 100 - (blockers.length * 50 + warnings.length * 10));
     const isSystemReady = blockers.length === 0 && readinessScore >= 80;
 
     const report: SystemReadinessReport = {
@@ -552,7 +552,7 @@ export class SystemGuardian {
     };
 
     this.logger.log(
-      `Guardian: Pre-market checklist complete. Ready: ${isSystemReady} (Score: ${report.readinessScore}/100)`
+      `Guardian: Pre-market checklist complete. Ready: ${isSystemReady} (Score: ${report.readinessScore}/100)`,
     );
 
     return report;
@@ -573,11 +573,12 @@ export class SystemGuardian {
 
     return {
       approved: report.readyToOperate,
-      reason: report.blockers.length > 0
-        ? `BLOCKED: ${report.blockers.join('; ')}`
-        : report.readinessScore >= 80
-        ? 'All systems GO'
-        : `WARNING: System at ${report.readinessScore}% readiness`,
+      reason:
+        report.blockers.length > 0
+          ? `BLOCKED: ${report.blockers.join('; ')}`
+          : report.readinessScore >= 80
+          ? 'All systems GO'
+          : `WARNING: System at ${report.readinessScore}% readiness`,
       checkResults: report.checksPerformed,
     };
   }
@@ -595,19 +596,17 @@ export class SystemGuardian {
   generatePostSessionReport(): SessionReport {
     const now = new Date();
     const sessionIncidents = this.incidents.filter(
-      i =>
-        i.timestamp.getDate() === now.getDate() &&
-        i.timestamp.getMonth() === now.getMonth()
+      (i) => i.timestamp.getDate() === now.getDate() && i.timestamp.getMonth() === now.getMonth(),
     );
 
-    const criticalIncidents = sessionIncidents.filter(i => i.severity === 'critical').length;
-    const highIncidents = sessionIncidents.filter(i => i.severity === 'high').length;
-    const mediumIncidents = sessionIncidents.filter(i => i.severity === 'medium').length;
+    const criticalIncidents = sessionIncidents.filter((i) => i.severity === 'critical').length;
+    const highIncidents = sessionIncidents.filter((i) => i.severity === 'high').length;
+    const mediumIncidents = sessionIncidents.filter((i) => i.severity === 'medium').length;
 
-    const recoveredIncidents = sessionIncidents.filter(i => i.type === 'recovery').length;
+    const recoveredIncidents = sessionIncidents.filter((i) => i.type === 'recovery').length;
 
     const duration = (now.getTime() - this.sessionStartTime.getTime()) / 60_000;
-    const uptime = 100 - (criticalIncidents * 5); // Rough calculation
+    const uptime = 100 - criticalIncidents * 5; // Rough calculation
 
     const recommendations: string[] = [];
     if (criticalIncidents > 0) {
@@ -624,7 +623,7 @@ export class SystemGuardian {
       { type: 'critical', severity: 'critical', count: criticalIncidents },
       { type: 'high', severity: 'high', count: highIncidents },
       { type: 'medium', severity: 'medium', count: mediumIncidents },
-    ].filter(i => i.count > 0);
+    ].filter((i) => i.count > 0);
 
     const improvements: string[] = [];
     if (recoveredIncidents > 0) {

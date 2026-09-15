@@ -10,7 +10,7 @@ import { BrokerCredential, ValidationResult } from '../types';
  */
 export function validateBrokerCredential(
   credential: BrokerCredential,
-  data: Record<string, string>
+  data: Record<string, string>,
 ): { isValid: boolean; missingFields: string[] } {
   const missingFields: string[] = [];
 
@@ -29,7 +29,7 @@ export function validateBrokerCredential(
 /**
  * Check if a credential will expire soon
  */
-export function willExpireSoon(expiresAt?: Date, thresholdHours: number = 1): boolean {
+export function willExpireSoon(expiresAt?: Date, thresholdHours = 1): boolean {
   if (!expiresAt) return false;
 
   const now = new Date();
@@ -55,7 +55,7 @@ export function buildValidationResult(
   brokers: Array<{
     credential: BrokerCredential;
     data: Record<string, string>;
-  }>
+  }>,
 ): ValidationResult {
   const errors: ValidationResult['errors'] = [];
   const warnings: ValidationResult['warnings'] = [];

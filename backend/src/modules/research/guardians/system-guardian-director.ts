@@ -16,8 +16,18 @@
 
 import { Injectable, Logger } from '@nestjs/common';
 import { SystemGuardian, ProviderHealthStatus, SystemIncident } from './system-guardian';
-import { SystemIntelligence, IncidentPattern, SafeAutocorrectionAction } from './system-intelligence';
-import { OperationsDirector, ExecutiveSummary, OperationIssue, AppliedFix, PendingAction } from './operations-director';
+import {
+  SystemIntelligence,
+  IncidentPattern,
+  SafeAutocorrectionAction,
+} from './system-intelligence';
+import {
+  OperationsDirector,
+  ExecutiveSummary,
+  OperationIssue,
+  AppliedFix,
+  PendingAction,
+} from './operations-director';
 import { OperationsTaskList, TaskList } from './operations-task-list';
 
 @Injectable()
@@ -28,7 +38,7 @@ export class SystemGuardianDirector {
     private readonly guardian: SystemGuardian,
     private readonly intelligence: SystemIntelligence,
     private readonly director: OperationsDirector,
-    private readonly taskList: OperationsTaskList
+    private readonly taskList: OperationsTaskList,
   ) {
     this.logger.log('Guardian Director initialized - Ready to operate');
   }
@@ -60,12 +70,14 @@ export class SystemGuardianDirector {
     const patterns = this.intelligence.detectIncidentPatterns(health.incidents || []);
 
     // 4. Convert incidents to operation issues
-    const issues: OperationIssue[] = (health.incidents || []).map(incident => ({
+    const issues: OperationIssue[] = (health.incidents || []).map((incident) => ({
       id: incident.id || `inc-${Date.now()}`,
       category:
-        incident.severity === 'critical' ? 'critical' :
-        incident.type === 'error' ? 'warning' :
-        'info',
+        incident.severity === 'critical'
+          ? 'critical'
+          : incident.type === 'error'
+          ? 'warning'
+          : 'info',
       title: `[${incident.provider}] ${incident.type}`,
       description: incident.message,
       detectedAt: incident.timestamp,
@@ -95,7 +107,7 @@ export class SystemGuardianDirector {
 
     // 6. Pending actions from patterns
     const pending: PendingAction[] = patterns
-      .filter(p => p.solutionSeverity === 'permanent_fix')
+      .filter((p) => p.solutionSeverity === 'permanent_fix')
       .map((p, idx) => ({
         id: `action-${idx}`,
         priority: 'high' as const,
@@ -118,9 +130,9 @@ export class SystemGuardianDirector {
 
     // 8. Insights from patterns
     const insights = {
-      patterns: patterns.map(p => p.pattern),
-      improvements: patterns.map(p => p.suggestedSolution),
-      risks: issues.filter(i => i.category === 'critical').map(i => i.description),
+      patterns: patterns.map((p) => p.pattern),
+      improvements: patterns.map((p) => p.suggestedSolution),
+      risks: issues.filter((i) => i.category === 'critical').map((i) => i.description),
     };
 
     // 9. Generate executive summary
@@ -130,10 +142,12 @@ export class SystemGuardianDirector {
       corrections,
       pending,
       metrics,
-      insights
+      insights,
     );
 
-    this.logger.log(`Director Report Ready: ${summary.recommendation} (Confidence: ${summary.confidenceIndex.overall}%)`);
+    this.logger.log(
+      `Director Report Ready: ${summary.recommendation} (Confidence: ${summary.confidenceIndex.overall}%)`,
+    );
 
     return summary;
   }
@@ -179,7 +193,10 @@ export class SystemGuardianDirector {
     // Auto-correct if safe
     for (const pattern of patterns) {
       for (const provider of pattern.affectedProviders) {
-        const correction = await this.intelligence.performSafeAutoCorrection(provider, pattern.pattern);
+        const correction = await this.intelligence.performSafeAutoCorrection(
+          provider,
+          pattern.pattern,
+        );
         if (correction.shouldExecute) {
           this.logger.log(`Auto-correction applied: ${correction.reason}`);
         }
@@ -210,7 +227,10 @@ export class SystemGuardianDirector {
     // Simulate corrections for report
     for (const pattern of patterns) {
       for (const provider of pattern.affectedProviders) {
-        const correction = await this.intelligence.performSafeAutoCorrection(provider, pattern.pattern);
+        const correction = await this.intelligence.performSafeAutoCorrection(
+          provider,
+          pattern.pattern,
+        );
         corrections.push(correction);
       }
     }
@@ -246,12 +266,7 @@ export class SystemGuardianDirector {
 
     const confidence = (metrics.systemUptime + metrics.dataFreshness) / 2;
 
-    return this.taskList.generateTaskList(
-      health.incidents || [],
-      patterns,
-      metrics,
-      confidence
-    );
+    return this.taskList.generateTaskList(health.incidents || [], patterns, metrics, confidence);
   }
 
   /**
@@ -284,7 +299,7 @@ export class SystemGuardianDirector {
 
   private calculateDataFreshness(providers: any[]): number {
     if (!providers.length) return 0;
-    const freshCount = providers.filter(p => {
+    const freshCount = providers.filter((p) => {
       if (!p.lastCheck) return false;
       const age = Date.now() - new Date(p.lastCheck).getTime();
       return age < 5 * 60 * 1000; // < 5 minutes

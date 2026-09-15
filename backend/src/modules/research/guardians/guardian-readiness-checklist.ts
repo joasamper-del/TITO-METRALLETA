@@ -42,17 +42,19 @@ export class GuardianReadinessChecklist {
    * Verifies: APIs responsive, health metrics green, no cascading failures
    */
   private checkPlatformHealth(health: any): ReadinessAnswer {
-    const isHealthy = health.overallUptime >= 95 &&
-      health.providers.filter((p: any) => p.isHealthy).length >= 7;
+    const isHealthy =
+      health.overallUptime >= 95 && health.providers.filter((p: any) => p.isHealthy).length >= 7;
 
     return {
       question: '¿La plataforma está sana?',
       answer: isHealthy ? 'YES' : 'NO',
       confidence: health.overallUptime,
-      evidence: `Uptime: ${health.overallUptime}%, ${health.providers.filter((p: any) => p.isHealthy).length}/10 providers healthy`,
-      affectedModules: isHealthy ? [] : health.providers
-        .filter((p: any) => !p.isHealthy)
-        .map((p: any) => p.name),
+      evidence: `Uptime: ${health.overallUptime}%, ${
+        health.providers.filter((p: any) => p.isHealthy).length
+      }/10 providers healthy`,
+      affectedModules: isHealthy
+        ? []
+        : health.providers.filter((p: any) => !p.isHealthy).map((p: any) => p.name),
       impact: isHealthy ? 'None' : 'Trading may experience interruptions or data gaps',
       timeToFix: isHealthy ? '0 min' : '5-15 min per provider',
     };
@@ -63,7 +65,8 @@ export class GuardianReadinessChecklist {
    * Verifies: Sources recent, quality > 80%, no contradictions
    */
   private checkDataReliability(dataQuality: any): ReadinessAnswer {
-    const isFresh = dataQuality.newsAge < 300000 && // 5 minutes
+    const isFresh =
+      dataQuality.newsAge < 300000 && // 5 minutes
       dataQuality.fundamentalsAge < 2592000000 && // 30 days
       dataQuality.calendarAge < 86400000; // 24 hours
 
@@ -74,7 +77,9 @@ export class GuardianReadinessChecklist {
       question: '¿Los datos son confiables?',
       answer: isReliable ? 'YES' : 'NO',
       confidence: qualityScore,
-      evidence: `Quality score: ${qualityScore}%, News: ${Math.round(dataQuality.newsAge / 60000)}min old, Fundamentals: ${Math.round(dataQuality.fundamentalsAge / 86400000)}d old`,
+      evidence: `Quality score: ${qualityScore}%, News: ${Math.round(
+        dataQuality.newsAge / 60000,
+      )}min old, Fundamentals: ${Math.round(dataQuality.fundamentalsAge / 86400000)}d old`,
       affectedModules: !isFresh ? ['WebResearchService'] : [],
       impact: isReliable ? 'None' : 'Stale data could lead to poor decisions',
       timeToFix: isReliable ? '0 min' : '5 min (refresh data)',
@@ -95,10 +100,10 @@ export class GuardianReadinessChecklist {
       answer: isComplete ? 'YES' : 'NO',
       confidence: (activeProviders / targetProviders) * 100,
       evidence: `${activeProviders}/${targetProviders} providers active`,
-      affectedModules: providers
-        .filter((p: any) => !p.isHealthy)
-        .map((p: any) => p.name),
-      impact: isComplete ? 'None' : `Missing data from ${targetProviders - activeProviders} provider(s)`,
+      affectedModules: providers.filter((p: any) => !p.isHealthy).map((p: any) => p.name),
+      impact: isComplete
+        ? 'None'
+        : `Missing data from ${targetProviders - activeProviders} provider(s)`,
       timeToFix: isComplete ? '0 min' : '5 min per provider',
     };
   }
@@ -117,7 +122,9 @@ export class GuardianReadinessChecklist {
       question: '¿El riesgo está controlado?',
       answer: riskControlled ? 'YES' : 'NO',
       confidence: riskControlled ? 100 : 60,
-      evidence: `Max daily loss: ${maxDailyLoss}%, Max position: ${maxPosition}%, Stop-loss: ${stopLossActive ? 'ARMED' : 'DISABLED'}`,
+      evidence: `Max daily loss: ${maxDailyLoss}%, Max position: ${maxPosition}%, Stop-loss: ${
+        stopLossActive ? 'ARMED' : 'DISABLED'
+      }`,
       affectedModules: !riskControlled ? ['RiskEngine', 'ExecutionEngine'] : [],
       impact: riskControlled ? 'None' : 'Uncontrolled losses possible if trade goes wrong',
       timeToFix: riskControlled ? '0 min' : '2 min (reconfigure)',
@@ -158,8 +165,8 @@ export class GuardianReadinessChecklist {
     const q5 = this.checkNoCriticalBlockers(systemState.incidents);
 
     const questions = [q1, q2, q3, q4, q5];
-    const yesCount = questions.filter(q => q.answer === 'YES').length;
-    const noCount = questions.filter(q => q.answer === 'NO').length;
+    const yesCount = questions.filter((q) => q.answer === 'YES').length;
+    const noCount = questions.filter((q) => q.answer === 'NO').length;
 
     // Determine overall readiness
     let overallReady: 'YES' | 'NO' | 'READY_WITH_CAUTION';
@@ -173,20 +180,22 @@ export class GuardianReadinessChecklist {
 
     // Collect blockers and warnings
     const blockers = questions
-      .filter(q => q.answer === 'NO')
-      .map(q => `${q.question}: ${q.impact} (${q.timeToFix} to fix)`);
+      .filter((q) => q.answer === 'NO')
+      .map((q) => `${q.question}: ${q.impact} (${q.timeToFix} to fix)`);
 
     const warnings = questions
-      .filter(q => q.answer === 'PARTIAL')
-      .map(q => `${q.question}: ${q.evidence}`);
+      .filter((q) => q.answer === 'PARTIAL')
+      .map((q) => `${q.question}: ${q.evidence}`);
 
     // Generate recommendation
     const recommendation =
       overallReady === 'YES'
         ? '✅ TITO READY - All systems GO for tomorrow'
         : overallReady === 'READY_WITH_CAUTION'
-          ? '⚠️ READY WITH CAUTION - Monitor closely, some edge cases'
-          : `🔴 NOT READY - Fix blockers first:\n${blockers.map((b, i) => `${i + 1}. ${b}`).join('\n')}`;
+        ? '⚠️ READY WITH CAUTION - Monitor closely, some edge cases'
+        : `🔴 NOT READY - Fix blockers first:\n${blockers
+            .map((b, i) => `${i + 1}. ${b}`)
+            .join('\n')}`;
 
     const readinessScore = (yesCount / questions.length) * 100;
 
@@ -216,9 +225,9 @@ export class GuardianReadinessChecklist {
 
     // Verdict
     const verdictEmoji = {
-      'YES': '✅',
-      'READY_WITH_CAUTION': '⚠️',
-      'NO': '🔴',
+      YES: '✅',
+      READY_WITH_CAUTION: '⚠️',
+      NO: '🔴',
     }[report.overallReady];
 
     lines.push(`VERDICT: ${verdictEmoji} ${report.overallReady}`);
@@ -244,14 +253,14 @@ export class GuardianReadinessChecklist {
     // Blockers
     if (report.blockers.length > 0) {
       lines.push(`🔴 BLOCKERS (${report.blockers.length}):`);
-      report.blockers.forEach(b => lines.push(`  • ${b}`));
+      report.blockers.forEach((b) => lines.push(`  • ${b}`));
       lines.push('');
     }
 
     // Warnings
     if (report.warnings.length > 0) {
       lines.push(`🟡 WARNINGS (${report.warnings.length}):`);
-      report.warnings.forEach(w => lines.push(`  • ${w}`));
+      report.warnings.forEach((w) => lines.push(`  • ${w}`));
       lines.push('');
     }
 

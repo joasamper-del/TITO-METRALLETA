@@ -67,8 +67,7 @@ export class RulesEngine {
       name: 'Contexto de Mercado Alcista',
       enabled: true,
       weight: 15,
-      condition: (data: MarketData, context: MarketContext) =>
-        context.spy.trend === 'alcista',
+      condition: (data: MarketData, context: MarketContext) => context.spy.trend === 'alcista',
       description: 'Verifica si SPY está en tendencia alcista (contexto general)',
     });
 
@@ -78,8 +77,7 @@ export class RulesEngine {
       name: 'VIX Bajo',
       enabled: true,
       weight: 10,
-      condition: (data: MarketData, context: MarketContext) =>
-        context.vix.price < 20,
+      condition: (data: MarketData, context: MarketContext) => context.vix.price < 20,
       description: 'Verifica si el VIX está por debajo de 20 (baja volatilidad)',
     });
 
@@ -186,9 +184,7 @@ export class RulesEngine {
         ruleName: rule.name,
         passed,
         points,
-        reason: passed
-          ? `✓ ${rule.description}`
-          : `✗ ${rule.description}`,
+        reason: passed ? `✓ ${rule.description}` : `✗ ${rule.description}`,
       });
     }
 
@@ -198,11 +194,7 @@ export class RulesEngine {
   /**
    * Calcula el análisis completo
    */
-  analyzeData(
-    data: MarketData,
-    context: MarketContext,
-    strategy: string
-  ): AnalysisResult {
+  analyzeData(data: MarketData, context: MarketContext, strategy: string): AnalysisResult {
     const ruleEvaluations = this.evaluate(data, context);
     const totalScore = ruleEvaluations.reduce((sum, r) => sum + r.points, 0);
     const maxScore = Array.from(this.rules.values())
@@ -224,17 +216,12 @@ export class RulesEngine {
     else if (percentageScore < 50) riskLevel = 'alto';
 
     // Razones principales (reglas que pasaron)
-    const mainReasons = ruleEvaluations
-      .filter((r) => r.passed)
-      .map((r) => r.ruleName);
+    const mainReasons = ruleEvaluations.filter((r) => r.passed).map((r) => r.ruleName);
 
     // Condiciones de invalidación (reglas que fallaron)
-    const invalidationConditions = ruleEvaluations
-      .filter((r) => !r.passed)
-      .map((r) => r.ruleName);
+    const invalidationConditions = ruleEvaluations.filter((r) => !r.passed).map((r) => r.ruleName);
 
-    const manualReviewNeeded =
-      data.price === 0 || data.volume === 0 || data.rsi === null;
+    const manualReviewNeeded = data.price === 0 || data.volume === 0 || data.rsi === null;
     const manualReviewReasons: string[] = [];
     if (data.price === 0) manualReviewReasons.push('Precio no disponible');
     if (data.volume === 0) manualReviewReasons.push('Volumen no disponible');

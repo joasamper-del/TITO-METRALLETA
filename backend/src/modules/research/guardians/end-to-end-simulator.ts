@@ -43,7 +43,7 @@ export class EndToEndSimulator {
    *
    * This is what S62 will execute
    */
-  async runFullDaySimulation(ticker: string = 'SPY'): Promise<SimulationResult> {
+  async runFullDaySimulation(ticker = 'SPY'): Promise<SimulationResult> {
     this.logger.log(`Starting full day simulation for ${ticker}...`);
 
     const startTime = new Date();
@@ -52,49 +52,31 @@ export class EndToEndSimulator {
 
     try {
       // 09:00 - Reset Session
-      steps.push(
-        await this.step1_ResetSession(startTime)
-      );
+      steps.push(await this.step1_ResetSession(startTime));
 
       // 09:01 - Generate Daily Report
-      steps.push(
-        await this.step2_GenerateDailyReport(startTime)
-      );
+      steps.push(await this.step2_GenerateDailyReport(startTime));
 
       // 09:05 - Web Research
-      steps.push(
-        await this.step3_WebResearch(ticker, startTime)
-      );
+      steps.push(await this.step3_WebResearch(ticker, startTime));
 
       // 09:10 - Verify System Ready
-      steps.push(
-        await this.step4_VerifySystemReady(startTime)
-      );
+      steps.push(await this.step4_VerifySystemReady(startTime));
 
       // 09:15 - Analyze Ticker
-      steps.push(
-        await this.step5_AnalyzeTicker(ticker, startTime)
-      );
+      steps.push(await this.step5_AnalyzeTicker(ticker, startTime));
 
       // 09:20 - Guardian Gate
-      steps.push(
-        await this.step6_GuardianGate(startTime)
-      );
+      steps.push(await this.step6_GuardianGate(startTime));
 
       // 09:30-16:00 - Session Monitoring (simulated 1 hour sample)
-      steps.push(
-        await this.step7_SessionMonitoring(startTime)
-      );
+      steps.push(await this.step7_SessionMonitoring(startTime));
 
       // 16:00 - Post-Market Report
-      steps.push(
-        await this.step8_PostMarketReport(startTime)
-      );
+      steps.push(await this.step8_PostMarketReport(startTime));
 
       // 16:05 - Close Session
-      steps.push(
-        await this.step9_CloseSession(startTime)
-      );
+      steps.push(await this.step9_CloseSession(startTime));
     } catch (error) {
       criticalErrors.push(`Critical error: ${error.message}`);
     }
@@ -103,9 +85,7 @@ export class EndToEndSimulator {
     const totalDuration = endTime.getTime() - startTime.getTime();
 
     // Determine pass/fail
-    const passed =
-      criticalErrors.length === 0 &&
-      steps.every(s => s.passed !== false);
+    const passed = criticalErrors.length === 0 && steps.every((s) => s.passed !== false);
 
     return {
       startTime,
@@ -272,7 +252,7 @@ export class EndToEndSimulator {
     // Errors
     if (result.criticalErrors.length > 0) {
       lines.push(`\n🔴 CRITICAL ERRORS (${result.criticalErrors.length}):`);
-      result.criticalErrors.forEach(e => lines.push(`  • ${e}`));
+      result.criticalErrors.forEach((e) => lines.push(`  • ${e}`));
     }
 
     lines.push(`\n${'═'.repeat(80)}\n`);

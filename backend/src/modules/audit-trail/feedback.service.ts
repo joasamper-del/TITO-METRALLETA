@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DecisionFeedback, FeedbackStatus } from '../database/entities/feedback.entity';
-import { FeedbackValidationRecord, ValidationOutcome } from '../database/entities/feedback-validation.entity';
+import {
+  FeedbackValidationRecord,
+  ValidationOutcome,
+} from '../database/entities/feedback-validation.entity';
 import { DecisionAuditTrail } from '../database/entities/decision-audit-trail.entity';
 
 export interface RespondToQuestionInput {
@@ -33,7 +36,7 @@ export class FeedbackService {
     @InjectRepository(FeedbackValidationRecord)
     private validationRecordRepo: Repository<FeedbackValidationRecord>,
     @InjectRepository(DecisionAuditTrail)
-    private auditTrailRepo: Repository<DecisionAuditTrail>
+    private auditTrailRepo: Repository<DecisionAuditTrail>,
   ) {}
 
   /**
@@ -119,9 +122,15 @@ export class FeedbackService {
     const savedRecord = await this.validationRecordRepo.save(record);
 
     // Update evidence counts based on outcome
-    if (input.hypothesisAppliedCorrectly === true && input.outcome === ValidationOutcome.PROFITABLE) {
+    if (
+      input.hypothesisAppliedCorrectly === true &&
+      input.outcome === ValidationOutcome.PROFITABLE
+    ) {
       feedback.validationEvidenceFavor += 1;
-    } else if (input.hypothesisAppliedCorrectly === false || input.outcome === ValidationOutcome.LOSS) {
+    } else if (
+      input.hypothesisAppliedCorrectly === false ||
+      input.outcome === ValidationOutcome.LOSS
+    ) {
       feedback.validationEvidenceAgainst += 1;
     }
 
@@ -158,7 +167,10 @@ export class FeedbackService {
       throw new Error(`Feedback ${feedbackId} not found`);
     }
 
-    if (feedback.status === FeedbackStatus.CONFIRMED || feedback.status === FeedbackStatus.REJECTED) {
+    if (
+      feedback.status === FeedbackStatus.CONFIRMED ||
+      feedback.status === FeedbackStatus.REJECTED
+    ) {
       throw new Error(`Cannot move feedback from ${feedback.status} to PROPOSED_LESSON`);
     }
 
@@ -234,10 +246,7 @@ export class FeedbackService {
    */
   async getFeedbackInValidation(): Promise<DecisionFeedback[]> {
     return this.feedbackRepo.find({
-      where: [
-        { status: FeedbackStatus.IN_VALIDATION },
-        { status: FeedbackStatus.HYPOTHESIS },
-      ],
+      where: [{ status: FeedbackStatus.IN_VALIDATION }, { status: FeedbackStatus.HYPOTHESIS }],
       relations: ['validationRecords'],
     });
   }

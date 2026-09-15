@@ -45,16 +45,16 @@ export class Lesson {
   action!: string; // ENTRAR, ESPERAR, NO_ENTRAR, SALIR
 
   @Column('float', { default: 0 })
-  confidence: number = 0; // 0-100
+  confidence = 0; // 0-100
 
   @Column('integer', { default: 0 })
-  sampleSize: number = 0; // Total evaluations
+  sampleSize = 0; // Total evaluations
 
   @Column('integer', { default: 0 })
-  favorableCount: number = 0; // Acertó
+  favorableCount = 0; // Acertó
 
   @Column('integer', { default: 0 })
-  unfavorableCount: number = 0; // Falló
+  unfavorableCount = 0; // Falló
 
   @Column('varchar', { length: 255, nullable: true })
   bestCondition: string | null = null; // "VIX > 20"

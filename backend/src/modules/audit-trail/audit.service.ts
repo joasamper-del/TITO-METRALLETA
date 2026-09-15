@@ -148,7 +148,8 @@ export class AuditService {
     }
 
     const orphanCount = dangling.length;
-    const integrityScore = orphanCount === 0 ? 1.0 : (allSnapshots.length - orphanCount) / allSnapshots.length;
+    const integrityScore =
+      orphanCount === 0 ? 1.0 : (allSnapshots.length - orphanCount) / allSnapshots.length;
 
     return {
       integrityScore,

@@ -32,7 +32,7 @@ export class HeartbeatService {
           timestamp: new Date().toISOString(),
           event: 'heartbeat_start',
           pid: process.pid,
-        }) + '\n'
+        }) + '\n',
       );
     } catch (err) {
       this.logger.warn(`Could not write heartbeat file: ${(err as Error).message}`);
@@ -54,7 +54,7 @@ export class HeartbeatService {
           event: 'beat',
           context,
           pid: process.pid,
-        }) + '\n'
+        }) + '\n',
       );
     } catch (err) {
       this.logger.warn(`Could not write heartbeat: ${(err as Error).message}`);
@@ -75,7 +75,7 @@ export class HeartbeatService {
           event: 'critical_error',
           error: message,
           pid: process.pid,
-        }) + '\n'
+        }) + '\n',
       );
     } catch (err) {
       this.logger.error(`Could not write error to heartbeat: ${(err as Error).message}`);
@@ -97,7 +97,7 @@ export class HeartbeatService {
           reason,
           pid: process.pid,
           uptime: process.uptime(),
-        }) + '\n'
+        }) + '\n',
       );
     } catch (err) {
       this.logger.warn(`Could not write shutdown to heartbeat: ${(err as Error).message}`);

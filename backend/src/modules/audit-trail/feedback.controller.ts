@@ -1,4 +1,13 @@
-import { Controller, Post, Get, Put, Body, Param, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Put,
+  Body,
+  Param,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { FeedbackService } from './feedback.service';
 import {
   RespondToQuestionInput,
@@ -18,7 +27,7 @@ export class FeedbackController {
   @Post(':decisionId')
   async respondToQuestion(
     @Param('decisionId') decisionId: string,
-    @Body() body: { jayResponse: string }
+    @Body() body: { jayResponse: string },
   ) {
     try {
       const input: RespondToQuestionInput = {
@@ -59,7 +68,7 @@ export class FeedbackController {
   @Put(':feedbackId/validation')
   async recordValidation(
     @Param('feedbackId') feedbackId: string,
-    @Body() body: RecordValidationInput
+    @Body() body: RecordValidationInput,
   ) {
     try {
       const input: RecordValidationInput = {
@@ -106,7 +115,7 @@ export class FeedbackController {
   @Post(':feedbackId/lesson-decision')
   async promoteToLesson(
     @Param('feedbackId') feedbackId: string,
-    @Body() body: { shouldPromote: boolean; comment?: string }
+    @Body() body: { shouldPromote: boolean; comment?: string },
   ) {
     try {
       const input: PromoteLessonInput = {

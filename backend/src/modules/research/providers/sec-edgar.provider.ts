@@ -55,7 +55,7 @@ export class SecEdgarProvider {
       // Fetch company facts (financial metrics)
       const factsResponse = await axios.get(
         `https://data.sec.gov/submissions/CIK${cik.padStart(10, '0')}.json`,
-        { timeout: 10000 }
+        { timeout: 10000 },
       );
 
       if (!factsResponse.data?.facts?.['us-gaap']) {
@@ -134,7 +134,9 @@ export class SecEdgarProvider {
   }
 
   private determineFreshness(filingDate: string): 'LIVE' | 'DELAYED' | 'CACHED' | 'STALE' {
-    const daysOld = Math.floor((Date.now() - new Date(filingDate).getTime()) / (1000 * 60 * 60 * 24));
+    const daysOld = Math.floor(
+      (Date.now() - new Date(filingDate).getTime()) / (1000 * 60 * 60 * 24),
+    );
     if (daysOld <= 7) return 'LIVE';
     if (daysOld <= 30) return 'DELAYED';
     if (daysOld <= 90) return 'CACHED';
@@ -145,7 +147,12 @@ export class SecEdgarProvider {
     return { value: null, source, timestamp, freshness: 'STALE', confidence: 0 };
   }
 
-  private createErrorResponse(ticker: string, cik: string, timestamp: string, error: string): SecEdgarData {
+  private createErrorResponse(
+    ticker: string,
+    cik: string,
+    timestamp: string,
+    error: string,
+  ): SecEdgarData {
     return {
       ticker,
       cik,

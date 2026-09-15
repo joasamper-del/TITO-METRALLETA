@@ -14,7 +14,7 @@ export class AlpacaClient {
   private apiKey: string;
   private apiSecret: string;
 
-  constructor(apiKey: string, apiSecret: string, baseUrl: string = 'https://paper-api.alpaca.markets') {
+  constructor(apiKey: string, apiSecret: string, baseUrl = 'https://paper-api.alpaca.markets') {
     this.apiKey = apiKey;
     this.apiSecret = apiSecret;
     this.baseUrl = baseUrl;
@@ -66,8 +66,8 @@ export class AlpacaClient {
    */
   async getHistoricalBars(
     symbol: string,
-    timeframe: string = '1day',
-    limit: number = 100
+    timeframe = '1day',
+    limit = 100,
   ): Promise<AlpacaBar[] | null> {
     try {
       const response = await this.dataClient.get(`/v2/stocks/${symbol}/bars`, {

@@ -22,7 +22,7 @@ export class GuardianSecretMasker {
     // API Keys
     { pattern: /apikey[=:\s]+([a-zA-Z0-9_-]+)/gi, name: 'API_KEY' },
     { pattern: /api_key[=:\s]+([a-zA-Z0-9_-]+)/gi, name: 'API_KEY' },
-    { pattern: /NEWSAPI_KEY[=:\s]+([a-zA-Z0-9_-]+)/gi, name: 'NEWSAPI_KEY' },
+    { pattern: /NEWS_API_KEY[=:\s]+([a-zA-Z0-9_-]+)/gi, name: 'NEWS_API_KEY' },
     { pattern: /FRED_API_KEY[=:\s]+([a-zA-Z0-9_-]+)/gi, name: 'FRED_API_KEY' },
 
     // Tokens

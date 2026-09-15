@@ -66,7 +66,7 @@ export class SessionCertification {
     simulationResult: any,
     securityAudit: any,
     readinessTests: any,
-    resilienceTests: any
+    resilienceTests: any,
   ): SessionCertificate {
     this.logger.log('Guardian: Generating Release Certificate...');
 
@@ -79,7 +79,8 @@ export class SessionCertification {
     const readinessPassed = readinessTests.allPassed;
     const resiliencePassed = resilienceTests.allPassed;
 
-    const allTestsPassed = simulationPassed && securityPassed && readinessPassed && resiliencePassed;
+    const allTestsPassed =
+      simulationPassed && securityPassed && readinessPassed && resiliencePassed;
 
     let readyForProduction: 'YES' | 'NO' | 'CONDITIONAL' = 'NO';
     const conditions: string[] = [];
@@ -153,7 +154,7 @@ export class SessionCertification {
     lines.push(`   Duration: ${cert.simulationRunTime}ms`);
     if (cert.simulationErrors.length > 0) {
       lines.push(`   Errors:`);
-      cert.simulationErrors.forEach(e => lines.push(`     • ${e}`));
+      cert.simulationErrors.forEach((e) => lines.push(`     • ${e}`));
     } else {
       lines.push(`   Status: All scenarios completed successfully`);
     }
@@ -164,7 +165,7 @@ export class SessionCertification {
     lines.push(`${secEmoji} SECURITY AUDIT`);
     if (cert.securityAuditErrors.length > 0) {
       lines.push(`   Issues found:`);
-      cert.securityAuditErrors.forEach(e => lines.push(`     • ${e}`));
+      cert.securityAuditErrors.forEach((e) => lines.push(`     • ${e}`));
     } else {
       lines.push(`   Status: No secrets exposed, all credentials masked`);
     }
@@ -173,8 +174,12 @@ export class SessionCertification {
     // Readiness Tests
     const readyEmoji = cert.readinessTestsPassed ? '✅' : '❌';
     lines.push(`${readyEmoji} READINESS TESTS (5 Critical Questions)`);
-    lines.push(`   Passed: ${cert.readinessTestDetails.filter(t => t.passed).length}/${cert.readinessTestDetails.length}`);
-    cert.readinessTestDetails.forEach(t => {
+    lines.push(
+      `   Passed: ${cert.readinessTestDetails.filter((t) => t.passed).length}/${
+        cert.readinessTestDetails.length
+      }`,
+    );
+    cert.readinessTestDetails.forEach((t) => {
       const icon = t.passed ? '  ✅' : '  ❌';
       lines.push(`${icon} ${t.name}`);
     });
@@ -183,8 +188,12 @@ export class SessionCertification {
     // Resilience Tests
     const resEmoji = cert.resilienceTestsPassed ? '✅' : '❌';
     lines.push(`${resEmoji} RESILIENCE TESTS (Failure Scenarios)`);
-    lines.push(`   Passed: ${cert.resilienceTestDetails.filter(t => t.passed).length}/${cert.resilienceTestDetails.length}`);
-    cert.resilienceTestDetails.forEach(t => {
+    lines.push(
+      `   Passed: ${cert.resilienceTestDetails.filter((t) => t.passed).length}/${
+        cert.resilienceTestDetails.length
+      }`,
+    );
+    cert.resilienceTestDetails.forEach((t) => {
       const icon = t.passed ? '  ✅' : '  ❌';
       lines.push(`${icon} ${t.name}`);
     });
@@ -194,16 +203,16 @@ export class SessionCertification {
     lines.push(`VERDICT\n`);
 
     const verdictEmoji = {
-      'YES': '✅',
-      'NO': '🔴',
-      'CONDITIONAL': '⚠️',
+      YES: '✅',
+      NO: '🔴',
+      CONDITIONAL: '⚠️',
     }[cert.readyForProduction];
 
     lines.push(`${verdictEmoji} READY FOR PRODUCTION: ${cert.readyForProduction}`);
 
     if (cert.conditions && cert.conditions.length > 0) {
       lines.push(`\nConditions for go-ahead:`);
-      cert.conditions.forEach(c => lines.push(`  • ${c}`));
+      cert.conditions.forEach((c) => lines.push(`  • ${c}`));
     }
 
     lines.push(`\n${'─'.repeat(80)}`);

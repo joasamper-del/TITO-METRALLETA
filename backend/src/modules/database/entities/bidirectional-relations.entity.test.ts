@@ -58,7 +58,9 @@ describe('Bidirectional Relations - Etapa 2', () => {
       decision.tradeExecutions = trades;
 
       expect(decision.tradeExecutions?.length).toBe(3);
-      expect(decision.tradeExecutions?.every((t) => t.decisionAuditTrail.id === 'decision-2')).toBe(true);
+      expect(decision.tradeExecutions?.every((t) => t.decisionAuditTrail.id === 'decision-2')).toBe(
+        true,
+      );
     });
 
     it('should NOT cascade delete TradeExecutions when Decision is deleted', () => {

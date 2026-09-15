@@ -14,9 +14,7 @@ export class ResearchController {
   private readonly logger = new Logger(ResearchController.name);
 
   constructor(
-    private webResearch: WebResearchService,
-    // Guardian will be injected here once integrated
-    // private guardian: SystemGuardian
+    private webResearch: WebResearchService, // Guardian will be injected here once integrated // private guardian: SystemGuardian
   ) {}
 
   /**
@@ -32,10 +30,12 @@ export class ResearchController {
   async getResearchContext(
     @Param('ticker') ticker: string,
     @Query('focusAreas') focusAreasStr?: string,
-    @Query('timeframe') timeframe?: 'today' | '1week' | '1month'
+    @Query('timeframe') timeframe?: 'today' | '1week' | '1month',
   ) {
     const focusAreas = focusAreasStr
-      ? focusAreasStr.split(',').filter(f => ['news', 'earnings', 'economics', 'fundamentals'].includes(f))
+      ? focusAreasStr
+          .split(',')
+          .filter((f) => ['news', 'earnings', 'economics', 'fundamentals'].includes(f))
       : ['news', 'earnings', 'economics', 'fundamentals'];
 
     const context: ResearchContext = {
@@ -62,10 +62,7 @@ export class ResearchController {
    * Recent news only
    */
   @Get(':ticker/news')
-  async getRecentNews(
-    @Param('ticker') ticker: string,
-    @Query('days') daysStr: string = '1'
-  ) {
+  async getRecentNews(@Param('ticker') ticker: string, @Query('days') daysStr = '1') {
     const days = parseInt(daysStr);
     const context: ResearchContext = {
       ticker: ticker.toUpperCase(),
@@ -82,7 +79,7 @@ export class ResearchController {
         ticker: result.ticker,
         news: result.news,
         lastUpdate: result.completedAt,
-        sources: result.sources.filter(s => s.type === 'news'),
+        sources: result.sources.filter((s) => s.type === 'news'),
       };
     } catch (error) {
       this.logger.error(`News research failed for ${ticker}:`, error);
@@ -149,7 +146,7 @@ export class ResearchController {
         freshness: result.fundamentals.freshness,
         lastUpdate: result.fundamentals.lastUpdate,
         dataAge: result.fundamentals.dataAge,
-        sources: result.sources.filter(s => s.type === 'official'),
+        sources: result.sources.filter((s) => s.type === 'official'),
       };
     } catch (error) {
       this.logger.error(`Fundamentals research failed for ${ticker}:`, error);
@@ -180,7 +177,7 @@ export class ResearchController {
       // Risk 1: Earnings imminent
       if (result.upcomingEvents.earnings) {
         const daysUntil = Math.ceil(
-          (result.upcomingEvents.earnings.date.getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+          (result.upcomingEvents.earnings.date.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
         );
         if (daysUntil <= 5) {
           risks.push({
@@ -195,9 +192,8 @@ export class ResearchController {
 
       // Risk 2: Negative news (24h window)
       const negativeNews = result.news.filter(
-        n =>
-          n.sentiment === 'negative' &&
-          Date.now() - n.publishedAt.getTime() < 24 * 60 * 60 * 1000
+        (n) =>
+          n.sentiment === 'negative' && Date.now() - n.publishedAt.getTime() < 24 * 60 * 60 * 1000,
       );
       if (negativeNews.length > 0) {
         risks.push({
@@ -206,13 +202,12 @@ export class ResearchController {
           count: negativeNews.length,
           description: `${negativeNews.length} negative articles in last 24h`,
           articles: negativeNews.slice(0, 3),
-          recommendation:
-            'CAUTION - Verify trade has edge after negative news',
+          recommendation: 'CAUTION - Verify trade has edge after negative news',
         });
       }
 
       // Risk 3: Economic event today
-      const highImpactEvents = result.economicEvents.filter(e => e.impact === 'high');
+      const highImpactEvents = result.economicEvents.filter((e) => e.impact === 'high');
       if (highImpactEvents.length > 0) {
         risks.push({
           type: 'economic_event',
@@ -244,9 +239,9 @@ export class ResearchController {
         riskLevel:
           risks.length === 0
             ? 'LOW'
-            : risks.some(r => r.severity === 'critical')
+            : risks.some((r) => r.severity === 'critical')
             ? 'CRITICAL'
-            : risks.some(r => r.severity === 'high')
+            : risks.some((r) => r.severity === 'high')
             ? 'HIGH'
             : 'MEDIUM',
         risks,

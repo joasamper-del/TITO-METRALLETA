@@ -100,7 +100,10 @@ export class ResilienceTester {
   /**
    * TEST ONE SCENARIO
    */
-  private async testScenario(scenario: FailureScenario, guardian: any): Promise<ResilienceTestResult> {
+  private async testScenario(
+    scenario: FailureScenario,
+    guardian: any,
+  ): Promise<ResilienceTestResult> {
     try {
       // Simulate the failure
       const failureResult = await this.simulateFailure(scenario);
@@ -162,7 +165,7 @@ export class ResilienceTester {
     lines.push(`${new Date().toLocaleString()}`);
     lines.push(`${'═'.repeat(80)}\n`);
 
-    const passCount = results.filter(r => r.passed).length;
+    const passCount = results.filter((r) => r.passed).length;
     const totalCount = results.length;
 
     lines.push(`SUMMARY: ${passCount}/${totalCount} scenarios passed\n`);
@@ -183,14 +186,12 @@ export class ResilienceTester {
     // Overall verdict
     lines.push(`${'─'.repeat(80)}`);
     if (passCount === totalCount) {
-      lines.push(
-        `✅ ALL TESTS PASSED - Guardian handles all failure scenarios gracefully`
-      );
+      lines.push(`✅ ALL TESTS PASSED - Guardian handles all failure scenarios gracefully`);
     } else {
-      const failedScenarios = results.filter(r => !r.passed);
+      const failedScenarios = results.filter((r) => !r.passed);
       lines.push(
         `🔴 ${failedScenarios.length} TESTS FAILED:\n` +
-          failedScenarios.map(r => `  • ${r.scenario.name}`).join('\n')
+          failedScenarios.map((r) => `  • ${r.scenario.name}`).join('\n'),
       );
     }
 

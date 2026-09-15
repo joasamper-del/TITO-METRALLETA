@@ -48,7 +48,7 @@ export class EarningsProvider implements EventProvider {
       this.logger.error(`Earnings fetch failed: ${error.message}`);
       throw new HttpException(
         `Earnings provider error: ${error.message}`,
-        HttpStatus.SERVICE_UNAVAILABLE
+        HttpStatus.SERVICE_UNAVAILABLE,
       );
     }
   }
@@ -71,7 +71,7 @@ export class EarningsProvider implements EventProvider {
 
     if (timeSinceLastRequest < this.rateLimitDelay) {
       const waitTime = this.rateLimitDelay - timeSinceLastRequest;
-      await new Promise(resolve => setTimeout(resolve, waitTime));
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
     }
 
     this.lastRequestTime = Date.now();

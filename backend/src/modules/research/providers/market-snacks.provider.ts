@@ -38,9 +38,7 @@ export class MarketSnacksProvider implements NewsProvider {
       // 3. Parse sentiment from headlines
       // 4. Return with live timestamps
 
-      console.warn(
-        `⚠️  MarketSnacks provider not configured (session cookies needed)`,
-      );
+      console.warn(`⚠️  MarketSnacks provider not configured (session cookies needed)`);
 
       return [];
     } catch (error) {

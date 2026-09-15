@@ -119,7 +119,8 @@ export class LessonsController {
         canBlockOrders: false,
         lessonsAreContextOnly: true,
         lessonsAreReadOnly: true,
-        message: 'All lessons endpoints are READ-ONLY. Lessons influence decisions via context only, never execute.',
+        message:
+          'All lessons endpoints are READ-ONLY. Lessons influence decisions via context only, never execute.',
       },
     };
   }

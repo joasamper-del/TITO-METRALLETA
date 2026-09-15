@@ -64,7 +64,7 @@ export const schwabHealthChecks: HealthCheckConfig[] = [
           throw new Error(`HTTP ${response.status}`);
         }
 
-        const data = await response.json() as unknown;
+        const data = (await response.json()) as unknown;
         if (!isSchwabTokenResponse(data)) {
           throw new Error('No access token in response');
         }

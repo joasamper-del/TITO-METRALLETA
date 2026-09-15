@@ -67,7 +67,9 @@ export class WebResearchService {
   registerFundamentalProvider(provider: FundamentalProvider): void {
     this.fundamentalProviders.push(provider);
     this.fundamentalProviders.sort((a, b) => a.priority - b.priority);
-    this.logger.log(`Registered fundamental provider: ${provider.name} (priority ${provider.priority})`);
+    this.logger.log(
+      `Registered fundamental provider: ${provider.name} (priority ${provider.priority})`,
+    );
   }
 
   /**
@@ -122,7 +124,7 @@ export class WebResearchService {
     this.logResearchOperation(context, researchResult, results);
 
     this.logger.log(
-      `Research completed for ${context.ticker} in ${researchResult.executionTimeMs}ms`
+      `Research completed for ${context.ticker} in ${researchResult.executionTimeMs}ms`,
     );
 
     return researchResult;
@@ -172,7 +174,7 @@ export class WebResearchService {
     }
 
     // Deduplicate and sort by date
-    const unique = Array.from(new Map(items.map(item => [item.id, item])).values());
+    const unique = Array.from(new Map(items.map((item) => [item.id, item])).values());
     unique.sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime());
 
     return { items: unique, usedProviders, failures };
@@ -366,7 +368,8 @@ export class WebResearchService {
 
     if (scores.news < 50) recommendations.push('Limited news coverage - consider multiple sources');
     if (scores.events < 50) recommendations.push('No upcoming events detected - verify manually');
-    if (scores.fundamentals < 50) recommendations.push('Fundamental data unavailable - use market data');
+    if (scores.fundamentals < 50)
+      recommendations.push('Fundamental data unavailable - use market data');
 
     return recommendations;
   }
@@ -405,7 +408,7 @@ export class WebResearchService {
   private logResearchOperation(
     context: ResearchContext,
     result: ResearchResult,
-    results: PromiseSettledResult<any>[]
+    results: PromiseSettledResult<any>[],
   ): void {
     const log: ResearchAuditLog = {
       tickerResearched: context.ticker,
@@ -416,7 +419,17 @@ export class WebResearchService {
       eventProvidersUsed: results[1].status === 'fulfilled' ? results[1].value.usedProviders : [],
       eventProvidersFailled: results[1].status === 'fulfilled' ? results[1].value.failures : [],
       fundamentalProvidersUsed: results[2].status === 'fulfilled' ? ['fundamental'] : [],
-      fundamentalProvidersFailled: results[2].status === 'rejected' ? [{ providerName: 'fundamental', error: String(results[2].reason), timestamp: new Date(), isRecoverable: true }] : [],
+      fundamentalProvidersFailled:
+        results[2].status === 'rejected'
+          ? [
+              {
+                providerName: 'fundamental',
+                error: String(results[2].reason),
+                timestamp: new Date(),
+                isRecoverable: true,
+              },
+            ]
+          : [],
       newsCount: result.news.length,
       eventsCount: result.economicEvents.length,
       fundamentalsRetrieved: result.fundamentals.source !== 'unknown',
@@ -437,7 +450,7 @@ export class WebResearchService {
    */
   getAuditLogs(tickerFilter?: string): ResearchAuditLog[] {
     if (!tickerFilter) return this.auditLogs;
-    return this.auditLogs.filter(log => log.tickerResearched === tickerFilter);
+    return this.auditLogs.filter((log) => log.tickerResearched === tickerFilter);
   }
 
   /**
@@ -450,8 +463,8 @@ export class WebResearchService {
       return;
     }
 
-    const keysToDelete = Array.from(this.cache.keys()).filter(key => key.includes(tickerFilter));
-    keysToDelete.forEach(key => this.cache.delete(key));
+    const keysToDelete = Array.from(this.cache.keys()).filter((key) => key.includes(tickerFilter));
+    keysToDelete.forEach((key) => this.cache.delete(key));
   }
 
   /**
@@ -461,25 +474,25 @@ export class WebResearchService {
   async getProviderStatus(): Promise<any> {
     return {
       newsProviders: await Promise.all(
-        this.newsProviders.map(async p => ({
+        this.newsProviders.map(async (p) => ({
           name: p.name,
           priority: p.priority,
           available: await p.isAvailable(),
-        }))
+        })),
       ),
       eventProviders: await Promise.all(
-        this.eventProviders.map(async p => ({
+        this.eventProviders.map(async (p) => ({
           name: p.name,
           priority: p.priority,
           available: await p.isAvailable(),
-        }))
+        })),
       ),
       fundamentalProviders: await Promise.all(
-        this.fundamentalProviders.map(async p => ({
+        this.fundamentalProviders.map(async (p) => ({
           name: p.name,
           priority: p.priority,
           available: await p.isAvailable(),
-        }))
+        })),
       ),
     };
   }

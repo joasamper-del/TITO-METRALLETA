@@ -73,13 +73,13 @@ export class OrderValidator {
         if (order.side === 'buy') {
           if (slPrice >= entryPrice) {
             errors.push(
-              `For BUY orders: stop_loss (${slPrice}) must be < limit_price (${entryPrice})`
+              `For BUY orders: stop_loss (${slPrice}) must be < limit_price (${entryPrice})`,
             );
           }
         } else if (order.side === 'sell') {
           if (slPrice <= entryPrice) {
             errors.push(
-              `For SELL orders: stop_loss (${slPrice}) must be > limit_price (${entryPrice})`
+              `For SELL orders: stop_loss (${slPrice}) must be > limit_price (${entryPrice})`,
             );
           }
         }
@@ -92,13 +92,13 @@ export class OrderValidator {
         if (order.side === 'buy') {
           if (tpPrice <= entryPrice) {
             errors.push(
-              `For BUY orders: take_profit (${tpPrice}) must be > limit_price (${entryPrice})`
+              `For BUY orders: take_profit (${tpPrice}) must be > limit_price (${entryPrice})`,
             );
           }
         } else if (order.side === 'sell') {
           if (tpPrice >= entryPrice) {
             errors.push(
-              `For SELL orders: take_profit (${tpPrice}) must be < limit_price (${entryPrice})`
+              `For SELL orders: take_profit (${tpPrice}) must be < limit_price (${entryPrice})`,
             );
           }
         }
@@ -112,13 +112,13 @@ export class OrderValidator {
         if (order.side === 'buy') {
           if (slPrice >= tpPrice) {
             errors.push(
-              `For BUY orders: stop_loss (${slPrice}) must be < take_profit (${tpPrice})`
+              `For BUY orders: stop_loss (${slPrice}) must be < take_profit (${tpPrice})`,
             );
           }
         } else if (order.side === 'sell') {
           if (tpPrice >= slPrice) {
             errors.push(
-              `For SELL orders: take_profit (${tpPrice}) must be < stop_loss (${slPrice})`
+              `For SELL orders: take_profit (${tpPrice}) must be < stop_loss (${slPrice})`,
             );
           }
         }

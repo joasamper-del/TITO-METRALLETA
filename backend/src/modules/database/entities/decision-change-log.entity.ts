@@ -1,4 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, Index, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  Index,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { DecisionAuditTrail } from './decision-audit-trail.entity';
 
 @Entity('decision_change_logs')
@@ -8,7 +16,7 @@ export class DecisionChangeLog {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column('uuid')
+  @Column('uuid', { nullable: true })
   decisionAuditTrailId: string;
 
   @Column('varchar', { length: 50 })

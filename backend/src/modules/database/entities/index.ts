@@ -8,3 +8,7 @@ export * from './position-snapshot.entity';
 export * from './decision-change-log.entity';
 export * from './trade-execution.entity';
 export * from './execution-event.entity';
+export * from './execution-report.entity';
+export * from './traceability-anomaly.entity';
+export * from './no-op-explanation.entity';
+export * from './daily-summary.entity';

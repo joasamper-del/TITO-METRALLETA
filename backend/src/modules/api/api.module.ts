@@ -1,7 +1,13 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from '../database/database.module';
 import { CoreModule } from '../core/core.module';
-import { AnalyzeService, RulesService, ResultsService, StatsService, DecisionAuditService } from './services';
+import {
+  AnalyzeService,
+  RulesService,
+  ResultsService,
+  StatsService,
+  DecisionAuditService,
+} from './services';
 import {
   AnalyzeController,
   RulesController,

@@ -275,9 +275,7 @@ export class FundamentalScorerService {
    * Get action recommendation based purely on score
    * NOTE: This is FIRST gate only. Full decision requires additional validations
    */
-  public getScoreAction(
-    score: FundamentalScores,
-  ): {
+  public getScoreAction(score: FundamentalScores): {
     canConsider: boolean;
     category: string;
     minThresholdMessage?: string;
@@ -286,7 +284,9 @@ export class FundamentalScorerService {
       return {
         canConsider: false,
         category: score.scoreCategory,
-        minThresholdMessage: `Score ${score.totalScore.toFixed(1)} is below minimum 80 threshold. Action: ${score.scoreCategory.toUpperCase()}`,
+        minThresholdMessage: `Score ${score.totalScore.toFixed(
+          1,
+        )} is below minimum 80 threshold. Action: ${score.scoreCategory.toUpperCase()}`,
       };
     }
 
@@ -294,14 +294,18 @@ export class FundamentalScorerService {
       return {
         canConsider: true,
         category: 'CANDIDATE',
-        minThresholdMessage: `Score ${score.totalScore.toFixed(1)} qualifies as CANDIDATE. Requires second interview (DCF, margin of safety, quality, risk validation).`,
+        minThresholdMessage: `Score ${score.totalScore.toFixed(
+          1,
+        )} qualifies as CANDIDATE. Requires second interview (DCF, margin of safety, quality, risk validation).`,
       };
     }
 
     return {
       canConsider: true,
       category: 'APPROVED',
-      minThresholdMessage: `Score ${score.totalScore.toFixed(1)} qualifies as APPROVED. Proceed to final gatekeeping validation.`,
+      minThresholdMessage: `Score ${score.totalScore.toFixed(
+        1,
+      )} qualifies as APPROVED. Proceed to final gatekeeping validation.`,
     };
   }
 }

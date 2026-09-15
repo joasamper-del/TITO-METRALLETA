@@ -75,7 +75,7 @@ export class DCFEngineService {
       defaults,
       defaults.wacc + 0.5, // Higher discount rate = lower valuation
       (defaults.terminalGrowthRate || 3) - 0.5,
-      defaults.fcfGrowthRate - 2 // Lower growth assumption
+      defaults.fcfGrowthRate - 2, // Lower growth assumption
     );
 
     const baseCase = this.buildScenario(
@@ -83,7 +83,7 @@ export class DCFEngineService {
       defaults,
       defaults.wacc,
       defaults.terminalGrowthRate || 3,
-      defaults.fcfGrowthRate
+      defaults.fcfGrowthRate,
     );
 
     const optimisticCase = this.buildScenario(
@@ -91,7 +91,7 @@ export class DCFEngineService {
       defaults,
       defaults.wacc - 0.5, // Lower discount rate = higher valuation
       (defaults.terminalGrowthRate || 3) + 0.5,
-      defaults.fcfGrowthRate + 2 // Higher growth assumption
+      defaults.fcfGrowthRate + 2, // Higher growth assumption
     );
 
     const confidenceAssessment = this.assessConfidence(inputs);
@@ -148,7 +148,7 @@ export class DCFEngineService {
     let pvOfProjectedFCF = 0;
 
     for (let year = 1; year <= inputs.projectionYears; year++) {
-      projectedFCF *= (1 + fcfGrowthRate / 100);
+      projectedFCF *= 1 + fcfGrowthRate / 100;
       const discountFactor = 1 / Math.pow(1 + wacc / 100, year);
       pvOfProjectedFCF += projectedFCF * discountFactor;
     }
@@ -178,18 +178,21 @@ export class DCFEngineService {
   /**
    * Assess confidence level based on FCF quality and earnings stability
    */
-  private assessConfidence(inputs: DCFInputs): { level: 'high' | 'medium' | 'low'; reason: string } {
+  private assessConfidence(inputs: DCFInputs): {
+    level: 'high' | 'medium' | 'low';
+    reason: string;
+  } {
     const fcfQualityScore = {
-      'excellent': 3,
-      'good': 2,
-      'fair': 1,
-      'poor': 0,
+      excellent: 3,
+      good: 2,
+      fair: 1,
+      poor: 0,
     }[inputs.fcfQuality];
 
     const earningsQualityScore = {
-      'stable': 2,
-      'volatile': 1,
-      'declining': 0,
+      stable: 2,
+      volatile: 1,
+      declining: 0,
     }[inputs.earningsQuality];
 
     const totalScore = fcfQualityScore + earningsQualityScore;
@@ -221,7 +224,9 @@ export class DCFEngineService {
     const warnings: string[] = [];
 
     if (inputs.fcfQuality === 'poor') {
-      warnings.push('CRITICAL: FCF is unpredictable. Valuation unreliable. Consider "baja confianza".');
+      warnings.push(
+        'CRITICAL: FCF is unpredictable. Valuation unreliable. Consider "baja confianza".',
+      );
     }
 
     if (inputs.earningsQuality === 'declining') {
@@ -229,7 +234,9 @@ export class DCFEngineService {
     }
 
     if (inputs.terminalGrowthRate && inputs.terminalGrowthRate > 4) {
-      warnings.push(`Terminal growth (${inputs.terminalGrowthRate}%) exceeds expected GDP. Risks overvaluation.`);
+      warnings.push(
+        `Terminal growth (${inputs.terminalGrowthRate}%) exceeds expected GDP. Risks overvaluation.`,
+      );
     }
 
     if (defaults.wacc <= 5) {
@@ -237,7 +244,9 @@ export class DCFEngineService {
     }
 
     if (inputs.fcfGrowthRate > 30) {
-      warnings.push(`FCF growth projection (${inputs.fcfGrowthRate}%) is aggressive. Highly sensitive to assumption changes.`);
+      warnings.push(
+        `FCF growth projection (${inputs.fcfGrowthRate}%) is aggressive. Highly sensitive to assumption changes.`,
+      );
     }
 
     return warnings;
@@ -256,8 +265,12 @@ export class DCFEngineService {
     assessment: 'strong-buy' | 'buy' | 'hold' | 'sell' | 'strong-sell';
     recommendation: string;
   } {
-    const baseDiscount = ((valuation.baseCase.fairValue - currentPrice) / valuation.baseCase.fairValue) * 100;
-    const conservativeDiscount = ((valuation.conservativeCase.fairValue - currentPrice) / valuation.conservativeCase.fairValue) * 100;
+    const baseDiscount =
+      ((valuation.baseCase.fairValue - currentPrice) / valuation.baseCase.fairValue) * 100;
+    const conservativeDiscount =
+      ((valuation.conservativeCase.fairValue - currentPrice) /
+        valuation.conservativeCase.fairValue) *
+      100;
 
     let assessment: 'strong-buy' | 'buy' | 'hold' | 'sell' | 'strong-sell' = 'hold';
     let recommendation = '';
@@ -265,22 +278,36 @@ export class DCFEngineService {
     // Assessment based on conservative case (more downside protection)
     if (conservativeDiscount >= 35) {
       assessment = 'strong-buy';
-      recommendation = `Price ${currentPrice.toFixed(2)} is ${conservativeDiscount.toFixed(1)}% below conservative fair value (${valuation.conservativeCase.fairValue.toFixed(2)}). Strong margin of safety.`;
+      recommendation = `Price ${currentPrice.toFixed(2)} is ${conservativeDiscount.toFixed(
+        1,
+      )}% below conservative fair value (${valuation.conservativeCase.fairValue.toFixed(
+        2,
+      )}). Strong margin of safety.`;
     } else if (conservativeDiscount >= 25) {
       assessment = 'buy';
-      recommendation = `Price ${currentPrice.toFixed(2)} is ${conservativeDiscount.toFixed(1)}% below conservative fair value. Adequate margin of safety.`;
+      recommendation = `Price ${currentPrice.toFixed(2)} is ${conservativeDiscount.toFixed(
+        1,
+      )}% below conservative fair value. Adequate margin of safety.`;
     } else if (conservativeDiscount >= 15) {
       assessment = 'hold';
-      recommendation = `Price ${currentPrice.toFixed(2)} is ${conservativeDiscount.toFixed(1)}% below conservative fair value. Limited margin of safety.`;
+      recommendation = `Price ${currentPrice.toFixed(2)} is ${conservativeDiscount.toFixed(
+        1,
+      )}% below conservative fair value. Limited margin of safety.`;
     } else if (conservativeDiscount >= 0) {
       assessment = 'hold';
-      recommendation = `Price ${currentPrice.toFixed(2)} is within ${Math.abs(conservativeDiscount).toFixed(1)}% of conservative fair value. Fair valuation.`;
+      recommendation = `Price ${currentPrice.toFixed(2)} is within ${Math.abs(
+        conservativeDiscount,
+      ).toFixed(1)}% of conservative fair value. Fair valuation.`;
     } else if (conservativeDiscount > -15) {
       assessment = 'sell';
-      recommendation = `Price ${currentPrice.toFixed(2)} is ${Math.abs(conservativeDiscount).toFixed(1)}% ABOVE conservative fair value. Limited upside, downside risk.`;
+      recommendation = `Price ${currentPrice.toFixed(2)} is ${Math.abs(
+        conservativeDiscount,
+      ).toFixed(1)}% ABOVE conservative fair value. Limited upside, downside risk.`;
     } else {
       assessment = 'strong-sell';
-      recommendation = `Price ${currentPrice.toFixed(2)} is ${Math.abs(conservativeDiscount).toFixed(1)}% ABOVE conservative fair value. Expensive.`;
+      recommendation = `Price ${currentPrice.toFixed(2)} is ${Math.abs(
+        conservativeDiscount,
+      ).toFixed(1)}% ABOVE conservative fair value. Expensive.`;
     }
 
     return {
@@ -294,7 +321,10 @@ export class DCFEngineService {
   /**
    * Determine valuation status (used as gatekeeping alongside score)
    */
-  public getValuationStatus(valuation: DCFValuation, currentPrice: number): 'attractive' | 'fair' | 'expensive' {
+  public getValuationStatus(
+    valuation: DCFValuation,
+    currentPrice: number,
+  ): 'attractive' | 'fair' | 'expensive' {
     const margin = this.calculateMarginAtPrice(valuation, currentPrice);
 
     if (['strong-buy', 'buy'].includes(margin.assessment)) {

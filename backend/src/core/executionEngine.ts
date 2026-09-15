@@ -85,7 +85,7 @@ export class ExecutionEngine {
 
       if (!validation.valid) {
         this.logger.error(
-          `🚫 Order validation failed for ${request.symbol}: ${validation.errors[0]}`
+          `🚫 Order validation failed for ${request.symbol}: ${validation.errors[0]}`,
         );
         this.heartbeat.beat('executeOrder_validation_fail');
         this.logValidationError(request, validation.errors.join('; '));
@@ -140,11 +140,13 @@ export class ExecutionEngine {
             retriesUsed = attempt + 1;
             const delayMs = Math.min(
               this.initialBackoffMs * Math.pow(2, attempt),
-              this.maxBackoffMs
+              this.maxBackoffMs,
             );
 
             this.logger.warn(
-              `⏳ Rate limited (429). Retry in ${delayMs}ms (attempt ${attempt + 1}/${this.maxRetries})`
+              `⏳ Rate limited (429). Retry in ${delayMs}ms (attempt ${attempt + 1}/${
+                this.maxRetries
+              })`,
             );
             this.heartbeat.beat(`executeOrder_429_retry_${attempt + 1}`);
 
@@ -229,7 +231,7 @@ export class ExecutionEngine {
   }
 
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private loadExecutedOrders() {
@@ -260,8 +262,8 @@ export class ExecutionEngine {
             timestamp: new Date().toISOString(),
           },
           null,
-          2
-        )
+          2,
+        ),
       );
     } catch (err) {
       this.logger.error(`❌ Failed to save executed orders: ${(err as Error).message}`);
@@ -272,7 +274,7 @@ export class ExecutionEngine {
     errorType: string,
     statusCode: number | undefined,
     message: string,
-    attempt: number
+    attempt: number,
   ) {
     const logEntry = {
       timestamp: new Date().toISOString(),

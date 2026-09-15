@@ -24,14 +24,7 @@ describe('TradeExecution Entity', () => {
   });
 
   it('should support all execution statuses', () => {
-    const statuses = [
-      'PENDING',
-      'PARTIAL',
-      'FILLED',
-      'CANCELLED',
-      'FAILED',
-      'EXPIRED',
-    ];
+    const statuses = ['PENDING', 'PARTIAL', 'FILLED', 'CANCELLED', 'FAILED', 'EXPIRED'];
 
     statuses.forEach((status) => {
       const tradeExec = new TradeExecution();

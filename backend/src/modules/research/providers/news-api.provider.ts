@@ -33,7 +33,7 @@ interface NewsAPIResponse {
 @Injectable()
 export class NewsAPIProvider implements NewsProvider {
   private readonly logger = new Logger(NewsAPIProvider.name);
-  private readonly apiKey = process.env.NEWSAPI_KEY;
+  private readonly apiKey = process.env.NEWS_API_KEY;
   private readonly baseUrl = 'https://newsapi.org/v2';
   private readonly rateLimitDelay = 100; // ms between requests
   private lastRequestTime = 0;

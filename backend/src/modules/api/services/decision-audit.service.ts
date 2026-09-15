@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DecisionAuditTrail } from '../../../modules/database/entities';
+import { NoOpExplanationService } from '../../../modules/database/services/no-op-explanation.service';
 
 export interface DecisionAuditInput {
   timestamp?: Date;
@@ -39,10 +40,12 @@ export class DecisionAuditService {
   constructor(
     @InjectRepository(DecisionAuditTrail)
     private auditRepository: Repository<DecisionAuditTrail>,
+    private noOpExplanationService: NoOpExplanationService,
   ) {}
 
   /**
    * Registra una decisión en el audit trail
+   * FASE 4: Si decisión es bloqueada (NO_ENTRAR + blockedReason), dispara recordBlockage() automáticamente
    */
   async recordDecision(input: DecisionAuditInput): Promise<DecisionAuditTrail> {
     const audit = this.auditRepository.create({
@@ -66,7 +69,47 @@ export class DecisionAuditService {
       executionStatus: 'PENDING',
     });
 
-    return this.auditRepository.save(audit);
+    const savedAudit = await this.auditRepository.save(audit);
+
+    // FASE 4: Registrar explicación de no-operación automáticamente si decisión fue bloqueada
+    if (input.decision === 'NO_ENTRAR' && input.blockedReason) {
+      try {
+        await this.noOpExplanationService.recordBlockage(
+          savedAudit.id,
+          this.extractBlockageReasonType(input.blockedReason),
+          input.blockedReason, // specificGateOrRule: exacto del bloqueador
+          input.timestamp || new Date(),
+          input.blockedReason, // blockageExplanation
+          input.marketData, // availableEvidence
+          input.riskGatesApplied, // failedGates
+        );
+      } catch (error) {
+        // Fail-closed: si fallo al registrar explicación, loguear pero NO fallar recordDecision()
+        console.error(`[FAIL] No se pudo registrar NoOpExplanation para decisión ${savedAudit.id}:`, error);
+      }
+    }
+
+    return savedAudit;
+  }
+
+  /**
+   * Helper: mapear blockedReason a tipo verificable (SEATBELT_GATE, MARKET_CLOSED, etc.)
+   */
+  private extractBlockageReasonType(blockedReason: string): string {
+    if (!blockedReason) return 'INDETERMINATE';
+    if (blockedReason.toLowerCase().includes('seatbelt') || blockedReason.toLowerCase().includes('gate')) {
+      return 'SEATBELT_GATE';
+    }
+    if (blockedReason.toLowerCase().includes('market') || blockedReason.toLowerCase().includes('closed')) {
+      return 'MARKET_CLOSED';
+    }
+    if (blockedReason.toLowerCase().includes('evidence') || blockedReason.toLowerCase().includes('insufficient')) {
+      return 'INSUFFICIENT_EVIDENCE';
+    }
+    if (blockedReason.toLowerCase().includes('multiple') || blockedReason.toLowerCase().includes('gates')) {
+      return 'MULTIPLE_GATES_FAILED';
+    }
+    return 'INDETERMINATE';
   }
 
   /**

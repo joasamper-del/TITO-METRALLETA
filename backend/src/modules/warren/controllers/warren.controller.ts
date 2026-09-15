@@ -1,5 +1,9 @@
 import { Controller, Post, Get, Body, HttpCode, HttpStatus, ValidationPipe } from '@nestjs/common';
-import { WarrenService, WarrenAnalysisRequest, WarrenAnalysisResponse } from '../services/warren.service';
+import {
+  WarrenService,
+  WarrenAnalysisRequest,
+  WarrenAnalysisResponse,
+} from '../services/warren.service';
 
 export interface WarrenAnalysisHttpResponse {
   success: boolean;
@@ -53,7 +57,9 @@ export class WarrenController {
    */
   @Post('analyze')
   @HttpCode(HttpStatus.OK)
-  async analyzeCompany(@Body(new ValidationPipe({ whitelist: true })) request: WarrenAnalysisRequest): Promise<WarrenAnalysisHttpResponse> {
+  async analyzeCompany(
+    @Body(new ValidationPipe({ whitelist: true })) request: WarrenAnalysisRequest,
+  ): Promise<WarrenAnalysisHttpResponse> {
     const analysis = await this.warrenService.analyzeCompany(request);
 
     return {
@@ -72,7 +78,9 @@ export class WarrenController {
    */
   @Post('validate')
   @HttpCode(HttpStatus.OK)
-  async validateInputs(@Body() request: WarrenValidationRequest): Promise<WarrenValidationResponse> {
+  async validateInputs(
+    @Body() request: WarrenValidationRequest,
+  ): Promise<WarrenValidationResponse> {
     const errors: string[] = [];
 
     // Ticker validation
@@ -116,7 +124,16 @@ export class WarrenController {
 
     // DCF inputs validation
     if (request.dcfInputs) {
-      const requiredFields = ['fcf', 'fcfGrowthRate', 'projectionYears', 'wacc', 'equityShares', 'netDebt', 'fcfQuality', 'earningsQuality'];
+      const requiredFields = [
+        'fcf',
+        'fcfGrowthRate',
+        'projectionYears',
+        'wacc',
+        'equityShares',
+        'netDebt',
+        'fcfQuality',
+        'earningsQuality',
+      ];
       for (const field of requiredFields) {
         if (!(field in request.dcfInputs)) {
           errors.push(`DCF inputs missing required field: ${field}`);

@@ -239,7 +239,7 @@ describe('TokenRefreshManager', () => {
     it('should not allow concurrent refresh for same broker', async () => {
       mockProvider.getTimeUntilExpiry.mockResolvedValue(30 * 60 * 1000);
       mockProvider.refresh.mockImplementation(
-        () => new Promise((resolve) => setTimeout(() => resolve('success'), 100))
+        () => new Promise((resolve) => setTimeout(() => resolve('success'), 100)),
       );
 
       // Start two concurrent refreshes

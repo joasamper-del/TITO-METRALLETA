@@ -81,7 +81,7 @@ export class CalendarProvider implements EventProvider {
       const in90Days = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
 
       const upcomingEvents = this.economicEvents.filter(
-        event => event.date > now && event.date < in90Days
+        (event) => event.date > now && event.date < in90Days,
       );
 
       this.logger.log(`Fetched ${upcomingEvents.length} upcoming economic events`);
@@ -90,12 +90,12 @@ export class CalendarProvider implements EventProvider {
       this.logger.error(`Calendar fetch failed: ${error.message}`);
       throw new HttpException(
         `Calendar provider error: ${error.message}`,
-        HttpStatus.SERVICE_UNAVAILABLE
+        HttpStatus.SERVICE_UNAVAILABLE,
       );
     }
   }
 
-  async fetchRecentEvents(days: number = 7): Promise<EconomicEvent[]> {
+  async fetchRecentEvents(days = 7): Promise<EconomicEvent[]> {
     try {
       await this.respectRateLimit();
 
@@ -103,7 +103,7 @@ export class CalendarProvider implements EventProvider {
       const pastDays = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
 
       const recentEvents = this.economicEvents.filter(
-        event => event.date > pastDays && event.date < now
+        (event) => event.date > pastDays && event.date < now,
       );
 
       return recentEvents;
@@ -119,7 +119,7 @@ export class CalendarProvider implements EventProvider {
 
     if (timeSinceLastRequest < this.rateLimitDelay) {
       const waitTime = this.rateLimitDelay - timeSinceLastRequest;
-      await new Promise(resolve => setTimeout(resolve, waitTime));
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
     }
 
     this.lastRequestTime = Date.now();

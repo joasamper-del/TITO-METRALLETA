@@ -7,7 +7,7 @@ export class DataEngine {
   private finnhubKey: string;
   private alpacaClient: AlpacaClient | null = null;
 
-  constructor(alphaVantageKey: string = '', finnhubKey: string = '') {
+  constructor(alphaVantageKey = '', finnhubKey = '') {
     this.alphaVantageKey = alphaVantageKey;
     this.finnhubKey = finnhubKey;
 
@@ -135,7 +135,9 @@ export class DataEngine {
         marketData.liquidity = this.calculateLiquidity(avgVolume);
       }
 
-      console.log(`✅ Datos de Alpaca obtenidos para ${symbol}: $${marketData.price}, Vol: ${marketData.volume}`);
+      console.log(
+        `✅ Datos de Alpaca obtenidos para ${symbol}: $${marketData.price}, Vol: ${marketData.volume}`,
+      );
     } catch (error) {
       console.error(`⚠️ Error al obtener datos de Alpaca para ${symbol}:`, error);
     }
@@ -144,10 +146,7 @@ export class DataEngine {
   /**
    * Obtiene datos de Alpha Vantage
    */
-  private async fetchAlphaVantageData(
-    symbol: string,
-    marketData: MarketData
-  ): Promise<void> {
+  private async fetchAlphaVantageData(symbol: string, marketData: MarketData): Promise<void> {
     try {
       const url = `https://www.alphavantage.co/query`;
       const params = {
@@ -219,11 +218,7 @@ export class DataEngine {
       if (data && marketData.price) {
         const sma20 = parseFloat(Object.values(data)[0] as any);
         marketData.trend =
-          marketData.price > sma20
-            ? 'alcista'
-            : marketData.price < sma20
-              ? 'bajista'
-              : 'lateral';
+          marketData.price > sma20 ? 'alcista' : marketData.price < sma20 ? 'bajista' : 'lateral';
       }
     } catch (error) {
       console.error(`⚠️ Error al obtener tendencia para ${symbol}`);
@@ -286,14 +281,18 @@ export class DataEngine {
   /**
    * Calcula la liquidez (volumen promedio / spread aproximado)
    */
-  calculateLiquidity(volume: number, spread: number = 0.01): number {
+  calculateLiquidity(volume: number, spread = 0.01): number {
     return volume > 0 ? volume / Math.max(spread, 0.01) : 0;
   }
 
   /**
    * Determina zona Premium/Discount basada en RSI y precio relativo
    */
-  determinePremiumDiscount(price: number, sma20: number, rsi: number | null): 'premium' | 'discount' | 'neutral' | 'desconocido' {
+  determinePremiumDiscount(
+    price: number,
+    sma20: number,
+    rsi: number | null,
+  ): 'premium' | 'discount' | 'neutral' | 'desconocido' {
     if (rsi === null) return 'desconocido';
 
     if (price > sma20 && rsi > 60) return 'premium';

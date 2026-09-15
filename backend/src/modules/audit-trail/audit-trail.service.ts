@@ -131,9 +131,7 @@ export class AuditTrailService {
   /**
    * Get summary for a date range
    */
-  async getSummary(
-    query: AuditTrailQuery,
-  ): Promise<Record<string, DecisionSummary>> {
+  async getSummary(query: AuditTrailQuery): Promise<Record<string, DecisionSummary>> {
     const decisions = await this.getDecisions(query);
 
     const summaryByDate: Record<string, DecisionSummary> = {};
@@ -180,9 +178,7 @@ export class AuditTrailService {
    * Normalize risk gates to string array format
    * Handles both Record<string, any> and string[] formats
    */
-  private normalizeRiskGates(
-    riskGates: Record<string, any> | string[] | null,
-  ): string[] {
+  private normalizeRiskGates(riskGates: Record<string, any> | string[] | null): string[] {
     if (!riskGates) return [];
     if (Array.isArray(riskGates)) return riskGates;
     // If Record, extract keys as gate names
@@ -207,35 +203,24 @@ export class AuditTrailService {
     }> = [];
 
     // If confidence is low + no execution, flag as question
-    if (
-      record.confidence < 60 &&
-      !record.executionId &&
-      record.decision === 'ESPERAR'
-    ) {
+    if (record.confidence < 60 && !record.executionId && record.decision === 'ESPERAR') {
       questions.push({
         timestamp: record.timestamp,
         situation: `${record.symbol} MLI=${record.mliScore}, confidence low (${record.confidence}%)`,
         missingInfo: 'Confirmation threshold for ESPERAR → ENTRAR',
-        question:
-          '¿Cuál es el umbral óptimo de confidence para pasar de ESPERAR a ENTRAR?',
+        question: '¿Cuál es el umbral óptimo de confidence para pasar de ESPERAR a ENTRAR?',
       });
     }
 
     // If multiple risk gates failed, ask for refinement
-    if (
-      record.riskGatesApplied &&
-      record.riskGatesApplied.some((g) => g.includes('FAIL'))
-    ) {
-      const failedGates = record.riskGatesApplied.filter((g) =>
-        g.includes('FAIL'),
-      );
+    if (record.riskGatesApplied && record.riskGatesApplied.some((g) => g.includes('FAIL'))) {
+      const failedGates = record.riskGatesApplied.filter((g) => g.includes('FAIL'));
       if (failedGates.length >= 2) {
         questions.push({
           timestamp: record.timestamp,
           situation: `Multiple risk gates failed: ${failedGates.join(', ')}`,
           missingInfo: 'Context-dependent thresholds',
-          question:
-            '¿Las reglas de Risk Gate deben ser adaptativas según el régimen de mercado?',
+          question: '¿Las reglas de Risk Gate deben ser adaptativas según el régimen de mercado?',
         });
       }
     }
@@ -255,8 +240,7 @@ export class AuditTrailService {
 
     const maxRangeDays = 90;
     const rangeDays = Math.floor(
-      (query.endDate.getTime() - query.startDate.getTime()) /
-        (1000 * 60 * 60 * 24),
+      (query.endDate.getTime() - query.startDate.getTime()) / (1000 * 60 * 60 * 24),
     );
     if (rangeDays > maxRangeDays) {
       errors.push(`Date range cannot exceed ${maxRangeDays} days`);

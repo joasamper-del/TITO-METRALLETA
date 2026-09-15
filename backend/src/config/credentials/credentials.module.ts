@@ -41,12 +41,12 @@ import {
         const result = manager.validate();
         if (!result.isValid) {
           console.error('⚠️  Credential validation failed:');
-          result.errors.forEach(err => console.error(`   [${err.brokerId}] ${err.message}`));
+          result.errors.forEach((err) => console.error(`   [${err.brokerId}] ${err.message}`));
         }
 
         if (result.warnings.length > 0) {
           console.warn('⚠️  Credential warnings:');
-          result.warnings.forEach(warn => console.warn(`   [${warn.brokerId}] ${warn.message}`));
+          result.warnings.forEach((warn) => console.warn(`   [${warn.brokerId}] ${warn.message}`));
         }
 
         // Print status

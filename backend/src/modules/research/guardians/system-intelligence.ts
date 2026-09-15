@@ -91,7 +91,7 @@ export class SystemIntelligence {
    */
   async performComprehensiveInspection(
     providerHealth: Map<string, any>,
-    recentIncidents: any[]
+    recentIncidents: any[],
   ): Promise<ComprehensiveInspectionResult> {
     this.logger.log('Guardian: Starting comprehensive inspection...');
     const inspectionTime = new Date();
@@ -116,29 +116,31 @@ export class SystemIntelligence {
 
     // Calculate overall readiness
     const checks = [apiStatus, authStatus, freshness, latency, resources];
-    const passedChecks = checks.filter(c => c.status === 'pass').length;
+    const passedChecks = checks.filter((c) => c.status === 'pass').length;
     const readinessScore = (passedChecks / checks.length) * 100;
 
     const blockers: string[] = [];
     const warnings: string[] = [];
 
     // Aggregate issues
-    [...apiStatus.issues, ...authStatus.issues, ...freshness.issues, ...latency.issues, ...resources.issues].forEach(
-      issue => {
-        if (issue.includes('CRITICAL') || issue.includes('DOWN')) {
-          blockers.push(issue);
-        } else {
-          warnings.push(issue);
-        }
+    [
+      ...apiStatus.issues,
+      ...authStatus.issues,
+      ...freshness.issues,
+      ...latency.issues,
+      ...resources.issues,
+    ].forEach((issue) => {
+      if (issue.includes('CRITICAL') || issue.includes('DOWN')) {
+        blockers.push(issue);
+      } else {
+        warnings.push(issue);
       }
-    );
+    });
 
     // Determine overall status
     const overallStatus = blockers.length === 0 && readinessScore >= 80 ? 'READY' : 'NOT_READY';
     const systemState =
-      readinessScore >= 90 ? 'healthy' :
-      readinessScore >= 70 ? 'degraded' :
-      'critical';
+      readinessScore >= 90 ? 'healthy' : readinessScore >= 70 ? 'degraded' : 'critical';
 
     // Generate recommendations
     const suggestions = this.generateSuggestions(
@@ -146,7 +148,7 @@ export class SystemIntelligence {
       authStatus,
       freshness,
       latency,
-      patterns
+      patterns,
     );
 
     const result: ComprehensiveInspectionResult = {
@@ -159,7 +161,10 @@ export class SystemIntelligence {
       authentication: authStatus,
       dataFreshness: freshness,
       networkLatency: latency,
-      errorPatterns: { status: patterns.length === 0 ? 'pass' : 'warn', issues: patterns.map(p => p.pattern) },
+      errorPatterns: {
+        status: patterns.length === 0 ? 'pass' : 'warn',
+        issues: patterns.map((p) => p.pattern),
+      },
       resourceUsage: resources,
 
       detectedPatterns: patterns,
@@ -168,14 +173,17 @@ export class SystemIntelligence {
       warnings,
 
       canProceedWithTrading: overallStatus === 'READY',
-      reason: blockers.length > 0
-        ? `BLOCKED: ${blockers.join('; ')}`
-        : overallStatus === 'READY'
-        ? 'All systems ready for trading'
-        : `System at ${readinessScore}% readiness - proceed with caution`,
+      reason:
+        blockers.length > 0
+          ? `BLOCKED: ${blockers.join('; ')}`
+          : overallStatus === 'READY'
+          ? 'All systems ready for trading'
+          : `System at ${readinessScore}% readiness - proceed with caution`,
     };
 
-    this.logger.log(`Comprehensive inspection complete: ${result.overallStatus} (${result.readinessScore}/100)`);
+    this.logger.log(
+      `Comprehensive inspection complete: ${result.overallStatus} (${result.readinessScore}/100)`,
+    );
 
     return result;
   }
@@ -190,7 +198,7 @@ export class SystemIntelligence {
     // Group incidents by type and provider
     const grouped = new Map<string, any[]>();
 
-    incidents.forEach(incident => {
+    incidents.forEach((incident) => {
       const key = `${incident.type}:${incident.provider}`;
       if (!grouped.has(key)) grouped.set(key, []);
       grouped.get(key)!.push(incident);
@@ -204,7 +212,7 @@ export class SystemIntelligence {
       if (incidents.length >= 3) {
         // 3+ occurrences = pattern
         const recentIncidents = incidents.filter(
-          i => Date.now() - i.timestamp.getTime() < 24 * 60 * 60 * 1000 // Last 24h
+          (i) => Date.now() - i.timestamp.getTime() < 24 * 60 * 60 * 1000, // Last 24h
         );
 
         if (recentIncidents.length >= 2) {
@@ -225,7 +233,7 @@ export class SystemIntelligence {
   }
 
   private calculateIncidentSeverity(incidents: any[]): 'critical' | 'high' | 'medium' | 'low' {
-    const criticalCount = incidents.filter(i => i.severity === 'critical').length;
+    const criticalCount = incidents.filter((i) => i.severity === 'critical').length;
     if (criticalCount > 0) return 'critical';
     if (incidents.length > 5) return 'high';
     if (incidents.length > 3) return 'medium';
@@ -251,7 +259,7 @@ export class SystemIntelligence {
    */
   async performSafeAutoCorrection(
     provider: string,
-    incidentType: string
+    incidentType: string,
   ): Promise<SafeAutocorrectionAction> {
     this.logger.log(`Guardian: Evaluating auto-correction for ${provider} (${incidentType})`);
 
@@ -317,24 +325,22 @@ export class SystemIntelligence {
    */
   generateIntelligenceReport(
     patterns: IncidentPattern[],
-    corrections: SafeAutocorrectionAction[]
+    corrections: SafeAutocorrectionAction[],
   ): SystemIntelligenceReport {
-    const successfulCorrections = corrections.filter(c => c.shouldExecute);
-    const failedCorrections = corrections.filter(c => !c.shouldExecute);
+    const successfulCorrections = corrections.filter((c) => c.shouldExecute);
+    const failedCorrections = corrections.filter((c) => !c.shouldExecute);
 
     // Detect trend
-    const recentHealthScores = this.systemTrends.slice(-10).map(t => t.healthScore);
+    const recentHealthScores = this.systemTrends.slice(-10).map((t) => t.healthScore);
     const trend =
-      recentHealthScores[recentHealthScores.length - 1] >
-      (recentHealthScores[0] || 0)
+      recentHealthScores[recentHealthScores.length - 1] > (recentHealthScores[0] || 0)
         ? 'improving'
-        : recentHealthScores[recentHealthScores.length - 1] <
-          (recentHealthScores[0] || 0)
+        : recentHealthScores[recentHealthScores.length - 1] < (recentHealthScores[0] || 0)
         ? 'degrading'
         : 'stable';
 
     const recommendations: string[] = [];
-    patterns.forEach(p => {
+    patterns.forEach((p) => {
       if (p.solutionSeverity === 'permanent_fix') {
         recommendations.push(`URGENT: ${p.suggestedSolution}`);
       } else {
@@ -409,7 +415,7 @@ export class SystemIntelligence {
   }
 
   private checkNetworkLatency(health: Map<string, any>) {
-    const latencies = Array.from(health.values()).map(h => h.responseTimeMs);
+    const latencies = Array.from(health.values()).map((h) => h.responseTimeMs);
     const avgLatency = latencies.reduce((a, b) => a + b, 0) / latencies.length;
 
     const issues: string[] = [];
@@ -436,7 +442,7 @@ export class SystemIntelligence {
     auth: any,
     freshness: any,
     latency: any,
-    patterns: IncidentPattern[]
+    patterns: IncidentPattern[],
   ): { improvements: string[] } {
     const improvements: string[] = [];
 
@@ -449,7 +455,7 @@ export class SystemIntelligence {
     if (latency.issues.length > 0) {
       improvements.push('Optimize network routes or upgrade bandwidth');
     }
-    patterns.forEach(p => {
+    patterns.forEach((p) => {
       if (p.solutionSeverity === 'permanent_fix') {
         improvements.push(p.suggestedSolution);
       }

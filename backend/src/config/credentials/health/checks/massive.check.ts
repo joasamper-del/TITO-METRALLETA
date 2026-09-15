@@ -38,12 +38,15 @@ export const massiveHealthChecks: HealthCheckConfig[] = [
       }
 
       try {
-        const response = await fetch(`${MASSIVE_API_BASE}/v2/snapshot/locale/us/markets/stocks/tickers/SPY`, {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
+        const response = await fetch(
+          `${MASSIVE_API_BASE}/v2/snapshot/locale/us/markets/stocks/tickers/SPY`,
+          {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+            },
           },
-        });
+        );
 
         if (!response.ok) {
           if (response.status === 401 || response.status === 403) {
@@ -76,12 +79,15 @@ export const massiveHealthChecks: HealthCheckConfig[] = [
       }
 
       try {
-        const response = await fetch(`${MASSIVE_API_BASE}/v2/snapshot/locale/us/markets/stocks/tickers/SPY`, {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
+        const response = await fetch(
+          `${MASSIVE_API_BASE}/v2/snapshot/locale/us/markets/stocks/tickers/SPY`,
+          {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+            },
           },
-        });
+        );
 
         const remaining = response.headers.get('x-ratelimit-remaining');
         if (remaining) {

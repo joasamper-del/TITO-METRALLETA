@@ -30,7 +30,9 @@ import { CredentialsModule } from './config/credentials/credentials.module';
         type: 'postgres',
         url: process.env.DATABASE_URL,
         entities: ['dist/**/*.entity{.ts,.js}'],
-        synchronize: process.env.NODE_ENV === 'development',
+        synchronize: false, // Disabled to run migrations properly
+        migrationsRun: true,
+        migrations: ['dist/migrations/**/*.{ts,js}'],
         logging: process.env.NODE_ENV === 'development',
       }),
     }),

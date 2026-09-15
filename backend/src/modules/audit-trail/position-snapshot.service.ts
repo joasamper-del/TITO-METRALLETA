@@ -60,10 +60,7 @@ export class PositionSnapshotService {
    * ESPERADO: campo reasoning poblado
    * OBTENIDO: snapshot con reasoning guardado
    */
-  async fillReasoning(
-    snapshot: PositionSnapshot,
-    reason: string,
-  ): Promise<PositionSnapshot> {
+  async fillReasoning(snapshot: PositionSnapshot, reason: string): Promise<PositionSnapshot> {
     if (!reason || reason.trim().length === 0) {
       throw new Error('reasoning no puede estar vacío');
     }

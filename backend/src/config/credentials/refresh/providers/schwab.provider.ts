@@ -15,8 +15,8 @@ const REFRESH_WARNING_HOURS = 1; // Warn 1 hour before expiry
 export class SchwabRefreshProvider implements RefreshProvider {
   private credentialMgr: CredentialManager;
   private lastErrorReason: string | null = null;
-  private retryCount: number = 0;
-  private maxRetries: number = 3;
+  private retryCount = 0;
+  private maxRetries = 3;
 
   constructor(credentialMgr: CredentialManager) {
     this.credentialMgr = credentialMgr;

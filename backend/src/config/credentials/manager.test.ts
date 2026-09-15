@@ -5,11 +5,7 @@
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { CredentialManager } from './manager';
-import {
-  AlpacaBroker,
-  MassiveBroker,
-  SchwabBroker,
-} from './brokers';
+import { AlpacaBroker, MassiveBroker, SchwabBroker } from './brokers';
 import {
   CredentialMissingError,
   CredentialNotFoundError,
@@ -37,9 +33,7 @@ describe('CredentialManager', () => {
       manager.registerBroker(AlpacaBroker);
       await manager.load();
       const status = manager.status();
-      expect(status.brokers).toContainEqual(
-        expect.objectContaining({ id: 'alpaca' })
-      );
+      expect(status.brokers).toContainEqual(expect.objectContaining({ id: 'alpaca' }));
     });
 
     it('should allow multiple broker registrations', async () => {
@@ -69,7 +63,7 @@ describe('CredentialManager', () => {
       await manager.load();
 
       const status = manager.status();
-      const alpaca = status.brokers.find(b => b.id === 'alpaca');
+      const alpaca = status.brokers.find((b) => b.id === 'alpaca');
       expect(alpaca?.configured).toBe(false);
     });
 
@@ -109,7 +103,7 @@ describe('CredentialManager', () => {
         expect.objectContaining({
           brokerId: 'alpaca',
           message: expect.stringContaining('Missing'),
-        })
+        }),
       );
     });
 
@@ -174,14 +168,12 @@ describe('CredentialManager', () => {
       await manager.load();
 
       expect(() => manager.getSecret('alpaca', 'ALPACA_API_KEY')).toThrow(
-        CredentialFieldMissingError
+        CredentialFieldMissingError,
       );
     });
 
     it('should throw CredentialNotFoundError for unknown broker', async () => {
-      expect(() => manager.getSecret('unknown', 'SOME_FIELD')).toThrow(
-        CredentialNotFoundError
-      );
+      expect(() => manager.getSecret('unknown', 'SOME_FIELD')).toThrow(CredentialNotFoundError);
     });
   });
 

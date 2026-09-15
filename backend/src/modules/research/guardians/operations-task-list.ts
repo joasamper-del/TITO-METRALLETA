@@ -41,12 +41,7 @@ export class OperationsTaskList {
    * Takes incidents, patterns, and system state
    * Returns: What to do today, in priority order
    */
-  generateTaskList(
-    incidents: any[],
-    patterns: any[],
-    metrics: any,
-    confidence: number
-  ): TaskList {
+  generateTaskList(incidents: any[], patterns: any[], metrics: any, confidence: number): TaskList {
     this.logger.log('Guardian: Generating prioritized task list...');
 
     const critical: OperationTask[] = [];
@@ -150,8 +145,8 @@ export class OperationsTaskList {
       critical.length > 0
         ? `🔴 ${critical.length} CRITICAL: Fix before operating`
         : important.length > 0
-          ? `🟡 ${important.length} IMPORTANT: Address today`
-          : `✅ Green. ${recommended.length} optional improvements available`;
+        ? `🟡 ${important.length} IMPORTANT: Address today`
+        : `✅ Green. ${recommended.length} optional improvements available`;
 
     this.logger.log(`Task list ready: ${summary}`);
 

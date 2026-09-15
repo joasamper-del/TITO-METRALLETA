@@ -42,13 +42,13 @@ export class DecisionFeedback {
   status!: FeedbackStatus;
 
   @Column('varchar', { length: 100, default: 'Jay' })
-  respondedBy: string = 'Jay';
+  respondedBy = 'Jay';
 
   @Column('int', { default: 0 })
-  validationEvidenceFavor: number = 0;
+  validationEvidenceFavor = 0;
 
   @Column('int', { default: 0 })
-  validationEvidenceAgainst: number = 0;
+  validationEvidenceAgainst = 0;
 
   @Column('jsonb', { nullable: true })
   auditHistory: Array<{
@@ -60,11 +60,7 @@ export class DecisionFeedback {
     changedTo?: string;
   }> | null = null;
 
-  @OneToMany(
-    () => FeedbackValidationRecord,
-    (record) => record.feedback,
-    { cascade: true }
-  )
+  @OneToMany(() => FeedbackValidationRecord, (record) => record.feedback, { cascade: true })
   validationRecords?: FeedbackValidationRecord[];
 
   @CreateDateColumn()

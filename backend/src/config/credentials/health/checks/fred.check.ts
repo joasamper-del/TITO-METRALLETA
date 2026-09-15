@@ -38,9 +38,12 @@ export const fredHealthChecks: HealthCheckConfig[] = [
       }
 
       try {
-        const response = await fetch(`${FRED_BASE}/series?series_id=VIXCLS&api_key=${apiKey}&file_type=json`, {
-          method: 'GET',
-        });
+        const response = await fetch(
+          `${FRED_BASE}/series?series_id=VIXCLS&api_key=${apiKey}&file_type=json`,
+          {
+            method: 'GET',
+          },
+        );
 
         if (!response.ok) {
           if (response.status === 401 || response.status === 403) {

@@ -11,10 +11,7 @@ export class TitoMetralletaAnalyzer {
   private rulesEngine: RulesEngine;
   private reportEngine: ReportEngine;
 
-  constructor(
-    alphaVantageKey: string = '',
-    finnhubKey: string = ''
-  ) {
+  constructor(alphaVantageKey = '', finnhubKey = '') {
     this.dataEngine = new DataEngine(alphaVantageKey, finnhubKey);
     this.rulesEngine = new RulesEngine();
     this.reportEngine = new ReportEngine();
@@ -26,7 +23,7 @@ export class TitoMetralletaAnalyzer {
   async analyzeOpportunity(
     symbol: string,
     strategy: string,
-    plan: OperationPlan
+    plan: OperationPlan,
   ): Promise<OpportunityReport | null> {
     try {
       console.log(`\n🔍 Analizando ${symbol} con estrategia: ${strategy}`);
@@ -54,28 +51,16 @@ export class TitoMetralletaAnalyzer {
         if (marketData.price === 0) missingData.push('Precio');
         if (marketData.volume === 0) missingData.push('Volumen');
 
-        return this.reportEngine.generateManualReviewReport(
-          symbol,
-          strategy,
-          missingData
-        );
+        return this.reportEngine.generateManualReviewReport(symbol, strategy, missingData);
       }
 
       // Paso 4: Evaluar reglas
       console.log('⚙️  Evaluando reglas...');
-      const analysis = this.rulesEngine.analyzeData(
-        marketData,
-        marketContext,
-        strategy
-      );
+      const analysis = this.rulesEngine.analyzeData(marketData, marketContext, strategy);
 
       // Paso 5: Generar reporte
       console.log('📄 Generando reporte...');
-      const report = this.reportEngine.generateReport(
-        analysis,
-        strategy,
-        plan
-      );
+      const report = this.reportEngine.generateReport(analysis, strategy, plan);
 
       return report;
     } catch (error) {
@@ -92,10 +77,10 @@ export class TitoMetralletaAnalyzer {
       symbol: string;
       strategy: string;
       plan: OperationPlan;
-    }>
+    }>,
   ): Promise<OpportunityReport[]> {
     const promises = opportunities.map((opp) =>
-      this.analyzeOpportunity(opp.symbol, opp.strategy, opp.plan)
+      this.analyzeOpportunity(opp.symbol, opp.strategy, opp.plan),
     );
 
     const results = await Promise.all(promises);
@@ -149,9 +134,7 @@ export class TitoMetralletaAnalyzer {
     const rules = this.rulesEngine.getAllRules();
     rules.forEach((rule) => {
       const status = rule.enabled ? '✅' : '❌';
-      console.log(
-        `${status} ${rule.id}: ${rule.name} (${rule.weight} puntos)`
-      );
+      console.log(`${status} ${rule.id}: ${rule.name} (${rule.weight} puntos)`);
       console.log(`   ${rule.description}\n`);
     });
   }
@@ -170,9 +153,7 @@ export class TitoMetralletaAnalyzer {
     console.log(`SPY: $${context.spy.price} - Tendencia: ${context.spy.trend}`);
     console.log(`QQQ: $${context.qqq.price} - Tendencia: ${context.qqq.trend}`);
     console.log(`VIX: ${context.vix.price} - Volatilidad`);
-    console.log(
-      `Mercado: ${context.marketIsOpen ? '🟢 ABIERTO' : '🔴 CERRADO'}`
-    );
+    console.log(`Mercado: ${context.marketIsOpen ? '🟢 ABIERTO' : '🔴 CERRADO'}`);
     if (context.timeUntilClose) {
       console.log(`Minutos al cierre: ${context.timeUntilClose}`);
     }

@@ -62,7 +62,7 @@ export class SeatbeltService {
     }
 
     // Initialize evidence record (TASK 4)
-    let evidence = new PreExecutionEvidence();
+    const evidence = new PreExecutionEvidence();
     evidence.trade_id = tradeId;
     evidence.all_gates_pass = false;
     evidence.valid_until = new Date(Date.now() + 5 * 60 * 1000);
@@ -71,7 +71,19 @@ export class SeatbeltService {
       // Gate 1: Market Health
       const gate1Result = await this.gate1.validate(order.symbol);
       gates.push(gate1Result);
-      evidence.gate1_result = gate1Result;
+      if (!gate1Result.timestamp) {
+        return {
+          allGatesPass: false,
+          gates,
+          reason: 'FAIL-CLOSED: Gate1 result missing timestamp — cannot record consistent evidence',
+          timestamp: new Date(),
+        };
+      }
+      evidence.gate1_result = {
+        valid: gate1Result.valid,
+        reason: gate1Result.reason,
+        timestamp: gate1Result.timestamp.toISOString(),
+      };
 
       // TASK 4: Record evidence for Gate1
       try {
@@ -100,7 +112,19 @@ export class SeatbeltService {
       // Gate 2: Risk Boundary
       const gate2Result = await this.gate2.validate(order, account, config);
       gates.push(gate2Result);
-      evidence.gate2_result = gate2Result;
+      if (!gate2Result.timestamp) {
+        return {
+          allGatesPass: false,
+          gates,
+          reason: 'FAIL-CLOSED: Gate2 result missing timestamp — cannot record consistent evidence',
+          timestamp: new Date(),
+        };
+      }
+      evidence.gate2_result = {
+        valid: gate2Result.valid,
+        reason: gate2Result.reason,
+        timestamp: gate2Result.timestamp.toISOString(),
+      };
 
       // TASK 4: Record evidence for Gate2
       try {
@@ -129,7 +153,19 @@ export class SeatbeltService {
       // Gate 3: Decision Audit
       const gate3Result = await this.gate3.validate(order, tradeId, currentMarket);
       gates.push(gate3Result);
-      evidence.gate3_result = gate3Result;
+      if (!gate3Result.timestamp) {
+        return {
+          allGatesPass: false,
+          gates,
+          reason: 'FAIL-CLOSED: Gate3 result missing timestamp — cannot record consistent evidence',
+          timestamp: new Date(),
+        };
+      }
+      evidence.gate3_result = {
+        valid: gate3Result.valid,
+        reason: gate3Result.reason,
+        timestamp: gate3Result.timestamp.toISOString(),
+      };
 
       // TASK 4: Record evidence for Gate3
       try {
@@ -170,7 +206,10 @@ export class SeatbeltService {
 
       // TASK 4: Validate integrity before returning
       const existingEvidence = await this.preExecutionEvidence.findByTradeId(tradeId);
-      if (!existingEvidence || !this.preExecutionEvidence.validateIntegrityBeforeUse(existingEvidence)) {
+      if (
+        !existingEvidence ||
+        !this.preExecutionEvidence.validateIntegrityBeforeUse(existingEvidence)
+      ) {
         return {
           allGatesPass: false,
           gates,
@@ -234,7 +273,7 @@ export class SeatbeltService {
     }
 
     // Initialize evidence record (TASK 4)
-    let evidence = new PreExecutionEvidence();
+    const evidence = new PreExecutionEvidence();
     evidence.trade_id = tradeId;
     evidence.all_gates_pass = false;
     evidence.valid_until = new Date(Date.now() + 5 * 60 * 1000);
@@ -243,7 +282,19 @@ export class SeatbeltService {
       // Gate 1: Market Health
       const gate1Result = await this.gate1.validate(order.symbol);
       gates.push(gate1Result);
-      evidence.gate1_result = gate1Result;
+      if (!gate1Result.timestamp) {
+        return {
+          allGatesPass: false,
+          gates,
+          reason: 'FAIL-CLOSED: Gate1 result missing timestamp — cannot record consistent evidence',
+          timestamp: new Date(),
+        };
+      }
+      evidence.gate1_result = {
+        valid: gate1Result.valid,
+        reason: gate1Result.reason,
+        timestamp: gate1Result.timestamp.toISOString(),
+      };
 
       // TASK 4: Record evidence for Gate1
       try {
@@ -271,7 +322,19 @@ export class SeatbeltService {
       // Gate 2: Risk Boundary
       const gate2Result = await this.gate2.validate(order, account, config);
       gates.push(gate2Result);
-      evidence.gate2_result = gate2Result;
+      if (!gate2Result.timestamp) {
+        return {
+          allGatesPass: false,
+          gates,
+          reason: 'FAIL-CLOSED: Gate2 result missing timestamp — cannot record consistent evidence',
+          timestamp: new Date(),
+        };
+      }
+      evidence.gate2_result = {
+        valid: gate2Result.valid,
+        reason: gate2Result.reason,
+        timestamp: gate2Result.timestamp.toISOString(),
+      };
 
       // TASK 4: Record evidence for Gate2
       try {
@@ -299,7 +362,19 @@ export class SeatbeltService {
       // Gate 3: Decision Audit
       const gate3Result = await this.gate3.validate(order, tradeId, currentMarket);
       gates.push(gate3Result);
-      evidence.gate3_result = gate3Result;
+      if (!gate3Result.timestamp) {
+        return {
+          allGatesPass: false,
+          gates,
+          reason: 'FAIL-CLOSED: Gate3 result missing timestamp — cannot record consistent evidence',
+          timestamp: new Date(),
+        };
+      }
+      evidence.gate3_result = {
+        valid: gate3Result.valid,
+        reason: gate3Result.reason,
+        timestamp: gate3Result.timestamp.toISOString(),
+      };
 
       // TASK 4: Record evidence for Gate3
       try {
@@ -328,7 +403,19 @@ export class SeatbeltService {
       if (this.gate4) {
         const gate4Result = await this.gate4.validate(order, referencePrice);
         gates.push(gate4Result);
-        evidence.gate4_result = gate4Result;
+        if (!gate4Result.timestamp) {
+          return {
+            allGatesPass: false,
+            gates,
+            reason: 'FAIL-CLOSED: Gate4 result missing timestamp — cannot record consistent evidence',
+            timestamp: new Date(),
+          };
+        }
+        evidence.gate4_result = {
+          valid: gate4Result.valid,
+          reason: gate4Result.reason,
+          timestamp: gate4Result.timestamp.toISOString(),
+        };
 
         // TASK 4: Record evidence for Gate4
         try {
@@ -358,7 +445,19 @@ export class SeatbeltService {
       if (this.gate5) {
         const gate5Result = await this.gate5.validate(order.symbol, order.orderType);
         gates.push(gate5Result);
-        evidence.gate5_result = gate5Result;
+        if (!gate5Result.timestamp) {
+          return {
+            allGatesPass: false,
+            gates,
+            reason: 'FAIL-CLOSED: Gate5 result missing timestamp — cannot record consistent evidence',
+            timestamp: new Date(),
+          };
+        }
+        evidence.gate5_result = {
+          valid: gate5Result.valid,
+          reason: gate5Result.reason,
+          timestamp: gate5Result.timestamp.toISOString(),
+        };
 
         // TASK 4: Record evidence for Gate5
         try {
@@ -399,7 +498,10 @@ export class SeatbeltService {
 
       // TASK 4: Validate integrity before returning
       const existingEvidence = await this.preExecutionEvidence.findByTradeId(tradeId);
-      if (!existingEvidence || !this.preExecutionEvidence.validateIntegrityBeforeUse(existingEvidence)) {
+      if (
+        !existingEvidence ||
+        !this.preExecutionEvidence.validateIntegrityBeforeUse(existingEvidence)
+      ) {
         return {
           allGatesPass: false,
           gates,

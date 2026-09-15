@@ -45,10 +45,7 @@ export class StressTestExecutor {
   private stressTestService: StressTestService;
   private reportFile = 'data/stress-test-report.json';
 
-  constructor(
-    executionEngine: ExecutionEngine,
-    heartbeat: HeartbeatService
-  ) {
+  constructor(executionEngine: ExecutionEngine, heartbeat: HeartbeatService) {
     this.stressTestService = new StressTestService(executionEngine, heartbeat);
   }
 
@@ -128,9 +125,11 @@ export class StressTestExecutor {
         report.scenarios.push(scenarioReport);
 
         this.logger.log(
-          `✅ Scenario ${result.status}: ${result.successful}/${result.totalOrders} orders`
+          `✅ Scenario ${result.status}: ${result.successful}/${result.totalOrders} orders`,
         );
-        this.logger.log(`   Latency avg: ${result.avgLatency.toFixed(0)}ms, max: ${result.maxLatency}ms`);
+        this.logger.log(
+          `   Latency avg: ${result.avgLatency.toFixed(0)}ms, max: ${result.maxLatency}ms`,
+        );
         this.logger.log(`   Errors: ${JSON.stringify(result.errors)}`);
       } catch (err) {
         this.logger.error(`❌ Scenario failed with exception: ${(err as Error).message}`);
@@ -163,10 +162,10 @@ export class StressTestExecutor {
 
     // Calcular resumen
     report.summary.totalScenarios = report.scenarios.length;
-    report.summary.passedScenarios = report.scenarios.filter(s => s.verdict === 'PASS').length;
-    report.summary.failedScenarios = report.scenarios.filter(s => s.verdict === 'FAIL').length;
+    report.summary.passedScenarios = report.scenarios.filter((s) => s.verdict === 'PASS').length;
+    report.summary.failedScenarios = report.scenarios.filter((s) => s.verdict === 'FAIL').length;
 
-    report.scenarios.forEach(scenario => {
+    report.scenarios.forEach((scenario) => {
       const result = scenario.result;
       report.summary.totalOrders += result.totalOrders;
       report.summary.successfulOrders += result.successful;
@@ -182,18 +181,18 @@ export class StressTestExecutor {
 
     // Calcular latencia promedio global
     if (report.summary.totalOrders > 0) {
-      const latencies = report.scenarios.map(s => s.result.avgLatency * s.result.totalOrders);
+      const latencies = report.scenarios.map((s) => s.result.avgLatency * s.result.totalOrders);
       report.summary.avgLatency = latencies.reduce((a, b) => a + b, 0) / report.summary.totalOrders;
     }
 
     // Determinar estado final
-    const successRate = report.summary.totalOrders > 0
-      ? report.summary.successfulOrders / report.summary.totalOrders
-      : 0;
+    const successRate =
+      report.summary.totalOrders > 0
+        ? report.summary.successfulOrders / report.summary.totalOrders
+        : 0;
 
     report.summary.status =
-      report.summary.passedScenarios === report.summary.totalScenarios &&
-      successRate >= 0.75
+      report.summary.passedScenarios === report.summary.totalScenarios && successRate >= 0.75
         ? 'READY_FOR_OPERATION'
         : 'NEEDS_INVESTIGATION';
 
@@ -203,9 +202,17 @@ export class StressTestExecutor {
     // Resumen final
     this.logger.log('\n📊 VALIDATION SUITE SUMMARY');
     this.logger.log(`   Status: ${report.summary.status}`);
-    this.logger.log(`   Scenarios: ${report.summary.passedScenarios}/${report.summary.totalScenarios} PASS`);
-    this.logger.log(`   Orders: ${report.summary.successfulOrders}/${report.summary.totalOrders} successful`);
-    this.logger.log(`   Latency: avg ${report.summary.avgLatency.toFixed(0)}ms, max ${report.summary.maxLatency}ms`);
+    this.logger.log(
+      `   Scenarios: ${report.summary.passedScenarios}/${report.summary.totalScenarios} PASS`,
+    );
+    this.logger.log(
+      `   Orders: ${report.summary.successfulOrders}/${report.summary.totalOrders} successful`,
+    );
+    this.logger.log(
+      `   Latency: avg ${report.summary.avgLatency.toFixed(0)}ms, max ${
+        report.summary.maxLatency
+      }ms`,
+    );
     this.logger.log(`   Mode: ${report.summary.mode}`);
 
     if (report.summary.status === 'READY_FOR_OPERATION') {
@@ -221,11 +228,15 @@ export class StressTestExecutor {
    * Generar notas de escenario
    */
   private generateScenarioNotes(result: StressTestResult): string {
-    const successRate = result.totalOrders > 0
-      ? ((result.successful / result.totalOrders) * 100).toFixed(0)
-      : '0';
+    const successRate =
+      result.totalOrders > 0 ? ((result.successful / result.totalOrders) * 100).toFixed(0) : '0';
 
-    return `Success rate: ${successRate}%. Latency: ${result.avgLatency.toFixed(0)}ms avg, ${result.maxLatency}ms max. Duplicates: ${result.duplicateDetected}. Errors: ${Object.values(result.errors).reduce((a, b) => a + b, 0)}`;
+    return `Success rate: ${successRate}%. Latency: ${result.avgLatency.toFixed(0)}ms avg, ${
+      result.maxLatency
+    }ms max. Duplicates: ${result.duplicateDetected}. Errors: ${Object.values(result.errors).reduce(
+      (a, b) => a + b,
+      0,
+    )}`;
   }
 
   /**
@@ -238,10 +249,7 @@ export class StressTestExecutor {
         fs.mkdirSync(dir, { recursive: true });
       }
 
-      fs.writeFileSync(
-        this.reportFile,
-        JSON.stringify(report, null, 2)
-      );
+      fs.writeFileSync(this.reportFile, JSON.stringify(report, null, 2));
 
       this.logger.log(`📄 Report saved to ${this.reportFile}`);
     } catch (err) {

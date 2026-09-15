@@ -9,26 +9,20 @@ import { HealthChecker } from './checker';
 import { HealthResult } from './types';
 
 export class PreflightError extends Error {
-  constructor(
-    public message: string,
-    public blockedSources?: string[],
-  ) {
+  constructor(public message: string, public blockedSources?: string[]) {
     super(message);
     this.name = 'PreflightError';
   }
 }
 
 export class PreflightGuard {
-  constructor(
-    private credentialMgr: CredentialManager,
-    private healthChecker: HealthChecker,
-  ) {}
+  constructor(private credentialMgr: CredentialManager, private healthChecker: HealthChecker) {}
 
   async verify(): Promise<HealthResult> {
     // Step 1: Validate credentials
     const credResult = this.credentialMgr.validate();
     if (!credResult.isValid) {
-      const errors = credResult.errors.map(e => e.message).join('; ');
+      const errors = credResult.errors.map((e) => e.message).join('; ');
       throw new PreflightError(`Missing credentials: ${errors}`);
     }
 

@@ -128,38 +128,38 @@ export class OperationsDirector {
     fixes: AppliedFix[],
     pendingActions: PendingAction[],
     metrics: any,
-    insights: any
+    insights: any,
   ): Promise<ExecutiveSummary> {
     this.logger.log('Director: Generating executive summary...');
 
     // Categorize issues
-    const critical = issues.filter(i => i.category === 'critical');
-    const warnings = issues.filter(i => i.category === 'warning');
-    const info = issues.filter(i => i.category === 'info');
+    const critical = issues.filter((i) => i.category === 'critical');
+    const warnings = issues.filter((i) => i.category === 'warning');
+    const info = issues.filter((i) => i.category === 'info');
 
     // Determine overall status
     const overallStatus =
-      critical.length > 0 ? 'CRITICAL' :
-      warnings.length > 5 ? 'DEGRADED' :
-      'OPERATIONAL';
+      critical.length > 0 ? 'CRITICAL' : warnings.length > 5 ? 'DEGRADED' : 'OPERATIONAL';
 
     // Calculate confidence index
     const confidenceIndex = this.calculateConfidenceIndex(metrics, fixes, issues);
 
     // Determine recommendation
     const recommendation =
-      confidenceIndex.recommendation === 'PROCEED' ? 'GO' :
-      confidenceIndex.recommendation === 'PROCEED_CAUTIOUS' ? 'GO_WITH_CAUTION' :
-      'NO-GO';
+      confidenceIndex.recommendation === 'PROCEED'
+        ? 'GO'
+        : confidenceIndex.recommendation === 'PROCEED_CAUTIOUS'
+        ? 'GO_WITH_CAUTION'
+        : 'NO-GO';
 
     // Calculate auto-correction success rate
-    const successCount = fixes.filter(f => f.result === 'success').length;
+    const successCount = fixes.filter((f) => f.result === 'success').length;
     const autoCorrectionsSuccessRate = fixes.length > 0 ? (successCount / fixes.length) * 100 : 0;
 
     // Categorize pending actions
-    const immediate = pendingActions.filter(a => a.priority === 'critical');
-    const shortTerm = pendingActions.filter(a => a.priority === 'high');
-    const longTerm = pendingActions.filter(a => ['medium', 'low'].includes(a.priority));
+    const immediate = pendingActions.filter((a) => a.priority === 'critical');
+    const shortTerm = pendingActions.filter((a) => a.priority === 'high');
+    const longTerm = pendingActions.filter((a) => ['medium', 'low'].includes(a.priority));
 
     // Generate narrative report
     const fullReport = this.generateNarrativeReport({
@@ -193,7 +193,7 @@ export class OperationsDirector {
       autoCorrectionsSuccessRate: Math.round(autoCorrectionsSuccessRate),
 
       pendingActions,
-      blockers: critical.map(i => i.description),
+      blockers: critical.map((i) => i.description),
 
       metrics,
 
@@ -208,7 +208,9 @@ export class OperationsDirector {
       fullReport,
     };
 
-    this.logger.log(`Director: Summary ready. Status: ${overallStatus}. Recommendation: ${recommendation}`);
+    this.logger.log(
+      `Director: Summary ready. Status: ${overallStatus}. Recommendation: ${recommendation}`,
+    );
 
     return summary;
   }
@@ -220,27 +222,33 @@ export class OperationsDirector {
   private calculateConfidenceIndex(
     metrics: any,
     fixes: AppliedFix[],
-    issues: OperationIssue[]
+    issues: OperationIssue[],
   ): ConfidenceIndex {
     // Infrastructure score: uptime + latency
-    const infrastructure = Math.max(0, 100 - (100 - metrics.systemUptime) * 2 - Math.min(metrics.averageLatency / 20, 10));
+    const infrastructure = Math.max(
+      0,
+      100 - (100 - metrics.systemUptime) * 2 - Math.min(metrics.averageLatency / 20, 10),
+    );
 
     // Data quality score: freshness
     const dataquality = metrics.dataFreshness || 80;
 
     // Resilience score: corrections applied + success rate
-    const correctionRate = fixes.length > 0 ? (fixes.filter(f => f.result === 'success').length / fixes.length) * 100 : 100;
+    const correctionRate =
+      fixes.length > 0
+        ? (fixes.filter((f) => f.result === 'success').length / fixes.length) * 100
+        : 100;
     const resilience = Math.min(100, correctionRate + (fixes.length > 0 ? 20 : 0));
 
     // Knowledge score: patterns detected + insights
-    const knowledge = 70 + Math.min(issues.filter(i => i.category === 'info').length * 5, 20);
+    const knowledge = 70 + Math.min(issues.filter((i) => i.category === 'info').length * 5, 20);
 
     // Overall
     const overall = (infrastructure + dataquality + resilience + knowledge) / 4;
 
     // Recommendation logic
     let recommendation: 'PROCEED' | 'PROCEED_CAUTIOUS' | 'HOLD' | 'ESCALATE';
-    if (issues.filter(i => i.category === 'critical').length > 0) {
+    if (issues.filter((i) => i.category === 'critical').length > 0) {
       recommendation = 'ESCALATE';
     } else if (overall < 70) {
       recommendation = 'HOLD';
@@ -269,7 +277,9 @@ export class OperationsDirector {
       return `System operating but with ${issues.length} issues detected. Monitoring recommended.`;
     }
     if (score >= 60) {
-      return `System degraded. ${issues.filter(i => i.category === 'critical').length} critical issues require attention.`;
+      return `System degraded. ${
+        issues.filter((i) => i.category === 'critical').length
+      } critical issues require attention.`;
     }
     return 'System critical. Operations should be suspended until resolved.';
   }
@@ -302,21 +312,27 @@ export class OperationsDirector {
     if (data.fixes.length > 0) {
       const successCount = data.fixes.filter((f: any) => f.result === 'success').length;
       report += `FIXES APPLIED (${successCount}/${data.fixes.length} successful):\n`;
-      data.fixes.filter((f: any) => f.result === 'success').forEach((f: any) => {
-        report += `  ✅ ${f.action}\n`;
-      });
+      data.fixes
+        .filter((f: any) => f.result === 'success')
+        .forEach((f: any) => {
+          report += `  ✅ ${f.action}\n`;
+        });
       report += `\n`;
     }
 
     // Pending Actions
     if (data.pendingActions.length > 0) {
       report += `PENDING ACTIONS:\n`;
-      data.pendingActions.filter((p: any) => p.priority === 'critical').forEach((p: any) => {
-        report += `  🔴 [CRITICAL] ${p.title} - Est: ${p.estimatedEffort}\n`;
-      });
-      data.pendingActions.filter((p: any) => p.priority === 'high').forEach((p: any) => {
-        report += `  🟡 [HIGH] ${p.title} - Est: ${p.estimatedEffort}\n`;
-      });
+      data.pendingActions
+        .filter((p: any) => p.priority === 'critical')
+        .forEach((p: any) => {
+          report += `  🔴 [CRITICAL] ${p.title} - Est: ${p.estimatedEffort}\n`;
+        });
+      data.pendingActions
+        .filter((p: any) => p.priority === 'high')
+        .forEach((p: any) => {
+          report += `  🟡 [HIGH] ${p.title} - Est: ${p.estimatedEffort}\n`;
+        });
       report += `\n`;
     }
 
@@ -341,7 +357,9 @@ export class OperationsDirector {
     // Recommendation
     report += `RECOMMENDATION:\n`;
     report += `  ${data.confidenceIndex.reasoning}\n`;
-    report += `  Ready to operate: ${data.confidenceIndex.recommendation === 'PROCEED' ? '✅ YES' : '⚠️ WITH CAUTION'}\n`;
+    report += `  Ready to operate: ${
+      data.confidenceIndex.recommendation === 'PROCEED' ? '✅ YES' : '⚠️ WITH CAUTION'
+    }\n`;
 
     return report;
   }
@@ -366,13 +384,15 @@ export class OperationsDirector {
     }[summary.overallStatus];
 
     lines.push(`STATUS: ${statusEmoji} ${summary.overallStatus}`);
-    lines.push(`CONFIDENCE: ${summary.confidenceIndex.overall}% (${summary.confidenceIndex.recommendation})`);
+    lines.push(
+      `CONFIDENCE: ${summary.confidenceIndex.overall}% (${summary.confidenceIndex.recommendation})`,
+    );
     lines.push(`RECOMMENDATION: ${summary.recommendation}\n`);
 
     // Issues
     if (summary.issuesDetected.critical.length > 0) {
       lines.push(`🔴 CRITICAL ISSUES (${summary.issuesDetected.critical.length}):`);
-      summary.issuesDetected.critical.forEach(i => {
+      summary.issuesDetected.critical.forEach((i) => {
         lines.push(`   • ${i.title}: ${i.description}`);
       });
       lines.push('');
@@ -380,7 +400,7 @@ export class OperationsDirector {
 
     if (summary.issuesDetected.warnings.length > 0) {
       lines.push(`🟡 WARNINGS (${summary.issuesDetected.warnings.length}):`);
-      summary.issuesDetected.warnings.slice(0, 3).forEach(i => {
+      summary.issuesDetected.warnings.slice(0, 3).forEach((i) => {
         lines.push(`   • ${i.title}`);
       });
       if (summary.issuesDetected.warnings.length > 3) {
@@ -390,10 +410,10 @@ export class OperationsDirector {
     }
 
     // Fixes
-    const successFixes = summary.appliedFixes.filter(f => f.result === 'success');
+    const successFixes = summary.appliedFixes.filter((f) => f.result === 'success');
     if (successFixes.length > 0) {
       lines.push(`✅ FIXES APPLIED (${summary.autoCorrectionsSuccessRate}% success rate):`);
-      successFixes.slice(0, 3).forEach(f => {
+      successFixes.slice(0, 3).forEach((f) => {
         lines.push(`   • ${f.action}`);
       });
       if (successFixes.length > 3) {
@@ -405,10 +425,10 @@ export class OperationsDirector {
     // Pending
     if (summary.pendingActions.length > 0) {
       lines.push(`📋 PENDING ACTIONS (${summary.pendingActions.length}):`);
-      summary.actionPlan.immediate.forEach(a => {
+      summary.actionPlan.immediate.forEach((a) => {
         lines.push(`   🔴 [CRITICAL] ${a.title} (${a.estimatedEffort})`);
       });
-      summary.actionPlan.short_term.forEach(a => {
+      summary.actionPlan.short_term.forEach((a) => {
         lines.push(`   🟡 [HIGH] ${a.title} (${a.estimatedEffort})`);
       });
       lines.push('');
@@ -416,12 +436,22 @@ export class OperationsDirector {
 
     // Metrics
     lines.push(`📊 METRICS:`);
-    lines.push(`   Uptime: ${summary.metrics.systemUptime}% | Latency: ${summary.metrics.averageLatency}ms | Data Fresh: ${summary.metrics.dataFreshness}%`);
+    lines.push(
+      `   Uptime: ${summary.metrics.systemUptime}% | Latency: ${summary.metrics.averageLatency}ms | Data Fresh: ${summary.metrics.dataFreshness}%`,
+    );
     lines.push('');
 
     // Final verdict
     lines.push(`${'─'.repeat(80)}`);
-    lines.push(`VERDICT: ${summary.recommendation === 'GO' ? '✅ READY TO OPERATE' : summary.recommendation === 'GO_WITH_CAUTION' ? '⚠️ PROCEED WITH CAUTION' : '🔴 DO NOT OPERATE'}`);
+    lines.push(
+      `VERDICT: ${
+        summary.recommendation === 'GO'
+          ? '✅ READY TO OPERATE'
+          : summary.recommendation === 'GO_WITH_CAUTION'
+          ? '⚠️ PROCEED WITH CAUTION'
+          : '🔴 DO NOT OPERATE'
+      }`,
+    );
     lines.push(`${'═'.repeat(80)}\n`);
 
     return lines.join('\n');

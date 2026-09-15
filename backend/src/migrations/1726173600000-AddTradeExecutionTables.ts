@@ -1,4 +1,11 @@
-import { MigrationInterface, QueryRunner, Table, TableColumn, TableForeignKey, TableIndex } from 'typeorm';
+import {
+  MigrationInterface,
+  QueryRunner,
+  Table,
+  TableColumn,
+  TableForeignKey,
+  TableIndex,
+} from 'typeorm';
 
 /**
  * ETAPA 2: FASE 3 - MIGRACIONES
@@ -377,7 +384,8 @@ export class AddTradeExecutionTables1726173600000 implements MigrationInterface 
             type: 'varchar',
             length: '30',
             isNullable: false,
-            comment: 'ORDER_PLACED | PARTIAL_FILL | FILL | RETRY | FAILED | CANCELLED | CLOSED | TP_HIT | SL_HIT',
+            comment:
+              'ORDER_PLACED | PARTIAL_FILL | FILL | RETRY | FAILED | CANCELLED | CLOSED | TP_HIT | SL_HIT',
           }),
 
           new TableColumn({

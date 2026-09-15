@@ -165,7 +165,7 @@ describe('HealthChecker', () => {
       interval: 300,
       timeout: 100,
       checker: async () => {
-        await new Promise(resolve => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 500));
         return 'green' as HealthStatus;
       },
     });

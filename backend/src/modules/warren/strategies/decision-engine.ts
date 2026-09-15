@@ -92,14 +92,26 @@ export class DecisionEngineService {
 
     // Position sizing
     const baseAllocation = 3; // Warren's standard 3% per position
-    const macroAdjustedAllocation = Math.max(1, Math.min(5, baseAllocation + macroAdjustment.aggressivenessAdjustment));
+    const macroAdjustedAllocation = Math.max(
+      1,
+      Math.min(5, baseAllocation + macroAdjustment.aggressivenessAdjustment),
+    );
 
     // Margin of safety
     const baseMargin = 20;
-    const macroAdjustedMargin = Math.max(-5, Math.min(15, baseMargin + macroAdjustment.marginAdjustment));
+    const macroAdjustedMargin = Math.max(
+      -5,
+      Math.min(15, baseMargin + macroAdjustment.marginAdjustment),
+    );
 
     // Determine decision based on gate results
-    const decision = this.determineDecision(scoreGate, valuationGate, marginGate, confidenceGate, dataQualityGate);
+    const decision = this.determineDecision(
+      scoreGate,
+      valuationGate,
+      marginGate,
+      confidenceGate,
+      dataQualityGate,
+    );
 
     const explanation = this.buildExplanation(
       input,
@@ -143,7 +155,9 @@ export class DecisionEngineService {
     if (score.totalScore < 80) {
       return {
         passed: false,
-        reason: `Score ${score.totalScore.toFixed(1)} is below minimum 80 threshold. Status: ${score.scoreCategory.toUpperCase()}. NO CANDIDATA.`,
+        reason: `Score ${score.totalScore.toFixed(
+          1,
+        )} is below minimum 80 threshold. Status: ${score.scoreCategory.toUpperCase()}. NO CANDIDATA.`,
         severity: 'reject',
       };
     }
@@ -151,14 +165,18 @@ export class DecisionEngineService {
     if (score.totalScore < 85) {
       return {
         passed: true,
-        reason: `Score ${score.totalScore.toFixed(1)} qualifies as CANDIDATE (80-84 range). Requires validation by other gates.`,
+        reason: `Score ${score.totalScore.toFixed(
+          1,
+        )} qualifies as CANDIDATE (80-84 range). Requires validation by other gates.`,
         severity: 'caution',
       };
     }
 
     return {
       passed: true,
-      reason: `Score ${score.totalScore.toFixed(1)} qualifies as APPROVED (85+ range). Proceed to validation gates.`,
+      reason: `Score ${score.totalScore.toFixed(
+        1,
+      )} qualifies as APPROVED (85+ range). Proceed to validation gates.`,
       severity: 'pass',
     };
   }
@@ -176,7 +194,11 @@ export class DecisionEngineService {
     if (status === 'attractive') {
       return {
         passed: true,
-        reason: `Valuation is ATTRACTIVE. Fair value range: ${valuation.fairValueRange.low.toFixed(2)} - ${valuation.fairValueRange.high.toFixed(2)} (base: ${valuation.baseCase.fairValue.toFixed(2)}). Allows BUY if other gates pass.`,
+        reason: `Valuation is ATTRACTIVE. Fair value range: ${valuation.fairValueRange.low.toFixed(
+          2,
+        )} - ${valuation.fairValueRange.high.toFixed(
+          2,
+        )} (base: ${valuation.baseCase.fairValue.toFixed(2)}). Allows BUY if other gates pass.`,
         severity: 'pass',
       };
     }
@@ -184,14 +206,20 @@ export class DecisionEngineService {
     if (status === 'fair') {
       return {
         passed: true,
-        reason: `Valuation is FAIR. Fair value range: ${valuation.fairValueRange.low.toFixed(2)} - ${valuation.fairValueRange.high.toFixed(2)}. HOLD/TRIM recommended, BUY requires caution.`,
+        reason: `Valuation is FAIR. Fair value range: ${valuation.fairValueRange.low.toFixed(
+          2,
+        )} - ${valuation.fairValueRange.high.toFixed(
+          2,
+        )}. HOLD/TRIM recommended, BUY requires caution.`,
         severity: 'caution',
       };
     }
 
     return {
       passed: false,
-      reason: `Valuation is EXPENSIVE. Fair value range: ${valuation.fairValueRange.low.toFixed(2)} - ${valuation.fairValueRange.high.toFixed(2)}. BLOCKS new BUY. TRIM/SELL recommended.`,
+      reason: `Valuation is EXPENSIVE. Fair value range: ${valuation.fairValueRange.low.toFixed(
+        2,
+      )} - ${valuation.fairValueRange.high.toFixed(2)}. BLOCKS new BUY. TRIM/SELL recommended.`,
       severity: 'reject',
     };
   }
@@ -201,12 +229,19 @@ export class DecisionEngineService {
    * Requires price ≥ 20% below conservative fair value
    */
   private evaluateMarginGate(valuation: DCFValuation, currentPrice: number): GateResult {
-    const conservativeDiscount = ((valuation.conservativeCase.fairValue - currentPrice) / valuation.conservativeCase.fairValue) * 100;
+    const conservativeDiscount =
+      ((valuation.conservativeCase.fairValue - currentPrice) /
+        valuation.conservativeCase.fairValue) *
+      100;
 
     if (conservativeDiscount >= 25) {
       return {
         passed: true,
-        reason: `Strong margin of safety: ${conservativeDiscount.toFixed(1)}% discount from conservative FV (${valuation.conservativeCase.fairValue.toFixed(2)}). Excellent risk/reward at current price ${currentPrice.toFixed(2)}.`,
+        reason: `Strong margin of safety: ${conservativeDiscount.toFixed(
+          1,
+        )}% discount from conservative FV (${valuation.conservativeCase.fairValue.toFixed(
+          2,
+        )}). Excellent risk/reward at current price ${currentPrice.toFixed(2)}.`,
         severity: 'pass',
       };
     }
@@ -214,14 +249,22 @@ export class DecisionEngineService {
     if (conservativeDiscount >= 20) {
       return {
         passed: true,
-        reason: `Adequate margin of safety: ${conservativeDiscount.toFixed(1)}% discount from conservative FV (${valuation.conservativeCase.fairValue.toFixed(2)}). Fair risk/reward at current price ${currentPrice.toFixed(2)}.`,
+        reason: `Adequate margin of safety: ${conservativeDiscount.toFixed(
+          1,
+        )}% discount from conservative FV (${valuation.conservativeCase.fairValue.toFixed(
+          2,
+        )}). Fair risk/reward at current price ${currentPrice.toFixed(2)}.`,
         severity: 'caution',
       };
     }
 
     return {
       passed: false,
-      reason: `Insufficient margin of safety: ${conservativeDiscount.toFixed(1)}% discount from conservative FV (${valuation.conservativeCase.fairValue.toFixed(2)}). Current price ${currentPrice.toFixed(2)} lacks downside protection. BLOCKS BUY.`,
+      reason: `Insufficient margin of safety: ${conservativeDiscount.toFixed(
+        1,
+      )}% discount from conservative FV (${valuation.conservativeCase.fairValue.toFixed(
+        2,
+      )}). Current price ${currentPrice.toFixed(2)} lacks downside protection. BLOCKS BUY.`,
       severity: 'reject',
     };
   }
@@ -236,7 +279,9 @@ export class DecisionEngineService {
     if (macroContext.confidenceLevel === 'high') {
       return {
         passed: true,
-        reason: `HIGH confidence in macro assessment. All data fresh and consistent. ${macroContext.confidenceReasons.join(' ')}`,
+        reason: `HIGH confidence in macro assessment. All data fresh and consistent. ${macroContext.confidenceReasons.join(
+          ' ',
+        )}`,
         severity: 'pass',
       };
     }
@@ -244,14 +289,18 @@ export class DecisionEngineService {
     if (macroContext.confidenceLevel === 'medium') {
       return {
         passed: true,
-        reason: `MEDIUM confidence in macro assessment. Minor data issues present. ${macroContext.confidenceReasons.join(' ')} Proceed with caution.`,
+        reason: `MEDIUM confidence in macro assessment. Minor data issues present. ${macroContext.confidenceReasons.join(
+          ' ',
+        )} Proceed with caution.`,
         severity: 'caution',
       };
     }
 
     return {
       passed: false,
-      reason: `LOW confidence in macro assessment. Multiple data quality issues. ${macroContext.confidenceReasons.join(' ')} Recommend HOLD pending data refresh.`,
+      reason: `LOW confidence in macro assessment. Multiple data quality issues. ${macroContext.confidenceReasons.join(
+        ' ',
+      )} Recommend HOLD pending data refresh.`,
       severity: 'reject',
     };
   }
@@ -272,14 +321,18 @@ export class DecisionEngineService {
     if (macroContext.dataQualityWarnings.length <= 2) {
       return {
         passed: true,
-        reason: `Minor data quality issues: ${macroContext.dataQualityWarnings.join(' | ')}. Proceed with awareness.`,
+        reason: `Minor data quality issues: ${macroContext.dataQualityWarnings.join(
+          ' | ',
+        )}. Proceed with awareness.`,
         severity: 'caution',
       };
     }
 
     return {
       passed: false,
-      reason: `Multiple data quality issues: ${macroContext.dataQualityWarnings.join(' | ')}. Insufficient data freshness. Recommend HOLD pending refresh.`,
+      reason: `Multiple data quality issues: ${macroContext.dataQualityWarnings.join(
+        ' | ',
+      )}. Insufficient data freshness. Recommend HOLD pending refresh.`,
       severity: 'reject',
     };
   }
@@ -321,7 +374,13 @@ export class DecisionEngineService {
 
     // All gates pass: can BUY
     // Check if all are 'pass' severity (no cautions)
-    const allFullPass = [scoreGate, valuationGate, marginGate, confidenceGate, dataQualityGate].every((g) => g.severity === 'pass');
+    const allFullPass = [
+      scoreGate,
+      valuationGate,
+      marginGate,
+      confidenceGate,
+      dataQualityGate,
+    ].every((g) => g.severity === 'pass');
 
     if (allFullPass) {
       return 'BUY'; // Full green light
@@ -339,10 +398,26 @@ export class DecisionEngineService {
       decision: 'SELL',
       gateResults: {
         scoreGate,
-        valuationGate: { passed: false, reason: 'Not evaluated due to score rejection', severity: 'reject' },
-        marginGate: { passed: false, reason: 'Not evaluated due to score rejection', severity: 'reject' },
-        confidenceGate: { passed: false, reason: 'Not evaluated due to score rejection', severity: 'reject' },
-        dataQualityGate: { passed: false, reason: 'Not evaluated due to score rejection', severity: 'reject' },
+        valuationGate: {
+          passed: false,
+          reason: 'Not evaluated due to score rejection',
+          severity: 'reject',
+        },
+        marginGate: {
+          passed: false,
+          reason: 'Not evaluated due to score rejection',
+          severity: 'reject',
+        },
+        confidenceGate: {
+          passed: false,
+          reason: 'Not evaluated due to score rejection',
+          severity: 'reject',
+        },
+        dataQualityGate: {
+          passed: false,
+          reason: 'Not evaluated due to score rejection',
+          severity: 'reject',
+        },
       },
       macroAdjustment: {
         context: input.macroContext.macroContext as 'bullish' | 'neutral' | 'bearish',
@@ -361,7 +436,6 @@ export class DecisionEngineService {
     };
   }
 
-
   /**
    * Build human-readable explanation
    */
@@ -377,7 +451,9 @@ export class DecisionEngineService {
     const parts: string[] = [
       `WARREN BUFFETT JR. DECISION ANALYSIS`,
       ``,
-      `FUNDAMENTAL SCORE: ${input.fundamentalScore.totalScore.toFixed(1)}/100 (${input.fundamentalScore.scoreCategory.toUpperCase()})`,
+      `FUNDAMENTAL SCORE: ${input.fundamentalScore.totalScore.toFixed(
+        1,
+      )}/100 (${input.fundamentalScore.scoreCategory.toUpperCase()})`,
       `  Valuation: ${input.fundamentalScore.valuation}/30 | Quality: ${input.fundamentalScore.quality}/35 | Growth: ${input.fundamentalScore.growth}/20 | Macro: ${input.fundamentalScore.macro}/15`,
       ``,
       `GATE RESULTS:`,
@@ -385,10 +461,18 @@ export class DecisionEngineService {
       `  2. VALUATION GATE: ${valuationGate.severity.toUpperCase()} - ${valuationGate.reason}`,
       `  3. MARGIN OF SAFETY GATE: ${marginGate.severity.toUpperCase()} - ${marginGate.reason}`,
       `  4. CONFIDENCE GATE: ${confidenceGate.severity.toUpperCase()} - ${confidenceGate.reason}`,
-      `  5. DATA QUALITY GATE: ${dataQualityGate.severity.toUpperCase()} - ${dataQualityGate.reason}`,
+      `  5. DATA QUALITY GATE: ${dataQualityGate.severity.toUpperCase()} - ${
+        dataQualityGate.reason
+      }`,
       ``,
-      `MACRO CONTEXT: ${input.macroContext.macroContext.toUpperCase()} - ${input.macroContext.contextReason}`,
-      `  Confidence: ${input.macroContext.confidenceLevel.toUpperCase()} | Aggressiveness Adj: ${input.macroContext.aggressivenessAdjustment > 0 ? '+' : ''}${input.macroContext.aggressivenessAdjustment}% | Margin Adj: ${input.macroContext.marginAdjustment > 0 ? '+' : ''}${input.macroContext.marginAdjustment}%`,
+      `MACRO CONTEXT: ${input.macroContext.macroContext.toUpperCase()} - ${
+        input.macroContext.contextReason
+      }`,
+      `  Confidence: ${input.macroContext.confidenceLevel.toUpperCase()} | Aggressiveness Adj: ${
+        input.macroContext.aggressivenessAdjustment > 0 ? '+' : ''
+      }${input.macroContext.aggressivenessAdjustment}% | Margin Adj: ${
+        input.macroContext.marginAdjustment > 0 ? '+' : ''
+      }${input.macroContext.marginAdjustment}%`,
       ``,
       `FINAL DECISION: ${decision}`,
     ];

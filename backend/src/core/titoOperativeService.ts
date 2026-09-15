@@ -43,10 +43,7 @@ export class TitoOperativeService implements OnModuleInit, OnModuleDestroy {
   private readonly loopIntervalMs = 10000; // 10 segundos
   private cycleCounter = 0;
 
-  constructor(
-    private executionEngine: ExecutionEngine,
-    private heartbeat: HeartbeatService
-  ) {
+  constructor(private executionEngine: ExecutionEngine, private heartbeat: HeartbeatService) {
     this.logger.log('🔧 TitoOperativeService initialized (PAPER MODE)');
   }
 
@@ -149,12 +146,12 @@ export class TitoOperativeService implements OnModuleInit, OnModuleDestroy {
       this.logOperation(logEntry);
 
       // 7. Heartbeat
-      this.heartbeat.beat(
-        `operative_cycle_${result.success ? 'success' : 'fail'}`
-      );
+      this.heartbeat.beat(`operative_cycle_${result.success ? 'success' : 'fail'}`);
 
       this.logger.log(
-        `✅ Cycle ${cycleId}: ${decision.symbol} ${decision.action} (${result.success ? 'EXECUTED' : 'FAILED'})`
+        `✅ Cycle ${cycleId}: ${decision.symbol} ${decision.action} (${
+          result.success ? 'EXECUTED' : 'FAILED'
+        })`,
       );
     } catch (err) {
       const errorMsg = (err as Error).message;
@@ -212,32 +209,27 @@ export class TitoOperativeService implements OnModuleInit, OnModuleDestroy {
         fs.mkdirSync(logDir, { recursive: true });
       }
 
-      fs.appendFileSync(
-        this.operationLogFile,
-        JSON.stringify(entry) + '\n'
-      );
+      fs.appendFileSync(this.operationLogFile, JSON.stringify(entry) + '\n');
     } catch (err) {
-      this.logger.error(
-        `Could not write operation log: ${(err as Error).message}`
-      );
+      this.logger.error(`Could not write operation log: ${(err as Error).message}`);
     }
   }
 
   /**
    * Obtener resumen del log operativo
    */
-  getOperationLog(limit: number = 10): OperativeLogEntry[] {
+  getOperationLog(limit = 10): OperativeLogEntry[] {
     try {
       if (!fs.existsSync(this.operationLogFile)) {
         return [];
       }
 
       const content = fs.readFileSync(this.operationLogFile, 'utf8');
-      const lines = content.split('\n').filter(l => l.trim());
+      const lines = content.split('\n').filter((l) => l.trim());
 
       return lines
         .slice(-limit)
-        .map(l => JSON.parse(l))
+        .map((l) => JSON.parse(l))
         .reverse();
     } catch (err) {
       this.logger.warn(`Could not read operation log: ${(err as Error).message}`);

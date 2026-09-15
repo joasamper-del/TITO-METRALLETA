@@ -23,7 +23,13 @@ import { DecisionEngineService } from '../strategies/decision-engine';
  * Exports: WarrenService, WarrenController
  */
 @Module({
-  providers: [FundamentalScorerService, DCFEngineService, MacroContextService, DecisionEngineService, WarrenService],
+  providers: [
+    FundamentalScorerService,
+    DCFEngineService,
+    MacroContextService,
+    DecisionEngineService,
+    WarrenService,
+  ],
   controllers: [WarrenController],
   exports: [WarrenService],
 })

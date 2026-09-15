@@ -8,7 +8,7 @@ export class ReportEngine {
   generateReport(
     analysis: AnalysisResult,
     strategy: string,
-    plan: OperationPlan
+    plan: OperationPlan,
   ): OpportunityReport {
     return {
       id: this.generateId(),
@@ -36,7 +36,7 @@ export class ReportEngine {
   generateManualReviewReport(
     symbol: string,
     strategy: string,
-    missingData: string[]
+    missingData: string[],
   ): OpportunityReport {
     return {
       id: this.generateId(),
@@ -93,9 +93,7 @@ export class ReportEngine {
     if (report.analysis?.manualReviewNeeded) {
       lines.push('');
       lines.push(`⚠️  REVISIÓN MANUAL REQUERIDA:`);
-      lines.push(
-        ...report.analysis.manualReviewReasons.map((r) => `   • ${r}`)
-      );
+      lines.push(...report.analysis.manualReviewReasons.map((r) => `   • ${r}`));
     }
 
     lines.push('');
@@ -112,7 +110,7 @@ export class ReportEngine {
     result: 'ganancia' | 'pérdida',
     successReasons: string[] = [],
     failureReasons: string[] = [],
-    lessons: string[] = []
+    lessons: string[] = [],
   ): TradeResult {
     const tradeResult: TradeResult = {
       reportId: report.id,
@@ -156,21 +154,17 @@ export class ReportEngine {
     const losses = results.filter((r) => r.result === 'pérdida');
 
     const avgPointsWin =
-      wins.length > 0
-        ? wins.reduce((sum, r) => sum + (r.points || 0), 0) / wins.length
-        : 0;
+      wins.length > 0 ? wins.reduce((sum, r) => sum + (r.points || 0), 0) / wins.length : 0;
 
     const avgPointsLoss =
-      losses.length > 0
-        ? losses.reduce((sum, r) => sum + (r.points || 0), 0) / losses.length
-        : 0;
+      losses.length > 0 ? losses.reduce((sum, r) => sum + (r.points || 0), 0) / losses.length : 0;
 
     const bestTrade = results.reduce((best, current) =>
-      (current.points || 0) > (best.points || 0) ? current : best
+      (current.points || 0) > (best.points || 0) ? current : best,
     );
 
     const worstTrade = results.reduce((worst, current) =>
-      (current.points || 0) < (worst.points || 0) ? current : worst
+      (current.points || 0) < (worst.points || 0) ? current : worst,
     );
 
     return {
@@ -188,7 +182,9 @@ export class ReportEngine {
   /**
    * Analiza qué reglas funcionan mejor
    */
-  analyzeRuleEffectiveness(reports: OpportunityReport[]): Map<string, { successes: number; failures: number; effectivenessRate: number }> {
+  analyzeRuleEffectiveness(
+    reports: OpportunityReport[],
+  ): Map<string, { successes: number; failures: number; effectivenessRate: number }> {
     const ruleStats = new Map<string, { successes: number; failures: number }>();
 
     for (const report of reports) {

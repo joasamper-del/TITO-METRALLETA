@@ -81,7 +81,10 @@ export class MacroContextService {
       indicators.spPE,
     );
 
-    const { aggressivenessAdjustment, marginAdjustment } = this.calculateAdjustments(macroContext, indicators);
+    const { aggressivenessAdjustment, marginAdjustment } = this.calculateAdjustments(
+      macroContext,
+      indicators,
+    );
 
     const dataQualityWarnings = this.assessDataQuality(indicators);
     const confidenceAssessment = this.assessConfidence(dataQualityWarnings);
@@ -93,7 +96,12 @@ export class MacroContextService {
       volatilitySignal,
       valuationSignal,
       macroContext,
-      contextReason: this.generateContextReason(fedRateSignal, inflationSignal, volatilitySignal, valuationSignal),
+      contextReason: this.generateContextReason(
+        fedRateSignal,
+        inflationSignal,
+        volatilitySignal,
+        valuationSignal,
+      ),
       confidenceLevel: confidenceAssessment.level,
       confidenceReasons: confidenceAssessment.reasons,
       aggressivenessAdjustment,
@@ -247,7 +255,7 @@ export class MacroContextService {
       inflationValue > 5 || inflationValue < 1,
       volatilityValue > 40,
       valuationValue > 30,
-    ].filter(x => x).length;
+    ].filter((x) => x).length;
 
     // If 2+ extremes align bearish, increase confidence in bearish
     if (extremeSignals >= 2 && bearishScore > bullishScore) {
@@ -328,29 +336,49 @@ export class MacroContextService {
     const spPEFreshness = (now.getTime() - indicators.spPETimestamp.getTime()) / (1000 * 60 * 60);
 
     if (fedFreshness > 24) {
-      warnings.push(`Fed Rate data is ${Math.floor(fedFreshness)} hours old (stale). Last update: ${indicators.fedRateTimestamp.toISOString()}`);
+      warnings.push(
+        `Fed Rate data is ${Math.floor(
+          fedFreshness,
+        )} hours old (stale). Last update: ${indicators.fedRateTimestamp.toISOString()}`,
+      );
     }
 
     if (cpiFreshness >= 720) {
       // CPI is monthly, so 30 days old is expected
-      warnings.push(`CPI data is ${Math.floor(cpiFreshness)} hours old (monthly release). Last update: ${indicators.cpiTimestamp.toISOString()}`);
+      warnings.push(
+        `CPI data is ${Math.floor(
+          cpiFreshness,
+        )} hours old (monthly release). Last update: ${indicators.cpiTimestamp.toISOString()}`,
+      );
     }
 
     if (vixFreshness > 24) {
-      warnings.push(`VIX data is ${Math.floor(vixFreshness)} hours old (stale). Last update: ${indicators.vixTimestamp.toISOString()}`);
+      warnings.push(
+        `VIX data is ${Math.floor(
+          vixFreshness,
+        )} hours old (stale). Last update: ${indicators.vixTimestamp.toISOString()}`,
+      );
     }
 
     if (spPEFreshness > 48) {
-      warnings.push(`S&P P/E data is ${Math.floor(spPEFreshness)} hours old (stale). Last update: ${indicators.spPETimestamp.toISOString()}`);
+      warnings.push(
+        `S&P P/E data is ${Math.floor(
+          spPEFreshness,
+        )} hours old (stale). Last update: ${indicators.spPETimestamp.toISOString()}`,
+      );
     }
 
     // Check for contradictions
     if (indicators.fedRate > 4.5 && indicators.vix < 12) {
-      warnings.push('CONTRADICTION: High Fed rate but VIX very low. Market may not be pricing rate risk. Data conflict?');
+      warnings.push(
+        'CONTRADICTION: High Fed rate but VIX very low. Market may not be pricing rate risk. Data conflict?',
+      );
     }
 
     if (indicators.cpi > 5 && indicators.fedRate < 3) {
-      warnings.push('CONTRADICTION: High inflation but low Fed rate. Policy lag or lagged CPI data?');
+      warnings.push(
+        'CONTRADICTION: High inflation but low Fed rate. Policy lag or lagged CPI data?',
+      );
     }
 
     return warnings;
@@ -359,7 +387,10 @@ export class MacroContextService {
   /**
    * Assess confidence in macro assessment
    */
-  private assessConfidence(warnings: string[]): { level: 'high' | 'medium' | 'low'; reasons: string[] } {
+  private assessConfidence(warnings: string[]): {
+    level: 'high' | 'medium' | 'low';
+    reasons: string[];
+  } {
     const reasons = [...warnings];
 
     const warningCount = warnings.length;
@@ -380,7 +411,10 @@ export class MacroContextService {
 
     return {
       level: 'low',
-      reasons: [...reasons, 'Multiple data quality issues. Macro assessment unreliable. Use with caution.'],
+      reasons: [
+        ...reasons,
+        'Multiple data quality issues. Macro assessment unreliable. Use with caution.',
+      ],
     };
   }
 

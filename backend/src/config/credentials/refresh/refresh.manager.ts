@@ -107,7 +107,7 @@ export class TokenRefreshManager {
   /**
    * Get refresh attempt history
    */
-  getHistory(brokerId?: string, limit: number = 10): RefreshAttempt[] {
+  getHistory(brokerId?: string, limit = 10): RefreshAttempt[] {
     if (brokerId) {
       return this.attemptHistory.filter((a) => a.brokerId === brokerId).slice(-limit);
     }
@@ -117,7 +117,7 @@ export class TokenRefreshManager {
   private async attemptRefresh(
     brokerId: string,
     provider: RefreshProvider,
-    config: RefreshConfig
+    config: RefreshConfig,
   ): Promise<boolean> {
     const attempt: RefreshAttempt = {
       timestamp: new Date().toISOString(),

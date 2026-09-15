@@ -49,23 +49,23 @@ export interface NewsItem {
   url: string;
 
   // Source
-  outlet: string;           // Reuters, Bloomberg, MarketWatch, etc.
+  outlet: string; // Reuters, Bloomberg, MarketWatch, etc.
   author?: string;
   publishedAt: Date;
 
   // Analysis
   sentiment: 'positive' | 'negative' | 'neutral';
-  relevanceScore: number;   // 0-100 (how relevant to ticker)
-  confidenceScore: number;  // 0-100 (how confident in sentiment)
+  relevanceScore: number; // 0-100 (how relevant to ticker)
+  confidenceScore: number; // 0-100 (how confident in sentiment)
 
   // Categorization
-  categories: string[];     // 'earnings', 'regulation', 'product', etc.
+  categories: string[]; // 'earnings', 'regulation', 'product', etc.
   tags: string[];
 }
 
 export interface NewsProvider {
   name: string;
-  priority: number;         // 1 = primary, 2 = fallback, etc.
+  priority: number; // 1 = primary, 2 = fallback, etc.
   isAvailable: () => Promise<boolean>;
   search(ticker: string, limit?: number): Promise<NewsItem[]>;
 }
@@ -76,10 +76,10 @@ export interface NewsProvider {
 
 export interface EconomicEvent {
   id: string;
-  name: string;             // 'CPI', 'Fed Rate Decision', etc.
+  name: string; // 'CPI', 'Fed Rate Decision', etc.
   country: string;
   date: Date;
-  time?: string;            // HH:MM UTC
+  time?: string; // HH:MM UTC
 
   // Impact assessment
   impact: 'high' | 'medium' | 'low';
@@ -88,7 +88,7 @@ export interface EconomicEvent {
   actual?: number;
 
   // Relevance
-  affectsAsset: boolean;    // Does this event affect the ticker?
+  affectsAsset: boolean; // Does this event affect the ticker?
   affectedMarkets: string[]; // 'USD', 'rates', 'commodities', etc.
 }
 
@@ -115,7 +115,7 @@ export interface UpcomingEvents {
 
 export interface EarningsEvent {
   date: Date;
-  quarter: string;          // 'Q3 2024'
+  quarter: string; // 'Q3 2024'
   isBeforeMarketOpen: boolean;
   isAfterMarketClose: boolean;
   estimatedEPS?: number;
@@ -124,12 +124,12 @@ export interface EarningsEvent {
 
 export interface SplitEvent {
   date: Date;
-  ratio: string;            // '2:1', '3:1', etc.
+  ratio: string; // '2:1', '3:1', etc.
 }
 
 export interface RegulatoryEvent {
   date: Date;
-  type: string;             // 'SEC filing', 'FDA approval', 'antitrust', etc.
+  type: string; // 'SEC filing', 'FDA approval', 'antitrust', etc.
   description: string;
   severity: 'critical' | 'high' | 'medium' | 'low';
 }
@@ -160,15 +160,15 @@ export interface FundamentalData {
   marketCap?: number;
 
   // Profitability
-  roe?: number;             // Return on Equity %
-  roic?: number;            // Return on Invested Capital %
+  roe?: number; // Return on Equity %
+  roic?: number; // Return on Invested Capital %
   marginNet?: number;
   marginOperating?: number;
 
   // Growth
-  revenueGrowth?: number;   // %
-  earningsGrowth?: number;  // %
-  fcfGrowth?: number;       // %
+  revenueGrowth?: number; // %
+  earningsGrowth?: number; // %
+  fcfGrowth?: number; // %
 
   // Debt
   debtToEquity?: number;
@@ -176,14 +176,14 @@ export interface FundamentalData {
   currentRatio?: number;
 
   // Dividend
-  dividendYield?: number;   // %
+  dividendYield?: number; // %
   payoutRatio?: number;
 
   // Metadata
   source: 'yahoo' | 'sec' | 'google' | 'cached' | 'unknown';
   lastUpdate: Date;
   freshness: 'realtime' | 'today' | 'stale';
-  dataAge: number;          // Days old
+  dataAge: number; // Days old
 }
 
 export interface FundamentalProvider {
@@ -199,11 +199,11 @@ export interface FundamentalProvider {
 
 export interface SourceCitation {
   type: 'news' | 'official' | 'calendar' | 'market';
-  outlet: string;           // Reuters, SEC, Yahoo Finance, etc.
+  outlet: string; // Reuters, SEC, Yahoo Finance, etc.
   url: string;
   timestamp: Date;
   reliability: 'high' | 'medium' | 'low';
-  providerName: string;     // Which provider gave us this
+  providerName: string; // Which provider gave us this
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -211,10 +211,10 @@ export interface SourceCitation {
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 export interface DataQualityScore {
-  overall: number;          // 0-100
-  news: number;             // 0-100 (freshness, count, sentiment reliability)
-  events: number;           // 0-100 (completeness, accuracy)
-  fundamentals: number;     // 0-100 (freshness, official source)
+  overall: number; // 0-100
+  news: number; // 0-100 (freshness, count, sentiment reliability)
+  events: number; // 0-100 (completeness, accuracy)
+  fundamentals: number; // 0-100 (freshness, official source)
   sourceRedundancy: number; // 0-100 (how many independent sources confirm data)
   recommendations: string[]; // "Get fresher fundamentals", "High sentiment agreement", etc.
 }
@@ -227,9 +227,9 @@ export interface ProviderConfig {
   name: string;
   type: 'news' | 'events' | 'fundamentals';
   enabled: boolean;
-  priority: number;         // Lower number = higher priority
-  timeout: number;          // MS
-  cacheSeconds: number;     // Cache result for N seconds
+  priority: number; // Lower number = higher priority
+  timeout: number; // MS
+  cacheSeconds: number; // Cache result for N seconds
   maxRetries: number;
   backoffMultiplier: number;
 }
@@ -258,7 +258,7 @@ export class ResearchProviderError extends Error {
   constructor(
     public providerName: string,
     public originalError: Error,
-    public isRecoverable: boolean
+    public isRecoverable: boolean,
   ) {
     super(`Provider ${providerName} failed: ${originalError.message}`);
   }

@@ -80,13 +80,55 @@ export class TickerResearchService {
 
     return {
       symbol,
-      price: { value: 0, source: 'unknown', timestamp: new Date(), freshness: 'UNKNOWN', confidence: 0 },
-      bid: { value: 0, source: 'unknown', timestamp: new Date(), freshness: 'UNKNOWN', confidence: 0 },
-      ask: { value: 0, source: 'unknown', timestamp: new Date(), freshness: 'UNKNOWN', confidence: 0 },
-      volume: { value: 0, source: 'unknown', timestamp: new Date(), freshness: 'UNKNOWN', confidence: 0 },
-      marketCap: { value: 0, source: 'unknown', timestamp: new Date(), freshness: 'UNKNOWN', confidence: 0 },
-      pe: { value: 0, source: 'unknown', timestamp: new Date(), freshness: 'UNKNOWN', confidence: 0 },
-      eps: { value: 0, source: 'unknown', timestamp: new Date(), freshness: 'UNKNOWN', confidence: 0 },
+      price: {
+        value: 0,
+        source: 'unknown',
+        timestamp: new Date(),
+        freshness: 'UNKNOWN',
+        confidence: 0,
+      },
+      bid: {
+        value: 0,
+        source: 'unknown',
+        timestamp: new Date(),
+        freshness: 'UNKNOWN',
+        confidence: 0,
+      },
+      ask: {
+        value: 0,
+        source: 'unknown',
+        timestamp: new Date(),
+        freshness: 'UNKNOWN',
+        confidence: 0,
+      },
+      volume: {
+        value: 0,
+        source: 'unknown',
+        timestamp: new Date(),
+        freshness: 'UNKNOWN',
+        confidence: 0,
+      },
+      marketCap: {
+        value: 0,
+        source: 'unknown',
+        timestamp: new Date(),
+        freshness: 'UNKNOWN',
+        confidence: 0,
+      },
+      pe: {
+        value: 0,
+        source: 'unknown',
+        timestamp: new Date(),
+        freshness: 'UNKNOWN',
+        confidence: 0,
+      },
+      eps: {
+        value: 0,
+        source: 'unknown',
+        timestamp: new Date(),
+        freshness: 'UNKNOWN',
+        confidence: 0,
+      },
       lastUpdate: new Date(),
     };
   }
@@ -101,10 +143,34 @@ export class TickerResearchService {
     return {
       symbol,
       company: '',
-      sector: { value: '', source: 'unknown', timestamp: new Date(), freshness: 'UNKNOWN', confidence: 0 },
-      industry: { value: '', source: 'unknown', timestamp: new Date(), freshness: 'UNKNOWN', confidence: 0 },
-      employees: { value: 0, source: 'unknown', timestamp: new Date(), freshness: 'UNKNOWN', confidence: 0 },
-      website: { value: '', source: 'unknown', timestamp: new Date(), freshness: 'UNKNOWN', confidence: 0 },
+      sector: {
+        value: '',
+        source: 'unknown',
+        timestamp: new Date(),
+        freshness: 'UNKNOWN',
+        confidence: 0,
+      },
+      industry: {
+        value: '',
+        source: 'unknown',
+        timestamp: new Date(),
+        freshness: 'UNKNOWN',
+        confidence: 0,
+      },
+      employees: {
+        value: 0,
+        source: 'unknown',
+        timestamp: new Date(),
+        freshness: 'UNKNOWN',
+        confidence: 0,
+      },
+      website: {
+        value: '',
+        source: 'unknown',
+        timestamp: new Date(),
+        freshness: 'UNKNOWN',
+        confidence: 0,
+      },
       earnings: [],
       lastUpdate: new Date(),
     };
@@ -118,8 +184,20 @@ export class TickerResearchService {
 
     return {
       symbol,
-      rsi: { value: 0, source: 'unknown', timestamp: new Date(), freshness: 'UNKNOWN', confidence: 0 },
-      adx: { value: 0, source: 'unknown', timestamp: new Date(), freshness: 'UNKNOWN', confidence: 0 },
+      rsi: {
+        value: 0,
+        source: 'unknown',
+        timestamp: new Date(),
+        freshness: 'UNKNOWN',
+        confidence: 0,
+      },
+      adx: {
+        value: 0,
+        source: 'unknown',
+        timestamp: new Date(),
+        freshness: 'UNKNOWN',
+        confidence: 0,
+      },
       superTrend: {
         value: { trend: 'neutral' as any, level: 0 },
         source: 'unknown',
@@ -127,8 +205,20 @@ export class TickerResearchService {
         freshness: 'UNKNOWN',
         confidence: 0,
       },
-      movingAverage50: { value: 0, source: 'unknown', timestamp: new Date(), freshness: 'UNKNOWN', confidence: 0 },
-      movingAverage200: { value: 0, source: 'unknown', timestamp: new Date(), freshness: 'UNKNOWN', confidence: 0 },
+      movingAverage50: {
+        value: 0,
+        source: 'unknown',
+        timestamp: new Date(),
+        freshness: 'UNKNOWN',
+        confidence: 0,
+      },
+      movingAverage200: {
+        value: 0,
+        source: 'unknown',
+        timestamp: new Date(),
+        freshness: 'UNKNOWN',
+        confidence: 0,
+      },
       lastUpdate: new Date(),
     };
   }
@@ -180,10 +270,12 @@ export class TickerResearchService {
       report.market?.ask?.confidence || 0,
       report.fundamentals?.pe?.confidence || 0,
       report.fundamentals?.sector?.confidence || 0,
-    ].filter(c => c > 0);
+    ].filter((c) => c > 0);
 
     if (allConfidences.length > 0) {
-      confidenceScore = Math.round(allConfidences.reduce((a, b) => a + b, 0) / allConfidences.length);
+      confidenceScore = Math.round(
+        allConfidences.reduce((a, b) => a + b, 0) / allConfidences.length,
+      );
     }
 
     // Risk score based on:
@@ -191,7 +283,7 @@ export class TickerResearchService {
     // - Conflicting validations
     // - Missing critical data
 
-    const validationConflicts = report.validations?.filter(v => !v.match)?.length || 0;
+    const validationConflicts = report.validations?.filter((v) => !v.match)?.length || 0;
     riskScore = Math.min(100, validationConflicts * 20);
 
     report.confidenceScore = Math.max(0, confidenceScore - riskScore);
@@ -216,7 +308,7 @@ export class TickerResearchService {
     }
 
     if (report.validations?.length > 0) {
-      const conflicts = report.validations.filter(v => !v.match).length;
+      const conflicts = report.validations.filter((v) => !v.match).length;
       if (conflicts > 0) {
         parts.push(`⚠️  ${conflicts} data discrepancies detected`);
       } else {
@@ -247,7 +339,7 @@ export class TickerResearchService {
       reasons.push(`Risk score too high (${report.riskScore}/100)`);
     }
 
-    const conflictingValidations = report.validations.filter(v => !v.match);
+    const conflictingValidations = report.validations.filter((v) => !v.match);
     if (conflictingValidations.length > 0) {
       reasons.push(`${conflictingValidations.length} data discrepancies`);
     }
@@ -257,7 +349,7 @@ export class TickerResearchService {
       report.market?.bid,
       report.market?.ask,
       report.fundamentals?.pe,
-    ].filter(dp => dp?.freshness === 'STALE' || dp?.freshness === 'UNKNOWN');
+    ].filter((dp) => dp?.freshness === 'STALE' || dp?.freshness === 'UNKNOWN');
 
     if (staleData.length > 0) {
       reasons.push(`${staleData.length} stale/missing data points`);

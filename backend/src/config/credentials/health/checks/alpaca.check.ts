@@ -96,7 +96,7 @@ export const alpacaHealthChecks: HealthCheckConfig[] = [
           throw new Error(`Failed to fetch account: ${response.status}`);
         }
 
-        const account = await response.json() as unknown;
+        const account = (await response.json()) as unknown;
 
         if (!isAlpacaAccountResponse(account)) {
           throw new Error('Invalid account response');

@@ -38,14 +38,17 @@ export const marketsnackHealthChecks: HealthCheckConfig[] = [
       }
 
       try {
-        const response = await fetch(`${MARKETSNACK_API_BASE}/api/flow_feed?filter[scope]=all&period=1d&limit=1`, {
-          method: 'GET',
-          headers: {
-            Accept: 'application/json',
-            Cookie: cookie,
+        const response = await fetch(
+          `${MARKETSNACK_API_BASE}/api/flow_feed?filter[scope]=all&period=1d&limit=1`,
+          {
+            method: 'GET',
+            headers: {
+              Accept: 'application/json',
+              Cookie: cookie,
+            },
+            redirect: 'manual',
           },
-          redirect: 'manual',
-        });
+        );
 
         if (!response.ok) {
           if (response.status === 401 || response.status === 403) {

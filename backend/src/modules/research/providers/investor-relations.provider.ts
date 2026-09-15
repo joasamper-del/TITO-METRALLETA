@@ -72,11 +72,19 @@ export class InvestorRelationsProvider {
     }
   }
 
-  private extractIrMetrics(html: string, ticker: string, timestamp: string): Partial<InvestorRelationsData> {
+  private extractIrMetrics(
+    html: string,
+    ticker: string,
+    timestamp: string,
+  ): Partial<InvestorRelationsData> {
     const metrics: any = {
       nextEarningsDate: this.nullMetric('investor-relations', timestamp),
       guidance: this.nullMetric('investor-relations', timestamp),
-      lastUpdate: { date: new Date().toISOString().split('T')[0], source: 'investor-relations', timestamp },
+      lastUpdate: {
+        date: new Date().toISOString().split('T')[0],
+        source: 'investor-relations',
+        timestamp,
+      },
     };
 
     const earningsPattern = /earnings\s*:?\s*([A-Za-z]+\s+\d{1,2},?\s*\d{4})/i;
@@ -130,7 +138,11 @@ export class InvestorRelationsProvider {
     return { date: null, source, timestamp, freshness: 'STALE' as const, confidence: 0 };
   }
 
-  private createErrorResponse(ticker: string, timestamp: string, error: string): InvestorRelationsData {
+  private createErrorResponse(
+    ticker: string,
+    timestamp: string,
+    error: string,
+  ): InvestorRelationsData {
     return {
       ticker,
       company: this.getCompanyName(ticker),

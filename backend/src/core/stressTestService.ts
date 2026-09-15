@@ -53,15 +53,15 @@ class StressTestLogger {
     }
   }
 
-  readResults(limit: number = 100): any[] {
+  readResults(limit = 100): any[] {
     try {
       if (!fs.existsSync(this.logFile)) return [];
       const content = fs.readFileSync(this.logFile, 'utf8');
       return content
         .split('\n')
-        .filter(l => l.trim())
+        .filter((l) => l.trim())
         .slice(-limit)
-        .map(l => JSON.parse(l));
+        .map((l) => JSON.parse(l));
     } catch (err) {
       console.error(`Could not read stress test results: ${(err as Error).message}`);
       return [];
@@ -85,10 +85,7 @@ export class StressTestService {
   private isRunning = false;
   private killSwitchTriggered = false;
 
-  constructor(
-    private executionEngine: ExecutionEngine,
-    private heartbeat: HeartbeatService
-  ) {}
+  constructor(private executionEngine: ExecutionEngine, private heartbeat: HeartbeatService) {}
 
   /**
    * Ejecutar stress test con kill switch
@@ -130,7 +127,7 @@ export class StressTestService {
       const testOrders = this.generateTestOrders(
         scenario.ordersCount,
         scenario.consecutiveOrders || false,
-        scenario.duplicateOrders || false
+        scenario.duplicateOrders || false,
       );
 
       // Ejecutar cada orden
@@ -148,8 +145,7 @@ export class StressTestService {
           // Inyectar latencia si es necesario
           if (scenario.injectLatency) {
             const delay =
-              Math.random() *
-                (scenario.injectLatency.max - scenario.injectLatency.min) +
+              Math.random() * (scenario.injectLatency.max - scenario.injectLatency.min) +
               scenario.injectLatency.min;
             await this.sleep(delay);
           }
@@ -192,9 +188,7 @@ export class StressTestService {
 
       // Calcular métricas
       result.avgLatency =
-        latencies.length > 0
-          ? latencies.reduce((a, b) => a + b, 0) / latencies.length
-          : 0;
+        latencies.length > 0 ? latencies.reduce((a, b) => a + b, 0) / latencies.length : 0;
       result.maxLatency = latencies.length > 0 ? Math.max(...latencies) : 0;
 
       // Determinar estado PASS/FAIL
@@ -202,8 +196,7 @@ export class StressTestService {
       const errorRate = result.totalOrders > 0 ? result.failed / result.totalOrders : 0;
 
       // PASS si: >= 80% órdenes exitosas Y kill switch no se activó
-      result.status =
-        successRate >= 0.8 && !this.killSwitchTriggered ? 'PASS' : 'FAIL';
+      result.status = successRate >= 0.8 && !this.killSwitchTriggered ? 'PASS' : 'FAIL';
     } finally {
       result.endTime = new Date().toISOString();
       this.isRunning = false;
@@ -212,7 +205,7 @@ export class StressTestService {
       this.testLogger.log(result);
 
       this.logger.log(
-        `✅ Stress test completed: ${result.status} (${result.successful}/${result.totalOrders} orders)`
+        `✅ Stress test completed: ${result.status} (${result.successful}/${result.totalOrders} orders)`,
       );
       this.heartbeat.beat(`stress_test_${result.status.toLowerCase()}`);
     }
@@ -243,16 +236,15 @@ export class StressTestService {
   private generateTestOrders(
     count: number,
     consecutive: boolean,
-    withDuplicates: boolean
+    withDuplicates: boolean,
   ): OrderRequest[] {
     const orders: OrderRequest[] = [];
     const symbols = ['SPY', 'QQQ', 'AAPL', 'MSFT'];
 
     for (let i = 0; i < count; i++) {
       const symbol = symbols[i % symbols.length];
-      const clientOrderId = withDuplicates && i % 3 === 0
-        ? `test-dup-${i % 5}`
-        : `test-${Date.now()}-${i}`;
+      const clientOrderId =
+        withDuplicates && i % 3 === 0 ? `test-dup-${i % 5}` : `test-${Date.now()}-${i}`;
 
       orders.push({
         symbol,
@@ -272,13 +264,13 @@ export class StressTestService {
   }
 
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
    * Obtener resultados de stress tests
    */
-  getResults(limit: number = 10): StressTestResult[] {
+  getResults(limit = 10): StressTestResult[] {
     return this.testLogger.readResults(limit) as StressTestResult[];
   }
 

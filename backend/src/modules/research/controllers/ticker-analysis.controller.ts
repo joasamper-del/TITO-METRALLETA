@@ -22,9 +22,7 @@ export class TickerAnalysisController {
     status: 'success' | 'error';
     data: TickerAnalysisReport;
   }> {
-    const analysis = await this.tickerResearch.analyzeTickerComprehensive(
-      symbol.toUpperCase(),
-    );
+    const analysis = await this.tickerResearch.analyzeTickerComprehensive(symbol.toUpperCase());
 
     return {
       status: 'success',
@@ -42,7 +40,7 @@ export class TickerAnalysisController {
     data: TickerAnalysisReport[];
   }> {
     const analyses = await Promise.all(
-      symbols.map(sym => this.tickerResearch.analyzeTickerComprehensive(sym.toUpperCase())),
+      symbols.map((sym) => this.tickerResearch.analyzeTickerComprehensive(sym.toUpperCase())),
     );
 
     return {
@@ -61,9 +59,7 @@ export class TickerAnalysisController {
     status: 'GO' | 'NO-GO';
     reasons: string[];
   }> {
-    const analysis = await this.tickerResearch.analyzeTickerComprehensive(
-      symbol.toUpperCase(),
-    );
+    const analysis = await this.tickerResearch.analyzeTickerComprehensive(symbol.toUpperCase());
 
     return {
       status: analysis.readyForExecution ? 'GO' : 'NO-GO',

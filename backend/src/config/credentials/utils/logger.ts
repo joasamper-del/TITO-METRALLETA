@@ -26,7 +26,7 @@ export function logCredentialEvent(
   broker: string,
   message: string,
   severity: AuditLog['severity'] = 'info',
-  field?: string
+  field?: string,
 ): void {
   // Only log in production or if explicitly enabled
   if (process.env.NODE_ENV === 'test') {
@@ -60,7 +60,7 @@ export function logCredentialEvent(
 /**
  * Get recent audit entries
  */
-export function getAuditLog(lines: number = 50): AuditLog[] {
+export function getAuditLog(lines = 50): AuditLog[] {
   try {
     if (!fs.existsSync(AUDIT_LOG_PATH)) {
       return [];
@@ -69,9 +69,9 @@ export function getAuditLog(lines: number = 50): AuditLog[] {
     const content = fs.readFileSync(AUDIT_LOG_PATH, 'utf-8');
     return content
       .split('\n')
-      .filter(line => line.trim())
+      .filter((line) => line.trim())
       .slice(-lines)
-      .map(line => JSON.parse(line) as AuditLog);
+      .map((line) => JSON.parse(line) as AuditLog);
   } catch {
     return [];
   }

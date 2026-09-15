@@ -45,12 +45,12 @@ export class YahooProvider implements FundamentalProvider {
           trend: 'growing',
         },
         profitability: {
-          net_margin: 0.20,
+          net_margin: 0.2,
           gross_margin: 0.46,
           operating_margin: 0.24,
         },
         growth: {
-          revenue_growth_yoy: 0.10,
+          revenue_growth_yoy: 0.1,
           earnings_growth_yoy: 0.14,
         },
         warnings: [],
@@ -62,7 +62,7 @@ export class YahooProvider implements FundamentalProvider {
       this.logger.error(`Yahoo Finance fetch failed: ${error.message}`);
       throw new HttpException(
         `Yahoo Finance provider error: ${error.message}`,
-        HttpStatus.SERVICE_UNAVAILABLE
+        HttpStatus.SERVICE_UNAVAILABLE,
       );
     }
   }
@@ -73,7 +73,7 @@ export class YahooProvider implements FundamentalProvider {
 
     if (timeSinceLastRequest < this.rateLimitDelay) {
       const waitTime = this.rateLimitDelay - timeSinceLastRequest;
-      await new Promise(resolve => setTimeout(resolve, waitTime));
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
     }
 
     this.lastRequestTime = Date.now();

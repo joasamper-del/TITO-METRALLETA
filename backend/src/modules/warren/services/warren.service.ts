@@ -1,8 +1,16 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { FundamentalScorerService, FundamentalMetrics, FundamentalScores } from '../strategies/fundamental-scorer';
+import {
+  FundamentalScorerService,
+  FundamentalMetrics,
+  FundamentalScores,
+} from '../strategies/fundamental-scorer';
 import { DCFEngineService, DCFInputs, DCFValuation } from '../strategies/dcf-engine';
 import { MacroContextService, MacroIndicators, MacroContext } from '../strategies/macro-context';
-import { DecisionEngineService, DecisionInput, DecisionOutput } from '../strategies/decision-engine';
+import {
+  DecisionEngineService,
+  DecisionInput,
+  DecisionOutput,
+} from '../strategies/decision-engine';
 
 export interface WarrenAnalysisRequest {
   ticker: string;
@@ -91,7 +99,10 @@ export class WarrenService {
     const macroContext = this.macroContext.analyzeMacro(request.macroIndicators);
 
     // 3. Calculate margin of safety at current price
-    const marginAnalysis = this.dcfEngine.calculateMarginAtPrice(dcfValuation, request.currentPrice);
+    const marginAnalysis = this.dcfEngine.calculateMarginAtPrice(
+      dcfValuation,
+      request.currentPrice,
+    );
 
     // 4. DECISION GATE (all gates applied here)
     const decisionEngine = this.decisionEngine.makeDecision({
@@ -159,7 +170,16 @@ export class WarrenService {
     }
 
     // Validate DCF inputs
-    const requiredDcfFields = ['fcf', 'fcfGrowthRate', 'projectionYears', 'wacc', 'equityShares', 'netDebt', 'fcfQuality', 'earningsQuality'];
+    const requiredDcfFields = [
+      'fcf',
+      'fcfGrowthRate',
+      'projectionYears',
+      'wacc',
+      'equityShares',
+      'netDebt',
+      'fcfQuality',
+      'earningsQuality',
+    ];
     for (const field of requiredDcfFields) {
       if (!(field in request.dcfInputs)) {
         throw new BadRequestException(`DCF inputs missing required field: ${field}`);
@@ -167,7 +187,20 @@ export class WarrenService {
     }
 
     // Validate macro indicators
-    const requiredMacroFields = ['fedRate', 'fedRateTimestamp', 'fedRateSource', 'cpi', 'cpiTimestamp', 'cpiSource', 'vix', 'vixTimestamp', 'vixSource', 'spPE', 'spPETimestamp', 'spPESource'];
+    const requiredMacroFields = [
+      'fedRate',
+      'fedRateTimestamp',
+      'fedRateSource',
+      'cpi',
+      'cpiTimestamp',
+      'cpiSource',
+      'vix',
+      'vixTimestamp',
+      'vixSource',
+      'spPE',
+      'spPETimestamp',
+      'spPESource',
+    ];
     for (const field of requiredMacroFields) {
       if (!(field in request.macroIndicators)) {
         throw new BadRequestException(`Macro indicators missing required field: ${field}`);
@@ -189,13 +222,35 @@ export class WarrenService {
     const decision = decisionEngine.decision;
 
     // Build readable action description
-    const actionReason = this.buildActionReason(decision, fundamentalScore, dcfValuation, macroContext, marginAnalysis);
+    const actionReason = this.buildActionReason(
+      decision,
+      fundamentalScore,
+      dcfValuation,
+      macroContext,
+      marginAnalysis,
+    );
 
     // Build analysis reasons
     const analysis = {
-      fundamentalsReason: `Score: ${fundamentalScore.totalScore.toFixed(1)}/100 (${fundamentalScore.scoreCategory.toUpperCase()}). Valuation: ${fundamentalScore.valuation}/30, Quality: ${fundamentalScore.quality}/35, Growth: ${fundamentalScore.growth}/20, Macro: ${fundamentalScore.macro}/15.`,
-      valuationReason: `${dcfValuation.valuationStatus.toUpperCase()} valuation. Fair value range: ${dcfValuation.fairValueRange.low.toFixed(2)} - ${dcfValuation.fairValueRange.high.toFixed(2)} (base: ${dcfValuation.baseCase.fairValue.toFixed(2)}). Current price: ${request.currentPrice.toFixed(2)}. Discount: ${marginAnalysis.percentDiscountFromConservative.toFixed(1)}%.`,
-      macroReason: `Macro context: ${macroContext.macroContext.toUpperCase()}. ${macroContext.contextReason} Confidence: ${macroContext.confidenceLevel.toUpperCase()}.`,
+      fundamentalsReason: `Score: ${fundamentalScore.totalScore.toFixed(
+        1,
+      )}/100 (${fundamentalScore.scoreCategory.toUpperCase()}). Valuation: ${
+        fundamentalScore.valuation
+      }/30, Quality: ${fundamentalScore.quality}/35, Growth: ${
+        fundamentalScore.growth
+      }/20, Macro: ${fundamentalScore.macro}/15.`,
+      valuationReason: `${dcfValuation.valuationStatus.toUpperCase()} valuation. Fair value range: ${dcfValuation.fairValueRange.low.toFixed(
+        2,
+      )} - ${dcfValuation.fairValueRange.high.toFixed(
+        2,
+      )} (base: ${dcfValuation.baseCase.fairValue.toFixed(
+        2,
+      )}). Current price: ${request.currentPrice.toFixed(
+        2,
+      )}. Discount: ${marginAnalysis.percentDiscountFromConservative.toFixed(1)}%.`,
+      macroReason: `Macro context: ${macroContext.macroContext.toUpperCase()}. ${
+        macroContext.contextReason
+      } Confidence: ${macroContext.confidenceLevel.toUpperCase()}.`,
       decisionReason: `Decision: ${decision}. ${decisionEngine.explanation.split('\n').pop()}`,
     };
 
@@ -234,16 +289,36 @@ export class WarrenService {
   /**
    * Build human-readable action reason
    */
-  private buildActionReason(decision: string, score: FundamentalScores, valuation: DCFValuation, macro: MacroContext, margin: any): string {
+  private buildActionReason(
+    decision: string,
+    score: FundamentalScores,
+    valuation: DCFValuation,
+    macro: MacroContext,
+    margin: any,
+  ): string {
     switch (decision) {
       case 'BUY':
-        return `Strong fundamental score (${score.totalScore.toFixed(1)}) + attractive valuation + adequate margin (${margin.percentDiscountFromConservative.toFixed(1)}%) + ${macro.macroContext} macro. Proceed with analysis for new position.`;
+        return `Strong fundamental score (${score.totalScore.toFixed(
+          1,
+        )}) + attractive valuation + adequate margin (${margin.percentDiscountFromConservative.toFixed(
+          1,
+        )}%) + ${macro.macroContext} macro. Proceed with analysis for new position.`;
       case 'HOLD':
-        return `Score qualifies (${score.totalScore.toFixed(1)}) but one or more gates require caution: valuation (${valuation.valuationStatus}), margin (${margin.percentDiscountFromConservative.toFixed(1)}%), or data freshness. Monitor for improvements.`;
+        return `Score qualifies (${score.totalScore.toFixed(
+          1,
+        )}) but one or more gates require caution: valuation (${
+          valuation.valuationStatus
+        }), margin (${margin.percentDiscountFromConservative.toFixed(
+          1,
+        )}%), or data freshness. Monitor for improvements.`;
       case 'TRIM':
-        return `Expensive valuation (P/E >30 or DCF expensive) detected. Recommend trimming existing positions. Current price ${margin.percentDiscountFromConservative.toFixed(1)}% vs conservative fair value.`;
+        return `Expensive valuation (P/E >30 or DCF expensive) detected. Recommend trimming existing positions. Current price ${margin.percentDiscountFromConservative.toFixed(
+          1,
+        )}% vs conservative fair value.`;
       case 'SELL':
-        return `Score below 80 threshold (${score.totalScore.toFixed(1)}) or fundamental rejection. Do not initiate new positions. Strong recommendation to avoid.`;
+        return `Score below 80 threshold (${score.totalScore.toFixed(
+          1,
+        )}) or fundamental rejection. Do not initiate new positions. Strong recommendation to avoid.`;
       default:
         return 'Decision pending analysis.';
     }

@@ -14,7 +14,7 @@ export class HealthChecker {
   }
 
   registerMultiple(configs: HealthCheckConfig[]): void {
-    configs.forEach(config => this.register(config));
+    configs.forEach((config) => this.register(config));
   }
 
   async checkAll(): Promise<HealthResult> {
@@ -22,10 +22,7 @@ export class HealthChecker {
 
     for (const [id, config] of this.checks) {
       try {
-        const status = await Promise.race([
-          config.checker(),
-          this.timeout(config.timeout),
-        ]);
+        const status = await Promise.race([config.checker(), this.timeout(config.timeout)]);
 
         const check: HealthCheck = {
           id: config.id,
@@ -55,18 +52,13 @@ export class HealthChecker {
 
     // Determine overall status
     const criticalRed = results
-      .filter(r => r.status === 'red' && this.isCritical(r.id))
-      .map(r => r.broker);
+      .filter((r) => r.status === 'red' && this.isCritical(r.id))
+      .map((r) => r.broker);
 
-    const hasAnyRed = results.some(r => r.status === 'red');
-    const hasYellow = results.some(r => r.status === 'yellow');
+    const hasAnyRed = results.some((r) => r.status === 'red');
+    const hasYellow = results.some((r) => r.status === 'yellow');
 
-    const overallStatus: HealthStatus =
-      hasAnyRed
-        ? 'red'
-        : hasYellow
-          ? 'yellow'
-          : 'green';
+    const overallStatus: HealthStatus = hasAnyRed ? 'red' : hasYellow ? 'yellow' : 'green';
 
     return {
       timestamp: new Date(),
@@ -102,7 +94,11 @@ export class HealthChecker {
     }
 
     for (const [broker, brokerChecks] of byBroker) {
-      const emoji = blocked.includes(broker) ? '🔴' : brokerChecks.some(c => c.status === 'yellow') ? '🟡' : '🟢';
+      const emoji = blocked.includes(broker)
+        ? '🔴'
+        : brokerChecks.some((c) => c.status === 'yellow')
+        ? '🟡'
+        : '🟢';
       report += `${emoji} ${broker.toUpperCase()}\n`;
 
       for (const check of brokerChecks) {

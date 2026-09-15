@@ -96,7 +96,15 @@ export interface AlpacaOrder {
   limit_price?: string;
   stop_price?: string;
   filled_avg_price?: string;
-  status: 'pending_new' | 'accepted' | 'pending_cancel' | 'canceled' | 'expired' | 'filled' | 'partially_filled' | 'rejected';
+  status:
+    | 'pending_new'
+    | 'accepted'
+    | 'pending_cancel'
+    | 'canceled'
+    | 'expired'
+    | 'filled'
+    | 'partially_filled'
+    | 'rejected';
   extended_hours: boolean;
   legs?: AlpacaOrder[];
 }
