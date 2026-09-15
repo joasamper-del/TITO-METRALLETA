@@ -87,7 +87,7 @@ export class LiquidityService {
     }
 
     // 3. Disparidad MARGINAL: 20% < disparidad ≤ 40% → HOLD
-    if (disparityPct > this.DISPARITY_HOLD_THRESHOLD) {
+    if (disparityPct > this.DISPARITY_HOLD_THRESHOLD && disparityPct <= this.DISPARITY_FAIL_THRESHOLD) {
       return {
         pass: false,
         reason: `Liquidez marginal (disparidad ${disparityPct.toFixed(2)}%)`,

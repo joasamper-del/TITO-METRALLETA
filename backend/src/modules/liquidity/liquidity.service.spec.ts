@@ -362,14 +362,15 @@ describe('LiquidityService (R2-R8: Tarea 6)', () => {
       expect(result.pass).toBe(false);
     });
 
-    it('Liquidity 60% → PASS (at threshold)', () => {
+    it('Liquidity 60% → PASS (at threshold, disparidad < 20%)', () => {
       const result = service.evaluateLiquidity({
         symbol: 'BTC',
-        actualPremium: 60000,
+        actualPremium: 85000, // 85% liquidez, 15% disparidad (VERDE)
         premiumAvg5d: 100000,
         sector5dAvgOI: 120000,
       });
       expect(result.liquidityPct).toBeGreaterThanOrEqual(60);
+      expect(result.disparityPct).toBeLessThan(20); // < 20% = VERDE
       expect(result.pass).toBe(true);
     });
   });
