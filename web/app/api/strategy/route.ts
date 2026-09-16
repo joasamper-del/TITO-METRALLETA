@@ -128,7 +128,7 @@ export interface StrategyOperativeData {
   volume: { value: number | null; source: string; ts: string } | null;
   liquidity: { value: string | null; source: string; ts: string } | null;
   pattern: { value: string | null; source: string; ts: string } | null;
-  blockingEvent: { value: boolean; source: string; ts: string } | null;
+  blockingEvent: { value: boolean | null; source: string; ts: string } | null;
   regime: { value: string | null; source: string; ts: string } | null;
   dataQuality: "alta" | "media" | "baja";
   failSafeReason?: string;
@@ -606,7 +606,7 @@ export async function GET(request: NextRequest) {
       if (newsReport) {
         // Clasificar noticias como críticas si contienen palabras clave
         const criticalKeywords = ["bankruptcy", "sec", "fraud", "delisting", "resign"];
-        const allNews = [...(newsReport.macroNews || []), ...(newsReport.companyNews || [])];
+        const allNews = newsReport.news || [];
         const criticalMatches = allNews
           .filter((n: any) =>
             criticalKeywords.some((kw) =>

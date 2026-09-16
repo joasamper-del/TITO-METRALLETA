@@ -67,6 +67,10 @@ export default function NewsCard({
   const flag =
     report && callPct != null ? contradictionFlag(flowBias(callPct), report.bias) : null;
 
+  const companyNews = report?.news.filter((n) => n.layer === "company") ?? [];
+  const promotedNews = report?.news.filter((n) => n.layer === "company" && n.matchedBy) ?? [];
+  const macroNews = report?.news.filter((n) => n.layer === "macro") ?? [];
+
   return (
     <section className="card">
       <div>
@@ -97,20 +101,20 @@ export default function NewsCard({
             </div>
           )}
 
-          {report.company.length > 0 && (
+          {companyNews.length > 0 && (
             <div>
               <div className="news-head">De la empresa</div>
               <div className="news-list">
-                {report.company.slice(0, 4).map((n) => <Article key={n.id} n={n} />)}
+                {companyNews.slice(0, 4).map((n) => <Article key={n.id} n={n} />)}
               </div>
             </div>
           )}
 
-          {report.promoted.length > 0 && (
+          {promotedNews.length > 0 && (
             <div>
               <div className="news-head">En los feeds RSS mencionan a {ticker}</div>
               <div className="news-list">
-                {report.promoted.map((n) => <Article key={n.id} n={n} />)}
+                {promotedNews.map((n) => <Article key={n.id} n={n} />)}
               </div>
             </div>
           )}
@@ -120,8 +124,8 @@ export default function NewsCard({
               Clima de mercado <span className="news-head-note">— afecta a todos los tickers</span>
             </div>
             <div className="news-list">
-              {report.macro.slice(0, 4).map((n) => <Article key={n.id} n={n} />)}
-              {report.macro.length === 0 && (
+              {macroNews.slice(0, 4).map((n) => <Article key={n.id} n={n} />)}
+              {macroNews.length === 0 && (
                 <div className="feed-empty">Los feeds RSS no respondieron.</div>
               )}
             </div>
